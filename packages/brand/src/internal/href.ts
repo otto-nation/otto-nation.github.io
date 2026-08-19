@@ -1,4 +1,5 @@
-// Not exported from the barrel: internal to the package.
+// Internal to the package: not in the barrel, and the exports map carries no
+// wildcard, so a consumer importing this path gets ERR_PACKAGE_PATH_NOT_EXPORTED.
 //
 // A consumer with a basePath (otto-workbench sets '/otto-workbench') has
 // next/link prefix every internal href. An href that already names its own

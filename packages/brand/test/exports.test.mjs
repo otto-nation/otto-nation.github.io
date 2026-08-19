@@ -8,9 +8,13 @@ const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
 const read = (relative) => readFileSync(fileURLToPath(new URL(relative, root)), 'utf8');
 
+// Every target is a literal path: the exports map has no wildcard, so the
+// barrel and the named subpaths are the whole public API and each one of them
+// is disk-checked here. A pattern entry reintroduced later fails this test
+// rather than skipping it, which is the intended signal.
 test('every exports-map target exists on disk', () => {
   for (const target of Object.values(manifest.exports)) {
-    if (target.includes('*')) continue;
+    assert.ok(!target.includes('*'), `${target} is a wildcard: the API is the barrel and the named subpaths`);
     assert.doesNotThrow(() => read(target), `${target} is exported but missing`);
   }
 });
