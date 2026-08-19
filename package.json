@@ -5,6 +5,6 @@
   "workspaces": ["packages/*", "site"],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspace otto-nation-site"
+    "build": "npm run build --workspaces --if-present"
   }
 }

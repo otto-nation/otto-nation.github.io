@@ -12,6 +12,7 @@ consumes: tokens, fonts, marks, primitives, and page chrome.
 
 That is the whole repo today. The org landing site at
 https://otto-nation.github.io/ is not here yet: the root `package.json` reserves a
-`site` workspace and a `build` script that static-exports it, and neither resolves
-until that directory lands. There is no release automation and no list of
-downstream consumers — a version bump reaches a consumer by hand.
+`site` workspace, and `npm run build` builds every workspace that has a build
+script — no workspace does yet, and the brand package never will, so it is a no-op
+until `site/` lands. There is no release automation and no list of downstream
+consumers — a version bump reaches a consumer by hand.

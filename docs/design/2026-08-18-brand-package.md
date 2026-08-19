@@ -1,7 +1,10 @@
 # otto-nation brand package and org landing site — design
 
 Date: 2026-08-18
-Status: approved, pending implementation plan
+Status: phase 1 shipped — `packages/brand` is implemented, typechecked, and tested,
+and the `otto-brand-check` validator landed with it rather than in phase 4. Phases 2–5
+(landing site, release automation, otto-workbench migration, consumer fan-out) are
+unstarted. Nothing consumes the package yet.
 Issue: https://github.com/otto-nation/otto-workbench/issues/796
 
 ## Goal
@@ -97,13 +100,19 @@ New repo `otto-nation/otto-nation.github.io`, npm workspaces:
 ```
 package.json               # workspaces: ["packages/*", "site"]
 packages/brand/
-  package.json             # name @otto-nation/brand; files: ["src"]
+  package.json             # name @otto-nation/brand; files: ["src", "bin", "LICENSE"]
   README.md                # consumer setup; probe outcome; font provenance
+  LICENSE                  # MIT AND OFL-1.1 — the code, and both vendored faces
+  tsconfig.json            # strict, moduleResolution "bundler"; run by npm test
+  bin/
+    otto-brand-check.mjs   # the consumer-config validator, shipped as the package's bin
   src/
     index.ts
     tokens.css             # moved verbatim from otto-workbench site/app/tokens.css
     fonts.css              # @font-face for both faces
-    fonts/                 # LeagueSpartanVariable.woff2, LeagueMonoVariable.woff2, OFL.txt
+    fonts/                 # LeagueSpartanVariable.woff2, LeagueMonoVariable.woff2, one OFL per face
+    internal/
+      href.ts              # leavesThisDeployment; absent from the barrel and the exports map
     marks/
       greca.tsx            # Greca, GrecaDivider
       rings.tsx            # Rings
@@ -118,6 +127,7 @@ packages/brand/
       hero.tsx
       install-block.tsx
       search-button.tsx
+  test/                    # node --test: brand-check, contrast, exports, href
 site/                      # the landing app; mirrors otto-workbench's naming
 .github/workflows/
   pages.yml
@@ -128,7 +138,8 @@ consumers.yml
 The package ships **raw `.tsx` with no build step**. Tailwind's scanner has to read the
 source anyway, so a compiled artifact would mean shipping source *and* build output;
 and shipping source sidesteps the `"use client"` directive mangling that bundlers are
-prone to. `npm pack` tars `src/`. Consumers add `transpilePackages`.
+prone to. `npm pack` tars `src/`, `bin/`, and the `LICENSE`. Consumers add
+`transpilePackages`.
 
 The landing site consumes the package through the workspace link, not the tarball. See
 "Testing" — that gap needs its own coverage.
@@ -144,12 +155,12 @@ The landing site consumes the package through the workspace link, not the tarbal
 | `Rings` | — | Unchanged. |
 | `Eyebrow` | `{ children }` | Resolves the 0.15/0.16em tracking split — one value wins. |
 | `Button` | `{ href, variant: 'solid' \| 'outline', size?, onDark? }` | Absorbs the four inconsistent instances. `onDark` selects the `--ow-block-*` ramp. |
-| `CardGrid` | `{ columns, items: { title, body, href?, accent? }[] }` | Subsumes `Included` and `HowItWorks`. |
+| `CardGrid` | `{ columns, items: { title, body, href?, accent?, meta? }[] }` | Subsumes `Included` and `HowItWorks`. `meta` is the mono trailing line. |
 | `Nav` | `{ product, links, slot? }` | `links` are site-local; org property links are baked in. `slot` takes `SearchButton` so fumadocs' search context stays out of docs-less consumers. |
 | `Footer` | `{ cta? }` | Dark band, `--ow-block-*`. |
 | `Hero` | `{ eyebrow, headline, lede, actions }` | `headline` accepts nodes so the two-line break survives. |
 | `InstallBlock` | `{ shell, commands }` | Terminal chrome plus copy button; `commands` replaces the hardcoded constant. |
-| `SearchButton` | — | Client component; returns `null` when search is disabled. |
+| `SearchButton` | — | Client component; returns `null` when search is disabled. The one export not in the barrel: it is reachable only at `@otto-nation/brand/search-button`, so importing it does not pull fumadocs into the graph of a docs-less consumer. |
 
 Components use `tailwind-merge` so a consumer's `className` beats the package's
 defaults by prop rather than by stylesheet source order.
@@ -334,7 +345,7 @@ All otto-workbench work happens in a worktree off `origin/main`.
 |---|---|
 | Tailwind `@source` does not follow the workspace symlink | Probe 1, before any extraction. Fallback is a package build step emitting prebuilt CSS |
 | `"use client"` lost through raw-`.tsx` + `transpilePackages` | Probe 2. Affects `InstallBlock` and `SearchButton` only |
-| Consumer forgets `@source`; page renders unstyled | The validator makes it a build failure. Non-optional, ships in phase 4 |
+| Consumer forgets `@source`; page renders unstyled | The validator makes it a build failure. Non-optional; it shipped in phase 1 with the package and is wired into a consumer's CI in phase 4 |
 | Landing site never exercises the tarball | Pack-and-build smoke test in CI, phase 3 |
 | Components over-fitted to otto-workbench's copy | Landing site composed only from exports; over-fitting surfaces in phase 2, before otto-workbench depends on the API |
 | Extraction changes otto-workbench's appearance | Visual parity check; the four intended pixel changes named explicitly in the PR |
