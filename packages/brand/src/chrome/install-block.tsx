@@ -1,16 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 // `commands` replaces the hardcoded constant otto-workbench held. The copy
 // button now copies every command rather than only the first — with a real
 // list there is no principled reason to copy one line of three. Behavioural
 // change, called out in the migration PR.
-export function InstallBlock({ shell, commands }: { shell: string; commands: string[] }) {
+export function InstallBlock({
+  shell,
+  commands,
+  className,
+}: {
+  shell: string;
+  commands: string[];
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-lg bg-[var(--ow-block)]">
+    <div className={twMerge('overflow-hidden rounded-lg bg-[var(--ow-block)]', className)}>
       <div className="flex items-center justify-between border-b border-[var(--ow-block-hairline)] px-3 py-2">
         <span className="font-mono text-[9px] text-[var(--ow-block-ink-muted)]">{shell}</span>
         <button

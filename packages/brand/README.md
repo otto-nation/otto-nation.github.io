@@ -115,22 +115,28 @@ cannot see — those surface as errors in your own build.
 |---|---|
 | `@otto-nation/brand/tokens.css` | Sole owner of every hex in the org, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces; defines `--font-display`, `--font-mono` |
-| `Greca` | `{ size?: number; onDark?: boolean }` |
-| `GrecaDivider` | — |
-| `Rings` | — |
+| `Greca` | `{ size?: number; onDark?: boolean, className? }` |
+| `GrecaDivider` | `{ className? }` |
+| `Rings` | `{ className? }` |
 | `Eyebrow` | `{ children, className? }` |
 | `Button` | `{ href, children, variant?: 'solid' \| 'outline', size?: 'sm' \| 'xs', onDark?, className? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
-| `Nav` | `{ product, links, slot? }` |
+| `Nav` | `{ product, links, slot?, className? }` |
 | `Footer` | `{ cta?, className? }` |
-| `Hero` | `{ eyebrow, headline, lede, actions? }` |
-| `InstallBlock` | `{ shell, commands }` |
-| `SearchButton` | Client component, `@otto-nation/brand/search-button` only |
+| `Hero` | `{ eyebrow, headline, lede, actions?, className? }` |
+| `InstallBlock` | `{ shell, commands, className? }` |
+| `SearchButton` | Client component, `@otto-nation/brand/search-button` only. The one export with no `className?` — see below |
 
 `CardItem` is `{ title, body, href?, accent?, meta? }`.
 
-Every component takes `className?` and merges it with `tailwind-merge`, so your
-class beats the package default by prop rather than by stylesheet source order.
+Every component takes `className?` and merges it with `tailwind-merge` onto its
+outermost element, so your class beats the package default by prop rather than
+by stylesheet source order.
+
+`SearchButton` is the single exception. It is a verbatim copy of a
+fumadocs-coupled dialog trigger with no styling surface of its own, so there is
+nothing for a caller's class to override; style it through the fumadocs layout
+that owns it.
 
 ### Cross-deployment links
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { Greca } from '../marks/greca';
 
 export const ORG_HOME = 'https://otto-nation.github.io/';
@@ -16,13 +17,20 @@ export function Nav({
   product,
   links,
   slot,
+  className,
 }: {
   product: string;
   links: { label: string; href: string }[];
   slot?: ReactNode;
+  className?: string;
 }) {
   return (
-    <nav className="flex items-center justify-between border-b border-[var(--ow-hairline)] px-6 py-4">
+    <nav
+      className={twMerge(
+        'flex items-center justify-between border-b border-[var(--ow-hairline)] px-6 py-4',
+        className,
+      )}
+    >
       <a href={ORG_HOME} className="flex items-center gap-2 text-sm font-bold tracking-tight">
         <Greca size={17} />
         {product}

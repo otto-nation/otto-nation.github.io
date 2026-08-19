@@ -1,8 +1,24 @@
 import { useId } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-export function Greca({ size = 18, onDark = false }: { size?: number; onDark?: boolean }) {
+export function Greca({
+  size = 18,
+  onDark = false,
+  className,
+}: {
+  size?: number;
+  onDark?: boolean;
+  className?: string;
+}) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      aria-hidden="true"
+      className={twMerge(className)}
+    >
       <path
         d="M4 28V18h8v-6h8V6h8"
         stroke={onDark ? 'var(--ow-amarillo)' : 'var(--ow-barro)'}
@@ -17,11 +33,17 @@ export function Greca({ size = 18, onDark = false }: { size?: number; onDark?: b
 // background-image data-URI: a data-URI cannot read CSS custom properties,
 // so its stroke would be a hardcoded hex and stay light in dark mode. The
 // inline stroke below reads --ow-hairline directly and follows the theme.
-export function GrecaDivider() {
+export function GrecaDivider({ className }: { className?: string }) {
   const patternId = useId();
 
   return (
-    <svg aria-hidden="true" width="100%" height={13} style={{ display: 'block' }}>
+    <svg
+      aria-hidden="true"
+      width="100%"
+      height={13}
+      style={{ display: 'block' }}
+      className={twMerge(className)}
+    >
       <pattern
         id={patternId}
         x="0"

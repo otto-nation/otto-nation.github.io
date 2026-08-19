@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { Rings } from '../marks/rings';
 import { Eyebrow } from '../primitives/eyebrow';
 
@@ -9,14 +10,16 @@ export function Hero({
   headline,
   lede,
   actions,
+  className,
 }: {
   eyebrow: string;
   headline: ReactNode;
   lede: string;
   actions?: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="relative overflow-hidden px-6 pb-9 pt-11">
+    <section className={twMerge('relative overflow-hidden px-6 pb-9 pt-11', className)}>
       <Rings />
       <div className="relative max-w-full sm:max-w-[62%]">
         <Eyebrow className="mb-4">{eyebrow}</Eyebrow>

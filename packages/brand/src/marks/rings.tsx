@@ -1,3 +1,5 @@
+import { twMerge } from 'tailwind-merge';
+
 const RINGS = [
   { r: 2.6, c: 'var(--ow-amarillo)' },
   { r: 4.5, c: 'var(--ow-amarillo)' },
@@ -22,7 +24,7 @@ const SIZE = 290;
 // weight steady across both breakpoints.
 const STROKE_PX = 2.4;
 
-export function Rings() {
+export function Rings({ className }: { className?: string }) {
   return (
     <svg
       width={SIZE}
@@ -30,7 +32,10 @@ export function Rings() {
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
-      className="pointer-events-none absolute -right-16 -top-14 h-20 w-20 sm:h-[290px] sm:w-[290px]"
+      className={twMerge(
+        'pointer-events-none absolute -right-16 -top-14 h-20 w-20 sm:h-[290px] sm:w-[290px]',
+        className,
+      )}
     >
       {RINGS.map((ring) => (
         <circle
