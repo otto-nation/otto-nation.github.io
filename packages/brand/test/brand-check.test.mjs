@@ -160,6 +160,24 @@ test('an undeclared --ow-* token fails', () => {
   assert.match(output, /--ow-nonesuch/);
 });
 
+// One pass has to name every offender. Reporting only the last file scanned
+// turns one report into a round of whack-a-mole: the developer fixes what was
+// named, re-runs, and gets a failure that was there all along.
+test('every file referencing the same undeclared token is reported', () => {
+  const dir = fixture({
+    page: `export default () => <p className="text-[var(--ow-nonesuch)]" />;\n`,
+  });
+  writeFileSync(
+    join(dir, 'app', 'other.tsx'),
+    `export const Other = () => <p className="bg-[var(--ow-nonesuch)]" />;\n`,
+  );
+  const { code, output } = run(dir);
+  assert.equal(code, 1);
+  assert.match(output, /--ow-nonesuch/);
+  assert.match(output, /page\.tsx/);
+  assert.match(output, /other\.tsx/);
+});
+
 test('a commented-out @source does not count', () => {
   const { code } = run(fixture({
     css: `@import 'tailwindcss';\n/* @source '../node_modules/@otto-nation/brand/src/*.tsx'; */\n`,

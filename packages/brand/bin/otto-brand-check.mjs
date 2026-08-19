@@ -91,13 +91,17 @@ function stripComments(source) {
     .replace(/\u0000(\d+)\u0000/g, (_, index) => strings[Number(index)]);
 }
 
+// Thrown by walk() rather than exiting from inside the traversal, so the
+// entrypoint stays the only place that decides the process's fate and a caller
+// reusing walk() can handle the failure itself.
+class SourceScanError extends Error {}
+
 function* walk(dir) {
   let entries;
   try {
     entries = readdirSync(dir);
-  } catch {
-    console.error(`otto-brand-check: cannot read source directory: ${dir}`);
-    process.exit(1);
+  } catch (cause) {
+    throw new SourceScanError(`cannot read source directory: ${dir}`, { cause });
   }
   for (const entry of entries) {
     if (entry === 'node_modules' || entry.startsWith('.')) continue;
@@ -185,17 +189,37 @@ const declared = new Set(
   [...tokens.matchAll(/^\s*(--ow-[a-z-]+):/gm)].map(([, name]) => name),
 );
 
+// Every file that references a token, not just the last one scanned: a report
+// that names one offender per token turns a single run into a round of
+// whack-a-mole, where the developer fixes what was named and re-runs into a
+// failure that was there all along.
 const undeclared = new Map();
-for (const dir of args.src) {
-  for (const file of walk(dir)) {
-    const source = stripComments(readFileSync(file, 'utf8'));
-    for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
-      if (!declared.has(token)) undeclared.set(token, file);
+try {
+  for (const dir of args.src) {
+    for (const file of walk(dir)) {
+      const source = stripComments(readFileSync(file, 'utf8'));
+      for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
+        if (declared.has(token)) continue;
+        if (!undeclared.has(token)) undeclared.set(token, new Set());
+        undeclared.get(token).add(file);
+      }
     }
   }
+} catch (error) {
+  if (!(error instanceof SourceScanError)) throw error;
+  console.error(`otto-brand-check: ${error.message}`);
+  process.exit(1);
 }
-for (const [token, file] of undeclared) {
-  failures.push(`${file}: references ${token}, which ${PACKAGE}/tokens.css does not declare`);
+for (const [token, files] of undeclared) {
+  // One file stays on the headline; more than one goes to an indented list, so
+  // a token used across a dozen files does not produce a dozen near-identical
+  // lines saying the same thing about the same token.
+  const [first] = files;
+  const rest = [...files].slice(1);
+  failures.push(
+    `${first}: references ${token}, which ${PACKAGE}/tokens.css does not declare` +
+      rest.map((file) => `\n  also referenced by ${file}`).join(''),
+  );
 }
 
 if (failures.length > 0) {
