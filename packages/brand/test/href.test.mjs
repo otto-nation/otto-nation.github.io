@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { leavesThisDeployment } from '../src/internal/href.ts';
+
+const SRC = fileURLToPath(new URL('../src/', import.meta.url));
+
+function sourceFiles() {
+  return readdirSync(SRC, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.tsx'))
+    .map((entry) => relative(SRC, join(entry.parentPath, entry.name)).split(sep).join('/'));
+}
 
 // Every href here that reads as off-site but is answered site-local is the bug
 // the helper exists to prevent: next/link prefixes it with the consumer's
@@ -32,6 +43,26 @@ test('a site-local href keeps next/link', () => {
 test('a scheme is matched case-insensitively, as RFC 3986 defines it', () => {
   for (const href of ['https://x.dev', 'Https://x.dev', 'hTTps://x.dev', 'HTTPS://x.dev']) {
     assert.equal(leavesThisDeployment(href), true, `${href} is the same link as its lowercase form`);
+  }
+});
+
+// The predicate only helps where it is called. A component that renders a
+// caller-supplied href straight through next/link reintroduces the basePath
+// mis-resolution for its own prop, and the README's claim that a caller cannot
+// get this wrong stops being true. So the rule is structural: if a file renders
+// Link, it routes through the check and carries the plain-anchor branch too.
+test('every component that renders next/link routes its href through the check', () => {
+  const linking = sourceFiles().filter((file) =>
+    readFileSync(join(SRC, file), 'utf8').includes("from 'next/link'"),
+  );
+  assert.ok(linking.length >= 3, 'expected Button, Nav, and CardGrid to render Link');
+
+  for (const file of linking) {
+    const source = readFileSync(join(SRC, file), 'utf8');
+    assert.ok(source.includes('leavesThisDeployment('),
+      `src/${file} renders next/link without routing the href through leavesThisDeployment`);
+    assert.match(source, /<a\s[^>]*href=/,
+      `src/${file} has no plain-anchor branch, so an off-site href has nowhere to go`);
   }
 });
 

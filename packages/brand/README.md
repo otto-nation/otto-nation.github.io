@@ -154,12 +154,15 @@ change to both.
 
 ### Cross-deployment links
 
-`Nav`'s `links` and `CardGrid`'s `href` are site-local and render through
-`next/link`. The org property links are internal to `Nav` and `Footer` and render
-as absolute anchors. This is structural on purpose: a consumer with a `basePath`
-(otto-workbench sets `/otto-workbench`) has `next/link` prefix every internal
-href, so an absolute URL passed through `Link` resolves inside the wrong site.
-There is no prop that lets a caller get this wrong.
+Every caller-supplied href — `Button`'s, `Nav`'s `links`, `CardGrid`'s `href` —
+goes through one predicate, `leavesThisDeployment`, which picks `next/link` for a
+site-local href and a plain anchor for anything naming its own destination (a
+scheme, or protocol-relative `//host`). The org property links internal to `Nav`
+and `Footer` take the same route. This matters because a consumer with a
+`basePath` (otto-workbench sets `/otto-workbench`) has `next/link` prefix every
+internal href, so an off-site URL passed through `Link` resolves inside the wrong
+site. There is no prop that lets a caller get this wrong, and no component that
+skips the check — `test/href.test.mjs` asserts both.
 
 ## The four intended pixel changes
 
