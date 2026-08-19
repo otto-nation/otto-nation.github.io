@@ -1,0 +1,31 @@
+{
+  "name": "@otto-nation/brand",
+  "version": "1.0.0",
+  "description": "otto-nation design tokens, marks, and page chrome",
+  "license": "MIT",
+  "type": "module",
+  "files": ["src", "bin"],
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./fonts.css": "./src/fonts.css",
+    "./search-button": "./src/chrome/search-button.tsx",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "otto-brand-check": "./bin/otto-brand-check.mjs"
+  },
+  "dependencies": {
+    "tailwind-merge": "^3.0.0"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "fumadocs-ui": "^16.14.5"
+  },
+  "peerDependenciesMeta": {
+    "fumadocs-ui": { "optional": true }
+  }
+}

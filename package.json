@@ -1,0 +1,10 @@
+{
+  "name": "otto-nation-github-io",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "site"],
+  "scripts": {
+    "test": "node --test",
+    "build": "npm run build --workspace otto-nation-site"
+  }
+}
