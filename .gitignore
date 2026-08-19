@@ -1,5 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
 .next/
 out/
 *.tgz
+*.tsbuildinfo
+
+# fumadocs generated source
 .source/
+
+# npm
+npm-debug.log*
+.npm
+
+# Local env
+.env
+.env*.local
+
+# Worktree-local scratch — plans, specs, and design notes stay out of the repo
+ignore/
+
+# Agent and editor artifacts
+.claude/
+.superpowers/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backups
+*.bak
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -3,9 +3,8 @@
 Home of `@otto-nation/brand`, the design package every otto-nation property
 consumes: tokens, fonts, marks, primitives, and page chrome.
 
-- `packages/brand/` — the package, plus the `otto-brand-check` bin a consumer runs
-  in CI. See its README for consumer setup.
-- `docs/design/2026-08-18-brand-package.md` — the design this was built from.
+`packages/brand/` holds the package, plus the `otto-brand-check` bin a consumer runs
+in CI. See its README for consumer setup.
 
     npm install
     npm test        # typechecks packages/brand and runs its node --test suite
