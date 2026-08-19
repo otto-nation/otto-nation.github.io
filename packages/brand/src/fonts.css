@@ -14,11 +14,17 @@
  * Both are SIL OFL, but under two different copyright holders: see
  * fonts/OFL-LeagueSpartan.txt and fonts/OFL-LeagueMono.txt, and the
  * provenance table in README.md.
+ *
+ * The format keyword is plain woff2, matching what the pre-extraction
+ * next/font/local implementation emitted. A variable woff2 loads correctly
+ * under it. 'woff2-variations' is a draft keyword: a UA that does not
+ * recognise a format() must skip that src component entirely, so declaring it
+ * risks the face never loading at all.
  */
 
 @font-face {
   font-family: 'League Spartan';
-  src: url('./fonts/LeagueSpartanVariable.woff2') format('woff2-variations');
+  src: url('./fonts/LeagueSpartanVariable.woff2') format('woff2');
   font-weight: 200 900;
   font-style: normal;
   font-display: swap;
@@ -26,13 +32,17 @@
 
 @font-face {
   font-family: 'League Mono';
-  src: url('./fonts/LeagueMonoVariable.woff2') format('woff2-variations');
+  src: url('./fonts/LeagueMonoVariable.woff2') format('woff2');
   font-weight: 100 800;
   font-style: normal;
   font-display: swap;
 }
 
+/* The fallback stack lives in the variable, not at each use site. Tailwind's
+ * own .font-sans and .font-mono utilities compile to a bare
+ * var(--font-display) / var(--font-mono), so a fallback stated only at a use
+ * site in tokens.css would not reach a consumer using the utility class. */
 :root {
-  --font-display: 'League Spartan';
-  --font-mono: 'League Mono';
+  --font-display: 'League Spartan', system-ui, sans-serif;
+  --font-mono: 'League Mono', ui-monospace, monospace;
 }
