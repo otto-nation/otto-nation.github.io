@@ -69,7 +69,8 @@
   --ow-ink-muted: #8a8073;
   --ow-hairline: #3d3420;
 
-  /* The block ramp lifts rather than staying frozen. Against the light canvas
+  /* The block ramp lifts rather than staying frozen. One of the four changes
+   * README § The four intended pixel changes enumerates. Against the light canvas
    * the band sinks 16.02:1 below the page; against the dark canvas the same
    * hex sits 1.08:1 from it, which is invisible, and Footer has no border to
    * fall back on. Light mode cannot be reproduced by going darker — the dark

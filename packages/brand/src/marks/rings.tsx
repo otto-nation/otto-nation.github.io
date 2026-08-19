@@ -21,7 +21,8 @@ const SIZE = 290;
 // 5.6px on the 290px desktop render and 1.6px on the 80px mobile one, which is
 // why the rings went wispy below `sm`. `vector-effect: non-scaling-stroke`
 // takes the width in viewport pixels instead, so one constant holds the line
-// weight steady across both breakpoints.
+// weight steady across both breakpoints. README § The four intended pixel
+// changes lists this one alongside the rest.
 const STROKE_PX = 2.4;
 
 export function Rings({ className }: { className?: string }) {

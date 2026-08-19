@@ -281,9 +281,30 @@ this, a packaging regression is discovered by otto-workbench's CI after release 
 than before it.
 
 **Visual parity** — otto-workbench's landing page is compared before and after
-migration. The extraction is meant to be invisible; the two drift fixes (eyebrow
-tracking, button sizing) are the only intended pixel changes and are called out in the
-migration PR.
+migration. The extraction is meant to be invisible, and everything it does change is
+enumerated. This section planned for two changes — the two drift fixes visible from
+reading the originals. Phase 1 found two more that were only visible once the
+components were rendered and the palette measured, so the list is four:
+
+1. **Eyebrow tracking.** `0.16em` in the hero against `0.15em` in the other two uses.
+   `0.15em` wins 2-of-3; the hero's label tightens by `0.01em`.
+2. **Button sizing.** `text-sm` twice against `text-xs` once. `text-sm` is the default
+   and the footer button takes it, so it grows.
+3. **Ring stroke weight.** A stroke expressed in the 32-unit viewBox scales with the
+   rendered box — the same value lands at 5.6px on the 290px desktop render and 1.6px
+   on the 80px mobile one, which is why the rings went wispy below `sm`.
+   `vector-effect: non-scaling-stroke` holds one constant 2.4 CSS px at both
+   breakpoints, so the mobile rings thicken and the desktop rings thin.
+4. **The dark-mode footer band.** The extracted `--ow-block-*` ramp was theme-agnostic,
+   which left the band at 1.08:1 against the dark canvas — invisible, and `Footer` has
+   no border to fall back on. All four block tokens are restated in `.dark`, lifting
+   the band to 1.54:1 and moving the ink ramp with it to hold its readings.
+
+All four are called out in the migration PR. `packages/brand/README.md` § The four
+intended pixel changes carries the same list, and the components name their own
+change; the three documents have to agree. One behavioural change rides along and is
+not a pixel change: `InstallBlock` takes a `commands` list and its copy button copies
+every command rather than only the first.
 
 ## Phases
 
@@ -316,7 +337,7 @@ All otto-workbench work happens in a worktree off `origin/main`.
 | Consumer forgets `@source`; page renders unstyled | The validator makes it a build failure. Non-optional, ships in phase 4 |
 | Landing site never exercises the tarball | Pack-and-build smoke test in CI, phase 3 |
 | Components over-fitted to otto-workbench's copy | Landing site composed only from exports; over-fitting surfaces in phase 2, before otto-workbench depends on the API |
-| Extraction changes otto-workbench's appearance | Visual parity check; the two intended drift fixes named explicitly in the PR |
+| Extraction changes otto-workbench's appearance | Visual parity check; the four intended pixel changes named explicitly in the PR |
 | No Dependabot; a consumer silently stays on an old version | Phase 5's fan-out. If phase 5 is dropped, bumps are manual and that is accepted |
 | Org PAT for cross-repo PRs leaks or expires | Scope it to the consumer repos; phases 1–4 do not depend on it |
 | Tag and package version disagree, releasing a mislabeled tarball | Release workflow fails on mismatch before publishing |
