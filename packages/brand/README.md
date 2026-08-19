@@ -43,7 +43,10 @@ reaches Google Fonts, move it to `next/font/google`"): neither face uses that lo
 
 ## Consumer setup
 
-Two config lines, and `otto-brand-check` fails your build if either is missing.
+Four lines of configuration, and `otto-brand-check` enforces every one of them.
+It fails your build if either `@import` is absent, if the `@source` is absent
+*or* points at a path that does not exist on disk, or if `transpilePackages`
+omits the package.
 
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:

@@ -10,15 +10,18 @@ const CHECK = fileURLToPath(new URL('../bin/otto-brand-check.mjs', import.meta.u
 
 const GOOD_CSS = `@import 'tailwindcss';
 @import '@otto-nation/brand/tokens.css';
+@import '@otto-nation/brand/fonts.css';
 @source '../node_modules/@otto-nation/brand/**/*.tsx';
 `;
 const GOOD_CONFIG = `export default { transpilePackages: ['@otto-nation/brand'] };\n`;
 
 // A fixture consumer. Overrides replace the default file bodies so each test
-// breaks exactly one rule.
+// breaks exactly one rule. The installed package directory is real, because
+// the @source check resolves the glob's literal prefix against the CSS file.
 function fixture(overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-check-'));
   mkdirSync(join(dir, 'app'), { recursive: true });
+  mkdirSync(join(dir, 'node_modules', '@otto-nation', 'brand', 'src'), { recursive: true });
   writeFileSync(join(dir, 'app', 'global.css'), overrides.css ?? GOOD_CSS);
   writeFileSync(join(dir, 'next.config.mjs'), overrides.config ?? GOOD_CONFIG);
   writeFileSync(
@@ -73,6 +76,69 @@ test('an @source pointing somewhere else fails', () => {
   }));
   assert.equal(code, 1);
   assert.match(output, /@source/);
+});
+
+test('an @source whose depth does not resolve fails', () => {
+  const { code, output } = run(fixture({
+    css: GOOD_CSS.replace(
+      "'../node_modules/@otto-nation/brand/**/*.tsx'",
+      "'../../../../nowhere/node_modules/@otto-nation/brand/**/*.tsx'",
+    ),
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /does not exist/);
+  assert.match(output, /nowhere/);
+});
+
+// `/**/` is also a valid empty CSS comment, so the comment stripper has to
+// leave a glob's inner ** alone or the resolved prefix names a directory the
+// consumer never wrote.
+test('an @source with a ** segment mid-path still resolves', () => {
+  const dir = fixture({
+    css: GOOD_CSS.replace(
+      "'../node_modules/@otto-nation/brand/**/*.tsx'",
+      "'../node_modules/@otto-nation/brand/**/deep/*.tsx'",
+    ),
+  });
+  mkdirSync(join(dir, 'node_modules', '@otto-nation', 'brand', 'src', 'deep'), { recursive: true });
+  assert.equal(run(dir).code, 0);
+});
+
+test('a bare-directory @source that does resolve is accepted', () => {
+  const { code } = run(fixture({
+    css: GOOD_CSS.replace(
+      "'../node_modules/@otto-nation/brand/**/*.tsx'",
+      "'../node_modules/@otto-nation/brand/src'",
+    ),
+  }));
+  assert.equal(code, 0);
+});
+
+test('a missing tokens.css import fails', () => {
+  const { code, output } = run(fixture({
+    css: GOOD_CSS.replace("@import '@otto-nation/brand/tokens.css';\n", ''),
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /tokens\.css/);
+});
+
+test('a missing fonts.css import fails', () => {
+  const { code, output } = run(fixture({
+    css: GOOD_CSS.replace("@import '@otto-nation/brand/fonts.css';\n", ''),
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /fonts\.css/);
+});
+
+test('a commented-out tokens.css import does not count', () => {
+  const { code, output } = run(fixture({
+    css: GOOD_CSS.replace(
+      "@import '@otto-nation/brand/tokens.css';",
+      "/* @import '@otto-nation/brand/tokens.css'; */",
+    ),
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /tokens\.css/);
 });
 
 test('a missing transpilePackages fails', () => {

@@ -1,18 +1,43 @@
 #!/usr/bin/env node
 // Fails a consumer's build when it depends on @otto-nation/brand but omits the
-// configuration the package needs to render. Tailwind v4 excludes node_modules
-// from auto-detection, so a missing @source produces a page that builds clean
-// and renders unstyled — the exact failure this converts into a build error.
+// configuration the package needs to render. Every misconfiguration here
+// produces a page that builds clean and renders wrong, which is the failure
+// mode this converts into a build error. It enforces:
+//
+//   - @import of tokens.css and of fonts.css
+//   - an @source pointing at the package, whose path actually resolves
+//   - transpilePackages listing the package
+//   - no --ow-* reference in consumer source that tokens.css does not declare
 //
 // Usage:
 //   otto-brand-check --css <entrypoint.css> --next-config <next.config.mjs> \
 //                    --src <dir> [<dir>...]
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, extname, join, resolve } from 'node:path';
 
 const PACKAGE = '@otto-nation/brand';
 const SOURCE_FILES = new Set(['.tsx', '.ts', '.css', '.mjs', '.js', '.jsx', '.mdx']);
+
+// The stylesheets a consumer must pull in, and what breaks when they do not.
+const STYLESHEETS = [
+  {
+    file: 'tokens.css',
+    consequence:
+      'Every --ow-* custom property is then undefined, so every component renders\n' +
+      '  with inherited or transparent colour on a page that builds clean.',
+  },
+  {
+    file: 'fonts.css',
+    consequence:
+      'Neither @font-face rule is then declared and --font-display / --font-mono are\n' +
+      '  undefined, so the whole page renders in the wrong faces.',
+  },
+];
+
+function escapeRegExp(literal) {
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function parseArgs(argv) {
   const args = { css: null, nextConfig: null, src: [] };
@@ -41,11 +66,23 @@ function usage(message) {
 
 // Comments are stripped before every check so a commented-out directive never
 // counts as configuration.
+//
+// Quoted strings are masked out first. The recommended @source glob ends in
+// '/**/*.tsx', and `/**/` is a syntactically valid empty CSS comment, so a
+// naive strip deletes it from the middle of the path — turning
+// '../x/**/y/*.tsx' into '../xy/*.tsx' and making the resolved path check
+// below report a directory the consumer never wrote.
 function stripComments(source) {
-  return source
+  const strings = [];
+  const masked = source.replace(/'[^'\n]*'|"[^"\n]*"/g, (match) => {
+    strings.push(match);
+    return `\u0000${strings.length - 1}\u0000`;
+  });
+  return masked
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
-    .replace(/<!--[\s\S]*?-->/g, '');
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\u0000(\d+)\u0000/g, (_, index) => strings[Number(index)]);
 }
 
 function* walk(dir) {
@@ -77,7 +114,25 @@ const args = parseArgs(process.argv.slice(2));
 const failures = [];
 
 const css = stripComments(read(args.css, 'CSS entrypoint'));
-if (!new RegExp(String.raw`@source\s+['"][^'"]*${PACKAGE}[^'"]*['"]`).test(css)) {
+
+for (const { file, consequence } of STYLESHEETS) {
+  const specifier = escapeRegExp(`${PACKAGE}/${file}`);
+  const imported = new RegExp(
+    String.raw`@(?:import|use)\s+(?:url\(\s*)?['"]${specifier}['"]`,
+  ).test(css);
+  if (!imported) {
+    failures.push(
+      `${args.css}: does not import ${PACKAGE}/${file}.\n` +
+        `  ${consequence}\n` +
+        `  Add: @import '${PACKAGE}/${file}';`,
+    );
+  }
+}
+
+const sourceDirective = css.match(
+  new RegExp(String.raw`@source\s+['"]([^'"]*${escapeRegExp(PACKAGE)}[^'"]*)['"]`),
+);
+if (!sourceDirective) {
   failures.push(
     `${args.css}: no @source directive points at ${PACKAGE}.\n` +
       `  Tailwind v4 skips node_modules, so every utility the package uses would be\n` +
@@ -86,6 +141,25 @@ if (!new RegExp(String.raw`@source\s+['"][^'"]*${PACKAGE}[^'"]*['"]`).test(css))
       `  Use an explicit file glob, not a bare directory, and use ../../node_modules\n` +
       `  instead if npm hoisted them to a workspace root.`,
   );
+} else {
+  // Tailwind resolves an @source glob relative to the stylesheet that declares
+  // it, so the wrong number of ../ segments is the mistake the depth warning in
+  // the README predicts. Only the literal head of the glob — everything before
+  // the first wildcard — is a real path, and that is what has to exist.
+  const glob = sourceDirective[1];
+  const base = dirname(args.css);
+  const resolved = resolve(base, glob.split('*')[0]);
+  if (!existsSync(resolved)) {
+    failures.push(
+      `${args.css}: the @source path does not exist: ${resolved}\n` +
+        `  Resolved from @source '${glob}' relative to ${base}.\n` +
+        `  The depth is wrong: nothing lives at that path, so Tailwind scans none of\n` +
+        `  the package's files and the page renders unstyled exactly as if the\n` +
+        `  directive were absent.\n` +
+        `  Use ../node_modules/... when the app owns its node_modules and\n` +
+        `  ../../node_modules/... when npm hoisted them to a workspace root.`,
+    );
+  }
 }
 
 const config = stripComments(read(args.nextConfig, 'next config'));
