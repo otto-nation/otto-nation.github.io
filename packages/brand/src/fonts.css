@@ -1,0 +1,38 @@
+/*
+ * Both faces are vendored as variable woff2 and loaded by plain @font-face,
+ * not next/font. Three reasons: the build stops needing network access; the
+ * package stays free of any next/font coupling that would have to interact
+ * with transpilePackages; and the font story is identical for every consumer
+ * regardless of framework.
+ *
+ * font-weight ranges below are each face's actual fvar wght axis, not a
+ * uniform 100-900 — League Spartan's variable font only covers 200-900 and
+ * League Mono's only covers 100-800, confirmed via fontTools against the
+ * vendored files. A style asking for a weight outside a face's range is
+ * clamped by the browser to that face's nearest bound.
+ *
+ * Both are SIL OFL, but under two different copyright holders: see
+ * fonts/OFL-LeagueSpartan.txt and fonts/OFL-LeagueMono.txt, and the
+ * provenance table in README.md.
+ */
+
+@font-face {
+  font-family: 'League Spartan';
+  src: url('./fonts/LeagueSpartanVariable.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'League Mono';
+  src: url('./fonts/LeagueMonoVariable.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-display: 'League Spartan';
+  --font-mono: 'League Mono';
+}
