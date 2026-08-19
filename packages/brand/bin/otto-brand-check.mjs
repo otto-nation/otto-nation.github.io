@@ -42,7 +42,10 @@ function usage(message) {
 // Comments are stripped before every check so a commented-out directive never
 // counts as configuration.
 function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
 }
 
 function* walk(dir) {

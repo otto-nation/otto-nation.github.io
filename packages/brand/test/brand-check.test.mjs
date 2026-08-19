@@ -128,3 +128,13 @@ test('an undeclared --ow-* token in an .mdx file is caught', () => {
   assert.equal(code, 1);
   assert.match(output, /--ow-nonesuch/);
 });
+
+test('a --ow-* reference inside an MDX HTML comment does not fail the build', () => {
+  const dir = fixture();
+  writeFileSync(
+    join(dir, 'app', 'page.mdx'),
+    '<!-- uses var(--ow-nonesuch) -->\n',
+  );
+  const { code } = run(dir);
+  assert.equal(code, 0);
+});
