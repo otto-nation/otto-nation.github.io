@@ -52,13 +52,12 @@ test('a scheme is matched case-insensitively, as RFC 3986 defines it', () => {
 // get this wrong stops being true. So the rule is structural: if a file renders
 // Link, it routes through the check and carries the plain-anchor branch too.
 test('every component that renders next/link routes its href through the check', () => {
-  const linking = sourceFiles().filter((file) =>
-    readFileSync(join(SRC, file), 'utf8').includes("from 'next/link'"),
-  );
+  const linking = sourceFiles()
+    .map((file) => ({ file, source: readFileSync(join(SRC, file), 'utf8') }))
+    .filter(({ source }) => source.includes("from 'next/link'"));
   assert.ok(linking.length >= 3, 'expected Button, Nav, and CardGrid to render Link');
 
-  for (const file of linking) {
-    const source = readFileSync(join(SRC, file), 'utf8');
+  for (const { file, source } of linking) {
     assert.ok(source.includes('leavesThisDeployment('),
       `src/${file} renders next/link without routing the href through leavesThisDeployment`);
     assert.match(source, /<a\s[^>]*href=/,

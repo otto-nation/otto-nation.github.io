@@ -4,9 +4,15 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+// This package has no render tests on purpose. The org landing site imports
+// and composes every export, so its build is the coverage: a component that
+// breaks fails that build rather than a snapshot here. Revisit this if a
+// component gains branching logic the landing site's usage does not exercise
+// — at that point a build passing no longer implies the branch was reached.
+
 const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
-const read = (relative) => readFileSync(fileURLToPath(new URL(relative, root)), 'utf8');
+const read = (target) => readFileSync(fileURLToPath(new URL(target, root)), 'utf8');
 
 // Every target is a literal path: the exports map has no wildcard, so the
 // barrel and the named subpaths are the whole public API and each one of them
