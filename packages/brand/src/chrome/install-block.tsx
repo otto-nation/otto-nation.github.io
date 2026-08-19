@@ -6,7 +6,7 @@ import { twMerge } from 'tailwind-merge';
 // `commands` replaces the hardcoded constant otto-workbench held. The copy
 // button now copies every command rather than only the first — with a real
 // list there is no principled reason to copy one line of three. Behavioural
-// change, called out in the migration PR.
+// change, recorded in README § The four intended pixel changes.
 export function InstallBlock({
   shell,
   commands,

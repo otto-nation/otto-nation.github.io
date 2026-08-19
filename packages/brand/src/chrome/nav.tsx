@@ -1,15 +1,14 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { leavesThisDeployment } from '../internal/href';
 import { Greca } from '../marks/greca';
 
 export const ORG_HOME = 'https://otto-nation.github.io/';
 
 // `links` are site-local and render through Link. The one cross-deployment
 // link — the wordmark, pointing at the org root — is internal to the component
-// and renders as an absolute anchor, because a consumer with a basePath would
-// have Link prefix it and resolve it inside their own site. A caller cannot get
-// this wrong: there is no prop that would let them.
+// and renders as an absolute anchor. See internal/href.ts for why.
 //
 // `slot` exists so fumadocs' search context stays out of docs-less consumers:
 // the landing site passes nothing, otto-workbench passes <SearchButton />.
@@ -37,7 +36,7 @@ export function Nav({
       </a>
       <span className="flex items-center gap-4 font-mono text-xs text-[var(--ow-ink-muted)]">
         {links.map((link) =>
-          /^[a-z]+:/.test(link.href) ? (
+          leavesThisDeployment(link.href) ? (
             <a key={link.href} href={link.href}>
               {link.label}
             </a>

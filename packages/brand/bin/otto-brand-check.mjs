@@ -17,6 +17,12 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 
 const PACKAGE = '@otto-nation/brand';
+// .svg is deliberately absent. An SVG served as a favicon or an <img> src is
+// an isolated document that never sees the page's stylesheet, so it cannot
+// reference a custom property and its colours are necessarily literal hexes —
+// scanning it for --ow-* would only ever produce noise. The package's own
+// exception of that shape is src/marks/icon.svg, which names the three tokens
+// its hexes stand in for.
 const SOURCE_FILES = new Set(['.tsx', '.ts', '.css', '.mjs', '.js', '.jsx', '.mdx']);
 
 // The stylesheets a consumer must pull in, and what breaks when they do not.

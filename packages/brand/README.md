@@ -1,7 +1,9 @@
 # @otto-nation/brand
 
 otto-nation's design tokens, marks, and page chrome. Every org property consumes
-this package; nothing else in the org owns a hex, a font, or page chrome.
+this package; nothing else in the org owns a hex, a font, or page chrome. Inside
+the package, `tokens.css` owns every hex with one exception, `src/marks/icon.svg`
+— see [The one hex outside tokens.css](#the-one-hex-outside-tokenscss).
 
 ## Fonts
 
@@ -113,7 +115,7 @@ cannot see — those surface as errors in your own build.
 
 | Export | Shape |
 |---|---|
-| `@otto-nation/brand/tokens.css` | Sole owner of every hex in the org, including the `--color-fd-*` fumadocs remap |
+| `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces; defines `--font-display`, `--font-mono` |
 | `Greca` | `{ size?: number; onDark?: boolean, className? }` |
 | `GrecaDivider` | `{ className? }` |
@@ -138,6 +140,18 @@ fumadocs-coupled dialog trigger with no styling surface of its own, so there is
 nothing for a caller's class to override; style it through the fumadocs layout
 that owns it.
 
+### The one hex outside tokens.css
+
+`src/marks/icon.svg` carries three literal hexes — `#F7F2E9` (`--ow-canvas`),
+`#C4552F` (`--ow-barro`), and `#D81E5B` (`--ow-rosa`). It is consumed as a favicon
+and as an `<img>` src, and an SVG loaded that way is an isolated document that
+never sees the host page's stylesheet, so `var(--ow-canvas)` there resolves to
+nothing and each shape renders unpainted. `Greca` renders the same mark inline,
+where `var()` does resolve, and uses the tokens. `otto-brand-check`'s
+token-discipline walk skips `.svg` for the same reason — the file states the
+mapping in a comment so the two stay in step, and a change to either value is a
+change to both.
+
 ### Cross-deployment links
 
 `Nav`'s `links` and `CardGrid`'s `href` are site-local and render through
@@ -146,6 +160,32 @@ as absolute anchors. This is structural on purpose: a consumer with a `basePath`
 (otto-workbench sets `/otto-workbench`) has `next/link` prefix every internal
 href, so an absolute URL passed through `Link` resolves inside the wrong site.
 There is no prop that lets a caller get this wrong.
+
+## The four intended pixel changes
+
+Extracting otto-workbench's chrome into one owner forces a choice wherever the
+originals disagreed, so the package does not render identically to what it
+replaces. Four differences are deliberate; anything else is a bug.
+
+1. **Eyebrow tracking.** The label shipped three times with two values —
+   `0.16em` in the hero, `0.15em` in the other two. `0.15em` wins 2-of-3, so the
+   hero's label tightens by `0.01em`.
+2. **Footer button size.** The three link-shaped buttons disagreed on size
+   (`text-sm` twice, `text-xs` once). `text-sm` is the default and the footer
+   takes it, so the footer button grows.
+3. **Ring stroke weight.** A stroke expressed in the 32-unit viewBox scaled with
+   the rendered box, which is why the rings went wispy below `sm`.
+   `vector-effect: non-scaling-stroke` holds one constant 2.4 CSS px at both
+   breakpoints, so the mobile rings thicken and the desktop rings thin.
+4. **The dark-mode footer band.** The extracted `--ow-block-*` ramp was carried
+   into `.dark` unchanged, leaving the band 1.08:1 against the dark canvas —
+   invisible, and `Footer` has no border to fall back on. All four block tokens
+   are now restated in `.dark`, lifting the band to 1.54:1 while holding the ink
+   readings on it (see the ratios recorded in `tokens.css`).
+
+One behavioural change rides along, and it is not a pixel change: `InstallBlock`
+takes a `commands` list where otto-workbench held a hardcoded constant, and its
+copy button now copies every command rather than only the first.
 
 ## Why raw source, no build step
 
@@ -170,3 +210,14 @@ file glob. Adjust depth per consumer: `../` when the app owns its `node_modules`
 `../../` when npm has hoisted them to a workspace root. The bare-directory form
 was never confirmed to work on a host where the scanner was genuinely running, so
 the glob is the form to use, not an assumption that either would do.
+
+What the probe did **not** cover: fonts. Those three questions are the whole
+matrix — nothing in it touched `fonts.css`, the `url()` in either `@font-face`, or
+whether the vendored woff2 is emitted and actually loads in a built consumer. The
+known risk is that Tailwind rebases a `url()` inside an `@import`ed stylesheet
+relative to the entrypoint, and under the workspace-symlink shape it resolves
+through the symlink's realpath, so the rebased path can climb out of the app root
+and encode the absolute checkout location — which Next may or may not emit an
+asset for, and which is not reproducible between a dev machine and a CI runner.
+The no-build-step decision rests on the three rows above; the font path is
+untested and has to be probed in both shapes before a second consumer ships.
