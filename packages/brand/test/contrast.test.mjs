@@ -8,6 +8,11 @@ const TOKENS = readFileSync(
   'utf8',
 );
 
+const ICON = readFileSync(
+  fileURLToPath(new URL('../src/marks/icon.svg', import.meta.url)),
+  'utf8',
+);
+
 // Only :root declarations. The claims in the header comment are all stated
 // against the light ramp; the .dark overrides carry their own claims and are
 // checked separately below.
@@ -114,6 +119,36 @@ test('body copy tokens clear the 4.5:1 AA floor on their surface', () => {
 
 test('body copy tokens clear the 4.5:1 AA floor in dark mode too', () => {
   assertReadable(darkTokens());
+});
+
+// icon.svg is the one file exempt from "tokens.css owns every hex", because an
+// SVG loaded as a favicon or an <img> src never sees the host stylesheet and so
+// cannot resolve a custom property. The exemption is from using var(), not from
+// the palette: each hex it paints mirrors a token, and drift between the two is
+// the mark rendering in a colour the brand no longer uses. The file's own
+// comment states the mapping, so both halves are checked — that the painted
+// hexes are the documented ones, and that the documented ones still match
+// tokens.css.
+test('icon.svg paints the tokens it says it mirrors', () => {
+  const [comment] = ICON.match(/<!--[\s\S]*?-->/) ?? [];
+  assert.ok(comment, 'icon.svg lost the comment mapping its hexes to tokens');
+
+  const documented = [...comment.matchAll(/(#[0-9a-f]{6})\s+(--ow-[a-z-]+)/gi)]
+    .map(([, hex, token]) => ({ hex: hex.toLowerCase(), token }));
+  assert.equal(documented.length, 3, 'icon.svg should document exactly three hex/token pairs');
+
+  const painted = [...ICON.replace(/<!--[\s\S]*?-->/g, '').matchAll(/#[0-9a-f]{6}/gi)]
+    .map(([hex]) => hex.toLowerCase());
+  assert.deepEqual(painted, documented.map(({ hex }) => hex),
+    'the hexes icon.svg paints are not the ones its comment documents, in order');
+
+  const tokens = lightTokens();
+  for (const { hex, token } of documented) {
+    const declared = tokens.get(token)?.toLowerCase();
+    assert.ok(declared, `icon.svg mirrors ${token}, which tokens.css does not declare`);
+    assert.equal(hex, declared,
+      `icon.svg paints ${hex} for ${token}, but tokens.css declares ${declared}`);
+  }
 });
 
 // The footer is a band, not a page-coloured region: if --ow-block collapses

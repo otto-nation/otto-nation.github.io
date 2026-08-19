@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
@@ -21,18 +22,26 @@ test('the bin is listed in files, or it never ships', () => {
     'package.json declares a bin that is not on disk');
 });
 
-test('the root barrel does not reach fumadocs', () => {
-  // Importing the barrel must not pull fumadocs-ui into a consumer's graph.
-  // The landing site has no docs and must not acquire a fumadocs dependency
-  // just by importing Nav.
-  const barrel = read('src/index.ts');
-  const reachable = [...barrel.matchAll(/from '(\.[^']+)'/g)].map(([, path]) =>
-    read(`src/${path.replace(/^\.\//, '')}.tsx`),
-  );
-  for (const source of [barrel, ...reachable]) {
-    const specifiers = [...source.matchAll(/(?:from|import)\s*\(?\s*'([^']+)'/g)].map(([, s]) => s);
-    assert.ok(!specifiers.some((s) => s.includes('fumadocs')),
-      'a barrel-reachable module imports fumadocs');
+// Importing the barrel must not pull fumadocs-ui into a consumer's graph. The
+// landing site has no docs and must not acquire a fumadocs dependency just by
+// importing Nav. Asserted as a whole-tree invariant rather than by walking the
+// barrel's imports: a graph walk has to be transitive to be sound, and one that
+// is not passes a fumadocs import sitting two hops down. Every file but one is
+// either barrel-reachable or dead, so "only this file may say fumadocs" is both
+// the stronger claim and the shorter one.
+//
+// The exemption is one exact path. A substring or a directory would also cover
+// a file added later, which is the hole this test exists to close.
+const FUMADOCS_OWNER = 'chrome/search-button.tsx';
+
+test('only search-button mentions fumadocs', () => {
+  const srcDir = fileURLToPath(new URL('src/', root));
+  for (const entry of readdirSync(srcDir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    const path = relative(srcDir, join(entry.parentPath, entry.name)).split(sep).join('/');
+    if (path === FUMADOCS_OWNER) continue;
+    assert.ok(!readFileSync(join(srcDir, path), 'utf8').includes('fumadocs'),
+      `src/${path} mentions fumadocs; only src/${FUMADOCS_OWNER} may`);
   }
 });
 

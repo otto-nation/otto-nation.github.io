@@ -10,8 +10,11 @@ export const ORG_HOME = 'https://otto-nation.github.io/';
 // link — the wordmark, pointing at the org root — is internal to the component
 // and renders as an absolute anchor. See internal/href.ts for why.
 //
-// `slot` exists so fumadocs' search context stays out of docs-less consumers:
-// the landing site passes nothing, otto-workbench passes <SearchButton />.
+// `slot` exists so the docs-only search context stays out of docs-less
+// consumers: the landing site passes nothing, otto-workbench passes
+// <SearchButton />. chrome/search-button.tsx is the only file in the package
+// that may name that dependency, which test/exports.test.mjs enforces — hence
+// naming it here by file rather than by vendor.
 export function Nav({
   product,
   links,
