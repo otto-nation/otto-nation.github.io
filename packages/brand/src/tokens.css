@@ -11,7 +11,9 @@
  *   --ow-rosa      4.42:1 on canvas — below the 4.5:1 AA floor for normal text, above
  *                  the 3:1 large-text floor. UI and large text only, never inline prose.
  *   Body copy is always --ow-ink or --ow-ink-muted on --ow-canvas.
- *   --ow-block-*   the fixed dark surfaces, measured against --ow-block, not canvas.
+ *   --ow-block-*   the dark band surfaces, measured against --ow-block, not canvas.
+ *                  Dark and warm in both themes, but restated in .dark so the band
+ *                  still separates from a dark page.
  *
  * The ratios below are asserted by test/contrast.test.mjs, which parses them out
  * of this comment and recomputes them from the hexes. Edit a hex without editing
@@ -31,11 +33,12 @@
 
   /* The install block and the footer stay dark in both themes — a shell prompt
    * has to read as a terminal, and the footer closes the page on a solid band.
-   * They cannot follow the theme-dependent ramp, so they own fixed tokens whose
-   * contrast is measured against --ow-block rather than --ow-canvas:
+   * They do not follow the theme-dependent ramp, so they own their own tokens
+   * whose contrast is measured against --ow-block rather than --ow-canvas:
    *   --ow-block-ink        13.96:1 on the block. Body copy.
    *   --ow-block-ink-muted   4.61:1 on the block. Labels and buttons, AA.
-   *   --ow-block-hairline    never text. Dividers and borders only. */
+   *   --ow-block-hairline    never text. Dividers and borders only.
+   * The .dark block restates all four — see the note there. */
   --ow-block: #1a1712;
   --ow-block-ink: #e8e3d8;
   --ow-block-ink-muted: #8a8073;
@@ -65,6 +68,22 @@
   --ow-ink: #e8e3d8;
   --ow-ink-muted: #8a8073;
   --ow-hairline: #3d3420;
+
+  /* The block ramp lifts rather than staying frozen. Against the light canvas
+   * the band sinks 16.02:1 below the page; against the dark canvas the same
+   * hex sits 1.08:1 from it, which is invisible, and Footer has no border to
+   * fall back on. Light mode cannot be reproduced by going darker — the dark
+   * canvas is already near black, so even pure black only reaches 1.11:1 — so
+   * the band lifts off the page instead of sinking below it, and the ink ramp
+   * on it moves by the same amount to hold its readings:
+   *   --ow-block            1.54:1 against the dark canvas. A distinct band.
+   *   --ow-block-ink        9.78:1 on the dark block. Body copy.
+   *   --ow-block-ink-muted  4.74:1 on the dark block. Labels and buttons, AA.
+   *   --ow-block-hairline   1.48:1 on the dark block, matching light's 1.46. */
+  --ow-block: #393328;
+  --ow-block-ink: #e8e3d8;
+  --ow-block-ink-muted: #a89e8f;
+  --ow-block-hairline: #544c3c;
 
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded

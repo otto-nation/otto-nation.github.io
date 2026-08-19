@@ -8,13 +8,25 @@ const TOKENS = readFileSync(
   'utf8',
 );
 
-// Only :root declarations — the .dark block redefines a subset, and the
-// documented ratios are all stated against the light ramp or the fixed
-// --ow-block surface, neither of which the dark block touches.
+// Only :root declarations. The claims in the header comment are all stated
+// against the light ramp; the .dark overrides carry their own claims and are
+// checked separately below.
 function lightTokens() {
   const root = TOKENS.slice(TOKENS.indexOf(':root {'), TOKENS.indexOf('.dark {'));
   const map = new Map();
   for (const [, name, hex] of root.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
+    map.set(name, hex);
+  }
+  return map;
+}
+
+// The cascade a consumer actually gets under .dark: the light ramp with the
+// dark block's overrides applied over it, not the dark declarations alone.
+function darkTokens() {
+  const start = TOKENS.indexOf('.dark {');
+  const dark = TOKENS.slice(start, TOKENS.indexOf('}', start));
+  const map = lightTokens();
+  for (const [, name, hex] of dark.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
     map.set(name, hex);
   }
   return map;
@@ -50,13 +62,16 @@ function documentedClaims() {
   return claims;
 }
 
-test('tokens.css documents at least five contrast claims', () => {
-  assert.ok(documentedClaims().length >= 5, 'contrast claims disappeared from the header');
-});
+// The .dark note states its ratios as "on the dark block" / "against the dark
+// canvas", which is what keeps them out of the light set above.
+function documentedDarkClaims() {
+  return [
+    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block)\b/g),
+  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+}
 
-test('every documented contrast ratio matches the computed one', () => {
-  const tokens = lightTokens();
-  for (const { token, ratio, background } of documentedClaims()) {
+function assertClaimsHold(claims, tokens, theme) {
+  for (const { token, ratio, background } of claims) {
     const fg = tokens.get(token);
     const bg = tokens.get(background);
     assert.ok(fg, `${token} is claimed but not declared`);
@@ -64,14 +79,49 @@ test('every documented contrast ratio matches the computed one', () => {
     assert.equal(
       contrast(fg, bg).toFixed(2),
       Number(ratio).toFixed(2),
-      `${token} on ${background}: header says ${ratio}:1, hexes compute ${contrast(fg, bg).toFixed(2)}:1`,
+      `${theme}: ${token} on ${background}: header says ${ratio}:1, hexes compute ${contrast(fg, bg).toFixed(2)}:1`,
     );
   }
-});
+}
 
-test('body copy tokens clear the 4.5:1 AA floor on their surface', () => {
-  const tokens = lightTokens();
+// Body copy and the AA-rated labels, on whichever surface each one sits.
+function assertReadable(tokens) {
   assert.ok(contrast(tokens.get('--ow-ink'), tokens.get('--ow-canvas')) >= 4.5);
   assert.ok(contrast(tokens.get('--ow-ink-muted'), tokens.get('--ow-canvas')) >= 4.5);
   assert.ok(contrast(tokens.get('--ow-block-ink'), tokens.get('--ow-block')) >= 4.5);
+  assert.ok(contrast(tokens.get('--ow-block-ink-muted'), tokens.get('--ow-block')) >= 4.5);
+}
+
+test('tokens.css documents at least five contrast claims', () => {
+  assert.ok(documentedClaims().length >= 5, 'contrast claims disappeared from the header');
+});
+
+test('every documented contrast ratio matches the computed one', () => {
+  assertClaimsHold(documentedClaims(), lightTokens(), 'light');
+});
+
+test('tokens.css documents the dark block ramp', () => {
+  assert.ok(documentedDarkClaims().length >= 4, 'the .dark block ramp claims disappeared');
+});
+
+test('every documented dark contrast ratio matches the computed one', () => {
+  assertClaimsHold(documentedDarkClaims(), darkTokens(), 'dark');
+});
+
+test('body copy tokens clear the 4.5:1 AA floor on their surface', () => {
+  assertReadable(lightTokens());
+});
+
+test('body copy tokens clear the 4.5:1 AA floor in dark mode too', () => {
+  assertReadable(darkTokens());
+});
+
+// The footer is a band, not a page-coloured region: if --ow-block collapses
+// onto --ow-canvas the component whose job is to terminate the page stops
+// terminating it, and Footer carries no border to fall back on.
+test('the block band separates from the canvas in both themes', () => {
+  for (const [theme, tokens] of [['light', lightTokens()], ['dark', darkTokens()]]) {
+    const ratio = contrast(tokens.get('--ow-block'), tokens.get('--ow-canvas'));
+    assert.ok(ratio >= 1.2, `${theme}: --ow-block is ${ratio.toFixed(2)}:1 on --ow-canvas`);
+  }
 });
