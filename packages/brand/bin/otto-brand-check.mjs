@@ -12,7 +12,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
 
 const PACKAGE = '@otto-nation/brand';
-const SOURCE_FILES = new Set(['.tsx', '.ts', '.css', '.mjs', '.js', '.jsx']);
+const SOURCE_FILES = new Set(['.tsx', '.ts', '.css', '.mjs', '.js', '.jsx', '.mdx']);
 
 function parseArgs(argv) {
   const args = { css: null, nextConfig: null, src: [] };
@@ -46,7 +46,14 @@ function stripComments(source) {
 }
 
 function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    console.error(`otto-brand-check: cannot read source directory: ${dir}`);
+    process.exit(1);
+  }
+  for (const entry of entries) {
     if (entry === 'node_modules' || entry.startsWith('.')) continue;
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) yield* walk(path);
@@ -92,13 +99,14 @@ if (!transpile || !transpile[1].includes(PACKAGE)) {
 // against the version actually installed rather than a copy in the consumer.
 const tokens = readFileSync(new URL('../src/tokens.css', import.meta.url), 'utf8');
 const declared = new Set(
-  [...tokens.matchAll(/^\s{2}(--ow-[a-z-]+):/gm)].map(([, name]) => name),
+  [...tokens.matchAll(/^\s*(--ow-[a-z-]+):/gm)].map(([, name]) => name),
 );
 
 const undeclared = new Map();
 for (const dir of args.src) {
   for (const file of walk(dir)) {
-    for (const [, token] of readFileSync(file, 'utf8').matchAll(/(--ow-[a-z-]+)/g)) {
+    const source = stripComments(readFileSync(file, 'utf8'));
+    for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
       if (!declared.has(token)) undeclared.set(token, file);
     }
   }
