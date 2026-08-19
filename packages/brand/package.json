@@ -4,7 +4,11 @@
   "description": "otto-nation design tokens, marks, and page chrome",
   "license": "MIT AND OFL-1.1",
   "type": "module",
-  "files": ["src", "bin", "LICENSE"],
+  "files": [
+    "src",
+    "bin",
+    "LICENSE"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
@@ -16,16 +20,27 @@
   "bin": {
     "otto-brand-check": "./bin/otto-brand-check.mjs"
   },
+  "scripts": {
+    "test": "tsc --noEmit && node --test"
+  },
   "dependencies": {
     "tailwind-merge": "^3.0.0"
   },
   "peerDependencies": {
+    "fumadocs-ui": "^16.14.5",
     "next": "^16.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "fumadocs-ui": "^16.14.5"
+    "react-dom": "^19.2.0"
   },
   "peerDependenciesMeta": {
-    "fumadocs-ui": { "optional": true }
+    "fumadocs-ui": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "fumadocs-ui": "^16.14.5",
+    "typescript": "^7.0.2"
   }
 }

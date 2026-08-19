@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": ["packages/*", "site"],
   "scripts": {
-    "test": "node --test",
+    "test": "npm test --workspaces --if-present",
     "build": "npm run build --workspace otto-nation-site"
   }
 }

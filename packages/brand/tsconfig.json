@@ -1,0 +1,18 @@
+{
+  "//": "The package ships raw .tsx and has no build step, so nothing else here ever hands the sources to a compiler. This config exists purely to typecheck them: `tsc --noEmit` runs as half of the package's test script. Settings mirror what a consumer must provide (see README § Consumer setup) — jsx is preserved because the consumer's bundler transforms it, and moduleResolution is bundler because the barrel uses extensionless relative imports.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}

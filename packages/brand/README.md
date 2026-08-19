@@ -43,10 +43,11 @@ reaches Google Fonts, move it to `next/font/google`"): neither face uses that lo
 
 ## Consumer setup
 
-Four lines of configuration, and `otto-brand-check` enforces every one of them.
-It fails your build if either `@import` is absent, if the `@source` is absent
+Four lines of configuration, and `otto-brand-check` enforces every one of them:
+it fails your build if either `@import` is absent, if the `@source` is absent
 *or* points at a path that does not exist on disk, or if `transpilePackages`
-omits the package.
+omits the package. The compiler settings in step 5 are the one requirement it
+cannot see — those surface as errors in your own build.
 
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:
@@ -88,6 +89,25 @@ omits the package.
    ```bash
    npx otto-brand-check --css site/app/global.css --next-config site/next.config.mjs --src site/app site/components
    ```
+
+5. In your `tsconfig.json`:
+
+   ```json
+   "moduleResolution": "bundler",
+   "jsx": "preserve"
+   ```
+
+   The package's exports map points at `./src/index.ts` and the barrel uses
+   extensionless relative imports, which resolve under `"bundler"` but not under
+   `"node16"` or `"nodenext"` — those report TS2307 on every export. This is not
+   checked by `otto-brand-check`; it surfaces as a compile error in your own
+   build.
+
+   Because the package ships `.tsx` rather than `.d.ts`, `skipLibCheck` does not
+   apply to it: your `strict`, `jsx`, and `isolatedModules` settings are applied
+   to the package's source. The package typechecks itself under `strict` with
+   `moduleResolution: "bundler"` (`packages/brand/tsconfig.json`, run by
+   `npm test`), so that combination is the supported one.
 
 ## Exports
 
