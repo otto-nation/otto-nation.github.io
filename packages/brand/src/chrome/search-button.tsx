@@ -27,8 +27,11 @@ export function SearchButton() {
     >
       search
       <kbd className="rounded-sm border border-[var(--ow-hairline)] px-1 text-[10px] leading-4">
-        {hotKey.map((key, index) => (
-          <Fragment key={index}>{key.display}</Fragment>
+        {hotKey.map((key) => (
+          // The key code is the entry's own identifier — `display` is a
+          // ReactNode, so it cannot be one — and it survives a sequence the
+          // provider reorders, which the position would not.
+          <Fragment key={String(key.key)}>{key.display}</Fragment>
         ))}
       </kbd>
     </button>

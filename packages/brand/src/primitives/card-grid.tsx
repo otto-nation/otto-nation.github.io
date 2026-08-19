@@ -41,7 +41,11 @@ export function CardGrid({
 }) {
   return (
     <div className={twMerge('grid', COLUMNS[columns], className)}>
-      {items.map((item) => {
+      {items.map((item, index) => {
+        // Two cards can carry the same title — the component is reused across
+        // grids and the copy is the caller's — so the position disambiguates
+        // it while the title still remounts the card when the entry changes.
+        const key = `${index}-${item.title}`;
         const face = (
           <>
             <h2 className="text-sm font-bold tracking-tight">{item.title}</h2>
@@ -55,7 +59,7 @@ export function CardGrid({
         if (!item.href) {
           return (
             <div
-              key={item.title}
+              key={key}
               className="rounded-lg border border-[var(--ow-hairline)] p-4"
               style={item.accent ? { borderLeft: `3px solid ${item.accent}` } : undefined}
             >
@@ -68,11 +72,11 @@ export function CardGrid({
         // anchor, because next/link would resolve it under the consumer's
         // basePath. See internal/href.ts.
         return leavesThisDeployment(item.href) ? (
-          <a key={item.title} href={item.href} className={LINKED_CARD}>
+          <a key={key} href={item.href} className={LINKED_CARD}>
             {face}
           </a>
         ) : (
-          <Link key={item.title} href={item.href} className={LINKED_CARD}>
+          <Link key={key} href={item.href} className={LINKED_CARD}>
             {face}
           </Link>
         );

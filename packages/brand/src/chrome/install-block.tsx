@@ -40,8 +40,11 @@ export function InstallBlock({
         </button>
       </div>
       <pre className="overflow-x-auto px-4 py-4 font-mono text-xs leading-7 text-[var(--ow-block-ink)]">
+        {/* A multi-step install may legitimately repeat a command, so the text
+            alone is not unique; the position disambiguates it while the text
+            still remounts the line when that step changes. */}
         {commands.map((command, index) => (
-          <span key={command}>
+          <span key={`${index}-${command}`}>
             <span className="text-[var(--ow-amarillo)]">$ </span>
             {command}
             {index < commands.length - 1 ? '\n' : null}
