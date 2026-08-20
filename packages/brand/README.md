@@ -51,6 +51,12 @@ it fails your build if either `@import` is absent, if the `@source` is absent
 omits the package. The compiler settings in step 5 are the one requirement it
 cannot see — those surface as errors in your own build.
 
+The package declares an `engines` floor for Node in its `package.json`; that
+field is the authority, not this sentence. It is set by `fs.Dirent.parentPath`,
+which `otto-brand-verify` uses to walk a static export, and it sits above what
+the `next` peer dependency already requires — so a consumer on a supported Next
+is already above it.
+
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:
 

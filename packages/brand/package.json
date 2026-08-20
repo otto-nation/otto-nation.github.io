@@ -4,6 +4,9 @@
   "description": "otto-nation design tokens, marks, and page chrome",
   "license": "MIT AND OFL-1.1",
   "type": "module",
+  "engines": {
+    "node": ">=20.12.0"
+  },
   "files": [
     "src",
     "bin",
