@@ -8,22 +8,25 @@ import {
   type CardItem,
 } from '@otto-nation/brand';
 
+const WORKBENCH_URL = 'https://otto-nation.github.io/otto-workbench/';
+const GITHUB_URL = 'https://github.com/otto-nation';
+
 const PROPERTY_CARDS: CardItem[] = [
   {
     title: 'otto-workbench',
-    href: 'https://otto-nation.github.io/otto-workbench/',
+    href: WORKBENCH_URL,
     body: 'Manages your machine — shell, git, brew packages, editors, and AI coding tools, through one component framework.',
     meta: 'bin · git · task · zsh',
   },
   {
     title: 'otto-stack',
-    href: 'https://github.com/otto-nation/otto-stack',
+    href: `${GITHUB_URL}/otto-stack`,
     body: 'Manages your services — the containers, config, and wiring a local stack needs to come up the same way twice.',
     meta: 'compose · config · services',
   },
   {
     title: 'homebrew-tap',
-    href: 'https://github.com/otto-nation/homebrew-tap',
+    href: `${GITHUB_URL}/homebrew-tap`,
     body: 'Distributes both. One tap, one install command, no clone-and-bootstrap step.',
     meta: 'brew tap otto-nation/tap',
   },
@@ -35,8 +38,8 @@ export default function Home() {
       <Nav
         product="otto-nation"
         links={[
-          { label: 'workbench', href: 'https://otto-nation.github.io/otto-workbench/' },
-          { label: 'github', href: 'https://github.com/otto-nation' },
+          { label: 'workbench', href: WORKBENCH_URL },
+          { label: 'github', href: GITHUB_URL },
         ]}
       />
       <main className="flex-1">
@@ -52,8 +55,8 @@ export default function Home() {
           lede="otto-nation is three properties that assume each other: a workbench that manages your machine, a stack that manages your services, and a tap that installs both."
           actions={
             <>
-              <Button href="https://otto-nation.github.io/otto-workbench/">Get started</Button>
-              <Button href="https://github.com/otto-nation" variant="outline">
+              <Button href={WORKBENCH_URL}>Get started</Button>
+              <Button href={GITHUB_URL} variant="outline">
                 GitHub
               </Button>
             </>
