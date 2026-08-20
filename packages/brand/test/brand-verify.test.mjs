@@ -6,7 +6,12 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
-import { declaredTokens, fontStems, packageOnlyDeclaration, verifyExport } from '../src/verify.mjs';
+import { verifyExport } from '../src/verify.mjs';
+// Reached by relative path, not through the exports map: these parses are
+// internal on purpose, so the tests get at them the one way a consumer cannot.
+import {
+  declaredTokens, fontStems, minifyLength, trackingValue,
+} from '../src/internal/derive.mjs';
 
 const VERIFY_CLI = fileURLToPath(new URL('../bin/otto-brand-verify.mjs', import.meta.url));
 const source = (target) => readFileSync(new URL(target, import.meta.url), 'utf8');
@@ -17,7 +22,8 @@ const source = (target) => readFileSync(new URL(target, import.meta.url), 'utf8'
 // that had stopped deriving anything, which is the failure this whole change
 // exists to remove.
 const TOKENS = [...declaredTokens(source('../src/tokens.css'))];
-const DECLARATION = packageOnlyDeclaration(source('../src/primitives/eyebrow.tsx'));
+const TRACKING = trackingValue(source('../src/primitives/eyebrow.tsx'));
+const DECLARATION = `letter-spacing:${minifyLength(TRACKING)}`;
 const STEMS = fontStems(source('../src/fonts.css'));
 const CONTROL = 'py-7';
 
@@ -42,12 +48,18 @@ function goodCss() {
 
 // A static export as Turbopack lays one out: content-hashed CSS under
 // _next/static/chunks/ and content-hashed woff2 under _next/static/media/.
-// `media: null` omits the directory entirely rather than emptying it.
+// `css: null` emits no stylesheet, `media: null` omits that directory entirely
+// rather than emptying it, and `build: null` leaves out/ standing with no
+// _next/static/ beneath it, which is what a build that never ran looks like.
 function exportFixture(overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-verify-'));
   tempDirs.push(dir);
   const out = join(dir, 'out');
   const staticDir = join(out, '_next', 'static');
+  if (overrides.build === null) {
+    mkdirSync(out, { recursive: true });
+    return out;
+  }
   mkdirSync(join(staticDir, 'chunks'), { recursive: true });
   if (overrides.css !== null) {
     writeFileSync(join(staticDir, 'chunks', 'a1b2c3.css'), overrides.css ?? goodCss());
@@ -61,14 +73,23 @@ function exportFixture(overrides = {}) {
 }
 
 // A copy of the verifier with its evidence sources swapped, so a test can ask
-// what happens when eyebrow.tsx or fonts.css stops carrying what the derivation
-// reads. The verifier resolves those relative to its own file, so relocating it
-// is the only way to vary them.
+// what happens when tokens.css, eyebrow.tsx, or fonts.css stops carrying what
+// the derivation reads. The verifier resolves those relative to its own file,
+// so relocating it is the only way to vary them; internal/derive.mjs comes
+// along because the relocated copy still has to resolve its own import.
 async function verifierWithSources(overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-verify-pkg-'));
   tempDirs.push(dir);
   mkdirSync(join(dir, 'src', 'primitives'), { recursive: true });
-  copyFileSync(fileURLToPath(new URL('../src/verify.mjs', import.meta.url)), join(dir, 'src', 'verify.mjs'));
+  mkdirSync(join(dir, 'src', 'internal'), { recursive: true });
+  copyFileSync(
+    fileURLToPath(new URL('../src/verify.mjs', import.meta.url)),
+    join(dir, 'src', 'verify.mjs'),
+  );
+  copyFileSync(
+    fileURLToPath(new URL('../src/internal/derive.mjs', import.meta.url)),
+    join(dir, 'src', 'internal', 'derive.mjs'),
+  );
   writeFileSync(join(dir, 'src', 'tokens.css'), overrides.tokens ?? source('../src/tokens.css'));
   writeFileSync(join(dir, 'src', 'fonts.css'), overrides.fonts ?? source('../src/fonts.css'));
   writeFileSync(
@@ -93,16 +114,41 @@ function runCli(argv) {
 test('the derivations read the real package source', () => {
   assert.ok(TOKENS.includes('--ow-canvas'), 'tokens.css parse found no --ow-canvas');
   assert.ok(TOKENS.length > 10, 'tokens.css parse produced an implausibly short list');
+  assert.equal(TRACKING, '0.15em');
   assert.equal(DECLARATION, 'letter-spacing:.15em');
   assert.deepEqual([...STEMS].sort(), ['LeagueMonoVariable', 'LeagueSpartanVariable']);
 });
 
-// The leading-zero strip is the one assumption in the derivation, so it is
-// asserted on its own rather than only through eyebrow.tsx's current value.
-test('the tracking value loses a leading zero and nothing else', () => {
-  assert.equal(packageOnlyDeclaration('tracking-[0.15em]'), 'letter-spacing:.15em');
-  assert.equal(packageOnlyDeclaration('tracking-[1.5px]'), 'letter-spacing:1.5px');
-  assert.equal(packageOnlyDeclaration('tracking-[0.5rem]'), 'letter-spacing:.5rem');
+// verifyExport is the public contract from 1.0.0 on and the exports map has no
+// wildcard, so any other name exported here would be supported forever by
+// accident. The parses stay internal precisely so their shapes can still move.
+test('src/verify.mjs exports verifyExport and nothing else', async () => {
+  const module = await import('../src/verify.mjs');
+  assert.deepEqual(Object.keys(module), ['verifyExport']);
+});
+
+// The minifier model is the one place the verifier predicts rather than reads,
+// so each normalisation it claims is asserted on its own rather than only
+// through eyebrow.tsx's current value.
+test('minifyLength applies the three normalisations it models', () => {
+  assert.equal(minifyLength('0.15em'), '.15em');
+  assert.equal(minifyLength('-0.15em'), '-.15em');
+  assert.equal(minifyLength('0.150em'), '.15em');
+  assert.equal(minifyLength('-0.150em'), '-.15em');
+  assert.equal(minifyLength('1.50em'), '1.5em');
+  assert.equal(minifyLength('1.0em'), '1em');
+  assert.equal(minifyLength('1.5px'), '1.5px');
+  assert.equal(minifyLength('15em'), '15em');
+  assert.equal(minifyLength('.15em'), '.15em');
+});
+
+// Returning a wrong expectation for a shape it does not model would fail a
+// consumer's CI for a fault that is not theirs, so these come back as null and
+// the caller reports them as unmodelled.
+test('minifyLength refuses the shapes it does not model', () => {
+  for (const value of ['0em', '0.0em', '0.15', '0.15EM', 'calc(1em + 1px)', 'var(--x)', 'em']) {
+    assert.equal(minifyLength(value), null, `${value} should come back unmodelled`);
+  }
 });
 
 test('a complete export passes every check', () => {
@@ -193,8 +239,50 @@ test('an out directory that does not exist throws a diagnostic, not an ENOENT', 
   );
 });
 
+// Four failures, none of which said the build never ran, would send the reader
+// after four things that are not wrong: the utility failure advises fixing an
+// @source that is fine, and the token failure blames an @import that resolved.
+test('an out directory carrying no build output is diagnosed, not mis-blamed', () => {
+  assert.throws(
+    () => verifyExport({ out: exportFixture({ build: null }), control: CONTROL }),
+    (error) => {
+      assert.match(error.message, /build output not found/);
+      assert.match(error.message, /_next\/static/);
+      assert.doesNotMatch(error.message, /@source/);
+      assert.doesNotMatch(error.message, /@import/);
+      assert.doesNotMatch(error.message, /ENOENT/);
+      return true;
+    },
+  );
+});
+
 test('a missing control argument throws rather than silently skipping the control', () => {
   assert.throws(() => verifyExport({ out: exportFixture() }), /control utility is required/);
+});
+
+// The three derived checks each guard their own evidence. A derivation that
+// comes back empty leaves no expectations, and a check with no expectations
+// passes on every build forever — the one outcome a verifier must not produce
+// quietly. The tests below are that guarantee, one per evidence source.
+test('a tokens.css that parses to zero tokens fails loudly instead of passing', async () => {
+  const { verifyExport: relocated } = await verifierWithSources({ tokens: '' });
+  const result = relocated({ out: exportFixture(), control: CONTROL });
+  assert.equal(result.ok, false, 'an empty token list must not pass vacuously');
+  assert.equal(result.tokens.ok, false);
+  assert.match(result.tokens.failure, /no --ow-\* declaration remains/);
+  assert.equal(result.control.ok, true, 'the export itself was fine; the evidence source was not');
+});
+
+// The same empty parse arrives from a reformat rather than an empty file: these
+// declarations are real, they have just stopped opening a line.
+test('a tokens.css whose declarations no longer open a line fails loudly', async () => {
+  const { verifyExport: relocated } = await verifierWithSources({
+    tokens: '@theme{--ow-canvas:#fff;--ow-ink:#000}\n',
+  });
+  const result = relocated({ out: exportFixture(), control: CONTROL });
+  assert.equal(result.ok, false);
+  assert.equal(result.tokens.ok, false);
+  assert.match(result.tokens.failure, /no --ow-\* declaration remains/);
 });
 
 // If eyebrow.tsx stops carrying the class, the check has no evidence left. It
@@ -219,6 +307,33 @@ test('a fonts.css with no woff2 url fails loudly instead of skipping', async () 
   const result = relocated({ out: exportFixture(), control: CONTROL });
   assert.equal(result.fonts.ok, false);
   assert.match(result.fonts.failure, /no url\('\.\/fonts\/\*\.woff2'\) remains/);
+});
+
+// A tracking value outside the modelled shapes has to say so rather than assert
+// a guess: a wrong expectation shipped to a consumer reads as a package
+// regression in their CI, not as the gap here that it actually is.
+test('a tracking value the minifier model does not cover is reported, not guessed', async () => {
+  const { verifyExport: relocated } = await verifierWithSources({
+    eyebrow: 'export const E = () => <p className="tracking-[calc(1em/8)]" />;\n',
+  });
+  const result = relocated({ out: exportFixture(), control: CONTROL });
+  assert.equal(result.ok, false);
+  assert.equal(result.utility.ok, false);
+  assert.match(result.utility.failure, /cannot compile/);
+  assert.match(result.utility.failure, /calc\(1em\/8\)/);
+});
+
+// A negative or trailing-zero value is modelled, so it has to produce the
+// minified expectation rather than a false failure nobody can act on.
+test('a negative tracking value derives the sign-preserved minified form', async () => {
+  const { verifyExport: relocated } = await verifierWithSources({
+    eyebrow: 'export const E = () => <p className="tracking-[-0.150em]" />;\n',
+  });
+  const result = relocated({
+    out: exportFixture({ css: goodCss().replace(DECLARATION, 'letter-spacing:-.15em') }),
+    control: CONTROL,
+  });
+  assert.equal(result.utility.ok, true, result.utility.failure);
 });
 
 // A token added to tokens.css has to become a new expectation with no edit
@@ -259,6 +374,21 @@ test('the CLI exits 2 on an argument it does not recognise', () => {
   const { code, output } = runCli(['--out', exportFixture(), '--control', CONTROL, 'stray']);
   assert.equal(code, 2);
   assert.match(output, /unexpected argument: stray/);
+});
+
+// Silently keeping the last value would let a scripted invocation that appends
+// a second --out verify a directory nobody meant to name.
+test('the CLI exits 2 when a flag is repeated rather than keeping the last value', () => {
+  const repeatedOut = runCli([
+    '--out', exportFixture(), '--out', exportFixture(), '--control', CONTROL,
+  ]);
+  assert.equal(repeatedOut.code, 2);
+  assert.match(repeatedOut.output, /--out given more than once/);
+  const repeatedControl = runCli([
+    '--out', exportFixture(), '--control', CONTROL, '--control', 'other',
+  ]);
+  assert.equal(repeatedControl.code, 2);
+  assert.match(repeatedControl.output, /--control given more than once/);
 });
 
 // A missing out/ is a well-formed invocation against a build that did not run,

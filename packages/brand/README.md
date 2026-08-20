@@ -149,11 +149,17 @@ first because it makes the rest of the report meaningless. That exact false
 negative cost three rounds of probing before the control existed.
 
 Exit codes match `otto-brand-check`: `2` for a usage error, `1` for a failed
-check or an export directory that is not there, `0` and a one-line summary
-otherwise. The same logic is importable as `@otto-nation/brand/verify` for
-consumers that would rather assert inside their own test suite —
-`verifyExport({ out, control })` returns one field per check, each naming what
-failed and why, plus `ok` and a flattened `failures` list.
+check or for an export directory that is absent or carries no build output, `0`
+and a one-line summary otherwise. The same logic is importable as
+`@otto-nation/brand/verify` for consumers that would rather assert inside their
+own test suite — `verifyExport({ out, control })` returns one field per check,
+each naming what failed and why, plus `ok` and a flattened `failures` list. It
+throws only when nothing can be verified at all, since reporting four failures
+against a build that never ran names four causes that are not the real one.
+
+`verifyExport` is the whole of that subpath. The parses it derives from are
+internal and deliberately unexported, so their shapes can change without a
+breaking release.
 
 ## Exports
 

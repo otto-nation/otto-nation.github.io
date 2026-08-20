@@ -15,9 +15,19 @@
 // fonts.css, or eyebrow.tsx moves the assertion along with it, and that a
 // third consumer in another repo inherits the contract by installing the
 // package rather than by copying four magic strings.
+//
+// verifyExport is the whole public surface. The parses it derives from live in
+// internal/derive.mjs, which the exports map does not list.
+//
+// Each of the three derived checks guards its own evidence: a derivation that
+// comes back empty is a failure, never a skip. An empty expectation asserts
+// nothing and passes on every build forever, which is the one outcome a
+// verifier must not produce quietly.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
+
+import { declaredTokens, fontStems, minifyLength, trackingValue } from './internal/derive.mjs';
 
 const PACKAGE = '@otto-nation/brand';
 
@@ -25,45 +35,6 @@ const PACKAGE = '@otto-nation/brand';
 // the derivation always describes the version of the package the consumer
 // actually installed rather than whatever copy sits near their build output.
 const packageSource = (target) => readFileSync(new URL(target, import.meta.url), 'utf8');
-
-/**
- * The `--ow-*` custom property names tokens.css declares.
- *
- * Takes the stylesheet's text rather than reading it, so bin/otto-brand-check.mjs
- * can hand over the copy it resolved from its own location and the two share one
- * regex instead of drifting apart. The leading `\s*` is what lets either
- * indentation style parse — tokens.css is two-space indented today.
- */
-export function declaredTokens(tokensCss) {
-  return new Set([...tokensCss.matchAll(/^\s*(--ow-[a-z-]+):/gm)].map(([, name]) => name));
-}
-
-/**
- * The compiled CSS declaration of the one utility class that exists nowhere but
- * inside this package, derived from eyebrow.tsx. Returns null when that class is
- * gone, which callers must treat as a failure rather than a skip.
- */
-export function packageOnlyDeclaration(eyebrowSource) {
-  const tracking = eyebrowSource.match(/tracking-\[([^\]]+)\]/);
-  if (!tracking) return null;
-  // Tailwind's minifier drops a decimal's leading zero, so the source class
-  // `tracking-[0.15em]` compiles to `letter-spacing:.15em` and the literal text
-  // `0.15em` never appears in the built stylesheet — a grep for the source form
-  // reports a false negative even when @source worked. Tailwind also CSS-escapes
-  // the period inside the generated selector for the same reason. This strip is
-  // the single assumption in the whole derivation; everything else is verbatim.
-  return `letter-spacing:${tracking[1].replace(/^0\./, '.')}`;
-}
-
-/**
- * The basename stems of the woff2 files fonts.css points at, e.g.
- * `LeagueSpartanVariable`. The stem rather than the filename because Next
- * content-hashes the emitted asset (`LeagueSpartanVariable.11kb5ckq3-_9c.woff2`).
- */
-export function fontStems(fontsCss) {
-  return [...fontsCss.matchAll(/url\(\s*['"]?([^'")]+\.woff2)['"]?\s*\)/g)]
-    .map(([, url]) => basename(url, '.woff2'));
-}
 
 function collectFiles(dir, predicate) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
@@ -90,9 +61,12 @@ const passed = Object.freeze({ ok: true });
  *   failures: string[],
  * }}
  *
- * Throws only when there is nothing to verify at all — a missing export
- * directory. Every other problem comes back as a failed check, so one run
- * reports every fault rather than stopping at the first.
+ * Throws when there is nothing to verify at all — no export directory, or an
+ * export directory carrying no build output. Both sit upstream of every check,
+ * and reporting four failures when the real fault is "no build ran" sends the
+ * reader after four things that are not wrong. Every other problem comes back
+ * as a failed check, so one run reports every fault rather than stopping at
+ * the first.
  */
 export function verifyExport({ out, control }) {
   if (!out) throw new Error('verifyExport: an out directory is required');
@@ -117,74 +91,101 @@ export function verifyExport({ out, control }) {
   // _next/static/css/ does not exist. Concatenating every sheet keeps the three
   // CSS checks correct however the chunks happen to split.
   const staticDir = join(out, '_next', 'static');
-  const cssFiles = existsSync(staticDir)
-    ? collectFiles(staticDir, (name) => name.endsWith('.css'))
-    : [];
+  if (!existsSync(staticDir)) {
+    throw new Error(
+      `build output not found: ${staticDir}\n` +
+        `  ${out} exists but carries no _next/static/, so no stylesheet and no font\n` +
+        '  asset was emitted and there is nothing for any check to read. The build did\n' +
+        '  not run to completion, its output went elsewhere, or a stale out/ was left\n' +
+        '  behind by an earlier failure. Every check is downstream of this, so none is\n' +
+        '  reported — each would name a cause that is not the one in front of you.',
+    );
+  }
+  const cssFiles = collectFiles(staticDir, (name) => name.endsWith('.css'));
   const emittedCss = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
 
+  const controlResult = checkControl(control, cssFiles.length, emittedCss, staticDir);
+  const tokens = checkTokens(declaredTokens(packageSource('./tokens.css')), emittedCss, staticDir);
+  const utility = checkUtility(
+    trackingValue(packageSource('./primitives/eyebrow.tsx')), emittedCss, staticDir,
+  );
+  const fonts = checkFonts(fontStems(packageSource('./fonts.css')), join(staticDir, 'media'));
+
+  // The control leads: when it fails, the three results after it are describing
+  // a stylesheet that was never emitted, not a package that failed to arrive.
+  const failures = [controlResult, tokens, utility, fonts]
+    .filter((check) => !check.ok)
+    .map((check) => check.failure);
+
+  return { ok: failures.length === 0, control: controlResult, tokens, utility, fonts, failures };
+}
+
+function checkControl(control, sheetCount, emittedCss, staticDir) {
   // ceiling: the control's compiled selector is assumed to be `.<utility>{`.
   // Tailwind CSS-escapes brackets and periods, so an arbitrary-value control
   // such as tracking-[0.15em] would be reported missing when it was in fact
   // emitted. Upgrade to escaping the selector the way Tailwind does if a
   // consumer's only package-free utility is an arbitrary-value one.
-  const controlCheck = emittedCss.includes(`.${control}{`)
-    ? passed
-    : {
-        ok: false,
-        failure:
-          `${staticDir}: the control utility .${control} was not emitted.\n` +
-          `  Read ${cssFiles.length} stylesheet(s) here; none of them compiled it.\n` +
-          `  The control is a class the consumer's own markup uses and ${PACKAGE} does not,\n` +
-          '  so this is either a build that emitted no usable CSS at all or a --control\n' +
-          '  naming a class this consumer never actually used. Until it is settled, the\n' +
-          '  token and utility results below carry no information — an absent package\n' +
-          '  utility and an absent stylesheet look identical. That exact false negative\n' +
-          '  cost three rounds of probing before the control existed, which is why it is\n' +
-          '  reported first.',
-      };
+  if (emittedCss.includes(`.${control}{`)) return passed;
+  return {
+    ok: false,
+    failure:
+      `${staticDir}: the control utility .${control} was not emitted.\n` +
+      `  Read ${sheetCount} stylesheet(s) here; none of them compiled it.\n` +
+      `  The control is a class the consumer's own markup uses and ${PACKAGE} does not,\n` +
+      '  so this is either a build that emitted no usable CSS at all or a --control\n' +
+      '  naming a class this consumer never actually used. Until it is settled, the\n' +
+      '  token and utility results below carry no information — an absent package\n' +
+      '  utility and an absent stylesheet look identical. That exact false negative\n' +
+      '  cost three rounds of probing before the control existed, which is why it is\n' +
+      '  reported first.',
+  };
+}
 
-  const declared = declaredTokens(packageSource('./tokens.css'));
+function checkTokens(declared, emittedCss, staticDir) {
+  // An empty parse is the failure this check is least able to notice on its own:
+  // with nothing declared, nothing can be missing, and it would pass on every
+  // build from here on. otto-brand-check shares the same parse and only turns an
+  // empty one into a failure for a consumer whose source references an --ow-*
+  // name — one that references none passes it silently — so nothing upstream of
+  // here can be relied on to catch it.
+  if (declared.size === 0) {
+    return {
+      ok: false,
+      failure:
+        `${PACKAGE}/src/tokens.css: no --ow-* declaration remains to derive from.\n` +
+        '  The parse reads a name only where it opens a line, so this is either a\n' +
+        '  reformatted stylesheet — declarations folded onto one line, or moved inside\n' +
+        '  an @theme block — or a renamed prefix. Either way no expectation is left,\n' +
+        '  and a check with no expectations passes on every build forever.\n' +
+        '  Fix declaredTokens in src/internal/derive.mjs to match the new shape.',
+    };
+  }
   // The trailing colon is what makes each name its own search rather than a
   // prefix one: a bare `--ow-ink` is a substring of `--ow-ink-muted`, so
   // dropping the declaration of the first would go unnoticed while the second
   // survived. tokens.css is inlined verbatim, so the declaration form is what
   // reaches the build whether or not the CSS was minified.
-  const missingTokens = [...declared].filter((name) => !emittedCss.includes(`${name}:`));
-  const tokens = missingTokens.length === 0
-    ? passed
-    : {
-        ok: false,
-        failure:
-          `${staticDir}: ${missingTokens.length} of ${declared.size} --ow-* token(s) declared by\n` +
-          `  ${PACKAGE}/tokens.css are absent from the emitted CSS: ${missingTokens.join(', ')}\n` +
-          '  tokens.css is @imported and inlined verbatim, so every name it declares has to\n' +
-          '  survive into the build. A name that did not means the @import never resolved,\n' +
-          '  and every component styled by that token renders with inherited or transparent\n' +
-          '  colour on a page that built clean.',
-      };
-
-  const expectedDeclaration = packageOnlyDeclaration(packageSource('./primitives/eyebrow.tsx'));
-  const utility = utilityCheck(expectedDeclaration, emittedCss, staticDir);
-
-  const mediaDir = join(out, '_next', 'static', 'media');
-  const fonts = fontCheck(fontStems(packageSource('./fonts.css')), mediaDir);
-
-  // The control leads: when it fails, the three results after it are describing
-  // a stylesheet that was never emitted, not a package that failed to arrive.
-  const failures = [controlCheck, tokens, utility, fonts]
-    .filter((check) => !check.ok)
-    .map((check) => check.failure);
-
-  return { ok: failures.length === 0, control: controlCheck, tokens, utility, fonts, failures };
+  const missing = [...declared].filter((name) => !emittedCss.includes(`${name}:`));
+  if (missing.length === 0) return passed;
+  return {
+    ok: false,
+    failure:
+      `${staticDir}: ${missing.length} of ${declared.size} --ow-* token(s) declared by\n` +
+      `  ${PACKAGE}/tokens.css are absent from the emitted CSS: ${missing.join(', ')}\n` +
+      '  tokens.css is @imported and inlined verbatim, so every name it declares has to\n' +
+      '  survive into the build. A name that did not means the @import never resolved,\n' +
+      '  and every component styled by that token renders with inherited or transparent\n' +
+      '  colour on a page that built clean.',
+  };
 }
 
-// Split out only so verifyExport stays readable; both halves are one check.
-function utilityCheck(expectedDeclaration, emittedCss, staticDir) {
+function checkUtility(value, emittedCss, staticDir) {
   // A missing tracking-[…] class is not a check that can be skipped. This
   // verifier's whole claim that @source reached into the package rests on that
   // one class living in exactly one file, so losing it silently would leave the
   // suite green while testing nothing.
-  if (expectedDeclaration === null) {
+  if (value === null) {
     return {
       ok: false,
       failure:
@@ -197,12 +198,31 @@ function utilityCheck(expectedDeclaration, emittedCss, staticDir) {
         '  exists only inside the package.',
     };
   }
-  if (emittedCss.includes(expectedDeclaration)) return passed;
+  // Guessing at a value whose minified form is not modelled would put a wrong
+  // expectation in front of a consumer, where it reads as a package regression
+  // in their CI rather than as a gap here. Saying so is the cheaper failure.
+  const minified = minifyLength(value);
+  if (minified === null) {
+    return {
+      ok: false,
+      failure:
+        `${PACKAGE}/src/primitives/eyebrow.tsx: tracking-[${value}] carries a value this\n` +
+        '  check cannot compile. It models a signed decimal with a unit and the three\n' +
+        '  normalisations lightningcss applies to one: dropped leading zero, dropped\n' +
+        '  trailing zeros, dropped empty fraction. A zero length, a unitless or\n' +
+        '  uppercase unit, and any calc() or var() sit outside that, and asserting a\n' +
+        '  guess at one of them would fail every consumer\'s build for a fault that is\n' +
+        '  not theirs. Extend minifyLength in src/internal/derive.mjs, or use a plain\n' +
+        '  decimal value.',
+    };
+  }
+  const expected = `letter-spacing:${minified}`;
+  if (emittedCss.includes(expected)) return passed;
   return {
     ok: false,
     failure:
-      `${staticDir}: the package-only declaration ${expectedDeclaration} was not emitted.\n` +
-      `  It compiles from the tracking-[…] class in ${PACKAGE}/src/primitives/eyebrow.tsx,\n` +
+      `${staticDir}: the package-only declaration ${expected} was not emitted.\n` +
+      `  It compiles from tracking-[${value}] in ${PACKAGE}/src/primitives/eyebrow.tsx,\n` +
       '  which is the only file in the tree that uses it, so its absence means Tailwind\'s\n' +
       '  @source glob never scanned the package. Every utility the package relies on is\n' +
       '  then missing from the stylesheet and the components render unstyled.\n' +
@@ -210,8 +230,8 @@ function utilityCheck(expectedDeclaration, emittedCss, staticDir) {
   };
 }
 
-function fontCheck(stems, mediaDir) {
-  // Same reasoning as the utility check above: fonts.css with no url() at all
+function checkFonts(stems, mediaDir) {
+  // Same reasoning as the two checks above: fonts.css with no url() at all
   // means the evidence is gone, not that there is nothing to verify.
   if (stems.length === 0) {
     return {

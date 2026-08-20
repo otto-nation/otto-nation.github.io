@@ -16,7 +16,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 
-import { declaredTokens } from '../src/verify.mjs';
+import { declaredTokens } from '../src/internal/derive.mjs';
 
 const PACKAGE = '@otto-nation/brand';
 // .svg is deliberately absent. An SVG served as a favicon or an <img> src is
@@ -186,10 +186,10 @@ if (!transpile || !transpile[1].includes(PACKAGE)) {
 
 // tokens.css is read from this package's own src, so the check always measures
 // against the version actually installed rather than a copy in the consumer.
-// The parse itself lives in src/verify.mjs because otto-brand-verify needs the
-// same list, and two copies of the regex would drift the moment tokens.css
-// changed shape — the file is read here rather than there so the reindented
-// copy the tests build still resolves beside this script.
+// The parse itself lives in src/internal/derive.mjs because otto-brand-verify
+// needs the same list, and two copies of the regex would drift the moment
+// tokens.css changed shape — the file is read here rather than there so the
+// reindented copy the tests build still resolves beside this script.
 const tokens = readFileSync(new URL('../src/tokens.css', import.meta.url), 'utf8');
 const declared = declaredTokens(tokens);
 

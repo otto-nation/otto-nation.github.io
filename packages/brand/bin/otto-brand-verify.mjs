@@ -20,20 +20,23 @@
 
 import { verifyExport } from '../src/verify.mjs';
 
+const FLAGS = { '--out': 'out', '--control': 'control' };
+
+// Both flags take exactly one value, unlike otto-brand-check's variadic --src.
+// Nothing here silently discards a value the caller passed: a repeated flag and
+// a stray word after a filled slot are both usage errors, so `--out a --out b`
+// and `--out a b` say what is wrong instead of quietly keeping one of the two.
 function parseArgs(argv) {
   const args = { out: null, control: null };
   let current = null;
   for (const token of argv) {
-    if (token === '--out' || token === '--control') {
-      current = token;
+    if (Object.hasOwn(FLAGS, token)) {
+      if (args[FLAGS[token]] !== null) usage(`${token} given more than once`);
+      current = FLAGS[token];
       continue;
     }
-    // Both flags take exactly one value, unlike otto-brand-check's variadic
-    // --src, so the slot is cleared once it is filled. Leaving it open would
-    // let a stray trailing word silently replace the value the caller meant.
-    if (current === '--out') args.out = token;
-    else if (current === '--control') args.control = token;
-    else usage(`unexpected argument: ${token}`);
+    if (current === null) usage(`unexpected argument: ${token}`);
+    args[current] = token;
     current = null;
   }
   if (!args.out || !args.control) {
