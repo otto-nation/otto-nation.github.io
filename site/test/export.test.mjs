@@ -73,6 +73,12 @@ test('a site-only utility class is emitted (control for the assertion above)', (
 
 test('both League woff2 files are emitted', () => {
   const mediaDir = join(OUT_DIR, '_next', 'static', 'media');
+  if (!existsSync(mediaDir)) {
+    throw new Error(
+      `_next/static/media/ not found — the font url()s in fonts.css likely did not resolve, ` +
+      `so nothing was emitted (looked in ${mediaDir})`,
+    );
+  }
   const mediaFiles = readdirSync(mediaDir);
   assert.ok(mediaFiles.some((name) => /^LeagueMonoVariable\..*\.woff2$/.test(name)),
     'LeagueMonoVariable*.woff2 missing — fonts.css url() did not resolve from inside the package');
