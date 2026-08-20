@@ -13,5 +13,9 @@ That is the whole repo today. The org landing site at
 https://otto-nation.github.io/ is not here yet: the root `package.json` reserves a
 `site` workspace, and `npm run build` builds every workspace that has a build
 script — no workspace does yet, and the brand package never will, so it is a no-op
-until `site/` lands. There is no release automation and no list of downstream
-consumers — a version bump reaches a consumer by hand.
+until `site/` lands.
+
+A `brand-v*` tag releases the package: `.github/workflows/brand-release.yml`
+packs it, proves the tarball builds a real consumer in `fixtures/tarball-consumer/`,
+and attaches that same tarball to a GitHub release. There is still no list of
+downstream consumers, so a version bump reaches one by hand.

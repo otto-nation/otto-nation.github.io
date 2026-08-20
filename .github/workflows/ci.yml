@@ -51,30 +51,8 @@ jobs:
       - name: Verify rendered output
         run: npm run verify --workspace otto-nation-site
 
-      - name: Pack the brand tarball
-        run: npm pack --workspace @otto-nation/brand --pack-destination /tmp
-
-      - name: Build the tarball fixture
-        working-directory: fixtures/tarball-consumer
-        # --no-save keeps the tarball path out of the fixture's package.json, which
-        # is tracked: without it every run rewrites the manifest with a version-pinned
-        # /tmp path that means nothing on the next runner or on a contributor's machine.
-        run: |
-          version="$(node -p "require('../../packages/brand/package.json').version")"
-          npm install --no-save "/tmp/otto-nation-brand-${version}.tgz"
-          npm run build
-
-      - name: Assert the tarball actually styled the fixture
-        working-directory: fixtures/tarball-consumer
-        # The assertions live in the package, not here: otto-brand-verify derives every
-        # package-owned expectation — the --ow-* names, the package-only utility class,
-        # the vendored woff2 filenames — from the installed package's own source, so the
-        # tarball is checked against the version it actually shipped rather than against
-        # a copy of four strings pinned in this file. `--control py-7` is the one fact
-        # this consumer owns: a class in the fixture's own markup that the package never
-        # uses, without which a build emitting no CSS at all is indistinguishable from a
-        # working one. The bin resolves from the fixture's own node_modules because the
-        # tarball is installed there, which is the whole point of this job — the landing
-        # site exercises only the workspace-symlink path, so without it a packaging
-        # regression would surface in otto-workbench's CI after the release.
-        run: ./node_modules/.bin/otto-brand-verify --out out --control py-7
+      # Pack, install into the fixture consumer, build, verify. The release
+      # workflow runs the same action before it publishes, so the artifact that
+      # ships is the one this proved builds.
+      - name: Verify the packed tarball
+        uses: ./.github/actions/verify-brand-tarball
