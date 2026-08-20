@@ -36,4 +36,12 @@ jobs:
         run: npm run check --workspace otto-nation-site
 
       - name: Build
-        run: npm run build --workspace otto-nation-site
+        run: |
+          npm run build --workspace otto-nation-site 2>&1 | tee "$RUNNER_TEMP/site-build.log"
+          if grep -qi 'unique "key" prop' "$RUNNER_TEMP/site-build.log"; then
+            echo "::error::React key warning found in the build output"
+            exit 1
+          fi
+
+      - name: Verify rendered output
+        run: npm run verify --workspace otto-nation-site

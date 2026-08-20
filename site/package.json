@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "check": "otto-brand-check --css app/global.css --next-config next.config.mjs --src app"
+    "check": "otto-brand-check --css app/global.css --next-config next.config.mjs --src app",
+    "verify": "node --test test/export.test.mjs"
   },
   "dependencies": {
     "@otto-nation/brand": "*",
