@@ -1,0 +1,73 @@
+name: Release brand package
+
+on:
+  push:
+    tags:
+      - "brand-v*"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Verify and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: "npm"
+
+      # A tag that disagrees with the manifest would publish a tarball whose
+      # filename and contents name different versions, and every consumer would
+      # pin a URL that does not describe what it installs.
+      - name: Verify tag matches the manifest version
+        run: |
+          manifest="$(node -p "require('./packages/brand/package.json').version")"
+          tagged="${GITHUB_REF_NAME#brand-v}"
+          if [[ "$manifest" != "$tagged" ]]; then
+            echo "tag $GITHUB_REF_NAME says $tagged, packages/brand/package.json says $manifest" >&2
+            exit 1
+          fi
+          echo "version=$manifest" >> "$GITHUB_OUTPUT"
+        id: version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      # npm test only exercises the workspace-symlink path, where the package is
+      # reached through a symlink into the repo rather than through what `files`
+      # actually packed. A tarball missing a file the tests never noticed would
+      # pass it and break on install, so the publish is gated on the same
+      # pack → install → build → verify sequence CI runs. A tag cut from a commit
+      # that never went through the PR-gated ci.yml — a direct push to main, a
+      # rebase or cherry-pick before tagging — otherwise reaches consumers with
+      # no packaging guard in front of it at all.
+      - name: Verify the packed tarball
+        id: tarball
+        uses: ./.github/actions/verify-brand-tarball
+        with:
+          version: ${{ steps.version.outputs.version }}
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TARBALL: ${{ steps.tarball.outputs.tarball }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "$TARBALL" \
+            --title "@otto-nation/brand v${VERSION}" \
+            --notes "Install: \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"

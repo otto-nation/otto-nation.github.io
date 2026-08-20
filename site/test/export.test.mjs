@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { verifyExport } from '@otto-nation/brand/verify';
 
 // This is the render coverage for the landing page: the org site composes
 // every export @otto-nation/brand ships, so reading its built output is what
@@ -18,12 +20,6 @@ if (!existsSync(OUT_DIR)) {
   );
 }
 
-function collectFiles(dir, predicate) {
-  return readdirSync(dir, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && predicate(entry.name))
-    .map((entry) => join(entry.parentPath, entry.name));
-}
-
 const INDEX_HTML = readFileSync(join(OUT_DIR, 'index.html'), 'utf8');
 
 test('index.html renders output from every component on the page', () => {
@@ -36,52 +32,17 @@ test('index.html renders output from every component on the page', () => {
   assert.ok(INDEX_HTML.includes('MIT · otto-nation'), 'footer copy missing — Footer did not render');
 });
 
-// Turbopack content-hashes CSS filenames, so the file has to be globbed
-// rather than named. Reading every emitted stylesheet and concatenating them
-// keeps the two assertions below correct regardless of chunk splitting.
-const STATIC_DIR = join(OUT_DIR, '_next', 'static');
-const cssFiles = collectFiles(STATIC_DIR, (name) => name.endsWith('.css'));
-const emittedCss = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
-
-test('the package-only utility class reached @source and was emitted', () => {
-  assert.ok(cssFiles.length > 0, 'no CSS emitted at all under out/_next/static/');
-  // `tracking-[0.15em]` exists in exactly one file in the whole tree —
-  // packages/brand/src/primitives/eyebrow.tsx, rendered by Hero — so its
-  // compiled form in the site's own output proves the site's @source glob
-  // reached into node_modules/@otto-nation/brand. Asserting the compiled
-  // declaration rather than the source class name is deliberate: Tailwind's
-  // minifier drops the leading zero (`0.15em` -> `.15em`) and CSS-escapes the
-  // literal period in the selector (`0\.15em`), so the literal source string
-  // "0.15em" never appears in the built file and a naive grep for it reports
-  // a false negative even when @source worked correctly.
-  assert.ok(emittedCss.includes('letter-spacing:.15em'),
-    'tracking-[0.15em] from eyebrow.tsx was not emitted — @source did not reach the package');
-});
-
-test('a site-only utility class is emitted (control for the assertion above)', () => {
-  // `py-7` is used once, on the card-grid wrapper in site/app/page.tsx, and
-  // does not appear anywhere under packages/brand. Without this control, an
-  // empty CSS scan (a broken build that emits no utilities at all) would
-  // leave the previous test's absence of `.15em` looking like proof that
-  // @source specifically failed to reach the package, when it actually
-  // proves nothing — the scanner never ran at all. This exact false negative
-  // cost three rounds of probing before the control was added.
-  assert.ok(emittedCss.includes('.py-7{'),
-    'py-7 (site-only, not from the package) was not emitted — the CSS scan produced nothing, ' +
-    'which means the .15em assertion above carries no information either');
-});
-
-test('both League woff2 files are emitted', () => {
-  const mediaDir = join(OUT_DIR, '_next', 'static', 'media');
-  if (!existsSync(mediaDir)) {
-    throw new Error(
-      `_next/static/media/ not found — the font url()s in fonts.css likely did not resolve, ` +
-      `so nothing was emitted (looked in ${mediaDir})`,
-    );
-  }
-  const mediaFiles = readdirSync(mediaDir);
-  assert.ok(mediaFiles.some((name) => /^LeagueMonoVariable\..*\.woff2$/.test(name)),
-    'LeagueMonoVariable*.woff2 missing — fonts.css url() did not resolve from inside the package');
-  assert.ok(mediaFiles.some((name) => /^LeagueSpartanVariable\..*\.woff2$/.test(name)),
-    'LeagueSpartanVariable*.woff2 missing — fonts.css url() did not resolve from inside the package');
+// The tokens, the package-only utility, the vendored faces, and the control
+// are all package-owned facts, so the package owns the assertion: every
+// expectation is derived from its own source at call time rather than restated
+// here as a literal. The tarball fixture in CI and otto-workbench run the same
+// verifier against their own builds, which is what keeps three consumers from
+// each holding a private copy of four magic strings.
+//
+// `py-7` is the control. It is used once, on the card-grid wrapper in
+// site/app/page.tsx, and appears nowhere under packages/brand — so it is the
+// site's own class, and the one class here that the verifier cannot derive.
+test('the built export carries @otto-nation/brand', () => {
+  const result = verifyExport({ out: OUT_DIR, control: 'py-7' });
+  assert.ok(result.ok, result.failures.join('\n\n'));
 });

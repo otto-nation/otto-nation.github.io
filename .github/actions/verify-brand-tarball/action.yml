@@ -1,0 +1,71 @@
+name: Verify the brand tarball
+description: >-
+  Pack @otto-nation/brand, install the tarball into fixtures/tarball-consumer,
+  build it, and assert the built export actually carries the package. Outputs
+  the path of the tarball that was verified, so a caller publishing an artifact
+  publishes the one this proved. Assumes the repo is checked out, Node is set
+  up, and the root install has already run.
+
+inputs:
+  version:
+    description: >-
+      Package version to expect in the packed tarball's filename. When
+      omitted, derived from packages/brand/package.json — the caller passes
+      this when it has already read the version, so it has one owner instead
+      of two.
+    required: false
+    default: ""
+
+outputs:
+  tarball:
+    description: Absolute path of the packed tarball this action verified.
+    value: ${{ steps.pack.outputs.tarball }}
+
+runs:
+  using: composite
+  steps:
+    # This sequence is an action rather than a copy in each workflow because CI
+    # and the release both have to run exactly it. A drift between two copies
+    # would mean the release stops checking what CI checks while both still
+    # report green, and the release is the run where that matters most: it is
+    # the one publishing the artifact.
+    - name: Pack the brand tarball
+      id: pack
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        version="$VERSION"
+        if [[ -z "$version" ]]; then
+          version="$(node -p "require('./packages/brand/package.json').version")"
+        fi
+        npm pack --workspace @otto-nation/brand --pack-destination "$RUNNER_TEMP"
+        echo "tarball=$RUNNER_TEMP/otto-nation-brand-${version}.tgz" >> "$GITHUB_OUTPUT"
+
+    - name: Build the tarball fixture
+      shell: bash
+      working-directory: fixtures/tarball-consumer
+      # --no-save keeps the tarball path out of the fixture's package.json, which
+      # is tracked: without it every run rewrites the manifest with a version-pinned
+      # runner path that means nothing on the next runner or on a contributor's machine.
+      env:
+        TARBALL: ${{ steps.pack.outputs.tarball }}
+      run: |
+        npm install --no-save "$TARBALL"
+        npm run build
+
+    - name: Assert the tarball actually styled the fixture
+      shell: bash
+      working-directory: fixtures/tarball-consumer
+      # The assertions live in the package, not here: otto-brand-verify derives every
+      # package-owned expectation — the --ow-* names, the package-only utility class,
+      # the vendored woff2 filenames — from the installed package's own source, so the
+      # tarball is checked against the version it actually shipped rather than against
+      # a copy of four strings pinned in this file. `--control py-7` is the one fact
+      # this consumer owns: a class in the fixture's own markup that the package never
+      # uses, without which a build emitting no CSS at all is indistinguishable from a
+      # working one. The bin resolves from the fixture's own node_modules because the
+      # tarball is installed there, which is the whole point of this job — the landing
+      # site exercises only the workspace-symlink path, so without it a packaging
+      # regression would surface in otto-workbench's CI after the release.
+      run: ./node_modules/.bin/otto-brand-verify --out out --control py-7

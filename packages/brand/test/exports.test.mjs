@@ -25,11 +25,15 @@ test('every exports-map target exists on disk', () => {
   }
 });
 
-test('the bin is listed in files, or it never ships', () => {
+// Every declared bin, not just the first one: a second bin added later that
+// nobody listed here would ship as a broken command rather than fail the suite.
+test('the bins are listed in files, or they never ship', () => {
   assert.ok(manifest.files.includes('bin'), 'files must include "bin"');
   assert.ok(manifest.files.includes('src'), 'files must include "src"');
-  assert.doesNotThrow(() => read(manifest.bin['otto-brand-check']),
-    'package.json declares a bin that is not on disk');
+  for (const [name, target] of Object.entries(manifest.bin)) {
+    assert.doesNotThrow(() => read(target),
+      `package.json declares the bin ${name} at ${target}, which is not on disk`);
+  }
 });
 
 // Importing the barrel must not pull fumadocs-ui into a consumer's graph. The

@@ -51,6 +51,16 @@ it fails your build if either `@import` is absent, if the `@source` is absent
 omits the package. The compiler settings in step 5 are the one requirement it
 cannot see — those surface as errors in your own build.
 
+The package declares an `engines` floor for Node in its `package.json`; that
+field is the authority, not this sentence. It is set by `fs.Dirent.parentPath`,
+which `otto-brand-verify` uses to walk a static export, and it is higher than
+the floor `next` declares for itself — so satisfying your Next version is not
+enough to satisfy this package, and a Node that installs Next cleanly can still
+fail here with `entry.parentPath is undefined`. Read the field. npm's default is
+to report a mismatch as an `EBADENGINE` warning rather than an error, so unless
+you set `engine-strict`, an install that prints one still finishes and the break
+arrives later, in a build.
+
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:
 
@@ -92,6 +102,10 @@ cannot see — those surface as errors in your own build.
    npx otto-brand-check --css site/app/global.css --next-config site/next.config.mjs --src site/app site/components
    ```
 
+   After the build, run `otto-brand-verify` on the export as well — see
+   [Verifying a build](#verifying-a-build). The two are not interchangeable:
+   this one reads configuration, that one reads output.
+
 5. In your `tsconfig.json`:
 
    ```json
@@ -111,12 +125,59 @@ cannot see — those surface as errors in your own build.
    `moduleResolution: "bundler"` (`packages/brand/tsconfig.json`, run by
    `npm test`), so that combination is the supported one.
 
+## Verifying a build
+
+`otto-brand-check` cannot see whether a correct configuration actually produced
+anything. A stale lockfile, a `@source` glob whose depth changed under a moved
+directory, a `url()` rebased out of the app root — each of those passes the
+configuration check and ships a page that built clean and renders wrong. Run
+`otto-brand-verify` on the static export to close that gap:
+
+```bash
+npx otto-brand-verify --out out --control py-7
+```
+
+Four assertions, each pinned to a distinct failure:
+
+| Check | Derived from | What its absence means |
+|---|---|---|
+| Every `--ow-*` name is in the emitted CSS | `src/tokens.css` | The `@import` never resolved; every component renders with inherited or transparent colour |
+| The package-only utility was compiled | the `tracking-[…]` class in `src/primitives/eyebrow.tsx` | `@source` never scanned the package's `.tsx`, so every utility it relies on is missing |
+| Each vendored face was emitted as an asset | the `url()`s in `src/fonts.css` | The font `url()` did not resolve; the page renders in the fallback stack |
+| `--control` was compiled | you | The CSS scan produced nothing at all, which makes the three rows above vacuous |
+
+Nothing in that table is written down twice. Every expectation is parsed out of
+the installed package's own source at call time, so the check always measures
+against the version you installed and adding a token to `tokens.css` becomes a
+new expectation with no edit anywhere else.
+
+`--control` is the one fact the package cannot derive, and it is required. Name
+a utility class your own markup uses and the package does not — `py-7` in both
+of this repo's consumers. Without it, "the package's utility is missing" and
+"no CSS was emitted at all" are the same observation, and the second is reported
+first because it makes the rest of the report meaningless. That exact false
+negative cost three rounds of probing before the control existed.
+
+Exit codes match `otto-brand-check`: `2` for a usage error, `1` for a failed
+check or for an export directory that is absent or carries no build output, `0`
+and a one-line summary otherwise. The same logic is importable as
+`@otto-nation/brand/verify` for consumers that would rather assert inside their
+own test suite — `verifyExport({ out, control })` returns one field per check,
+each naming what failed and why, plus `ok` and a flattened `failures` list. It
+throws only when nothing can be verified at all, since reporting four failures
+against a build that never ran names four causes that are not the real one.
+
+`verifyExport` is the whole of that subpath. The parses it derives from are
+internal and deliberately unexported, so their shapes can change without a
+breaking release.
+
 ## Exports
 
 | Export | Shape |
 |---|---|
 | `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces; defines `--font-display`, `--font-mono` |
+| `@otto-nation/brand/verify` | `verifyExport({ out, control })` — see [Verifying a build](#verifying-a-build) |
 | `Greca` | `{ size?: number; onDark?: boolean, className? }` |
 | `GrecaDivider` | `{ className? }` |
 | `Rings` | `{ className? }` |

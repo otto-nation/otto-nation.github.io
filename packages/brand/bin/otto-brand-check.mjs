@@ -7,7 +7,8 @@
 //   - @import of tokens.css and of fonts.css
 //   - an @source pointing at the package, whose path actually resolves
 //   - transpilePackages listing the package
-//   - no --ow-* reference in consumer source that tokens.css does not declare
+//   - no --ow-* reference in consumer source that tokens.css does not declare,
+//     and a tokens.css this package can still parse those names out of at all
 //
 // Usage:
 //   otto-brand-check --css <entrypoint.css> --next-config <next.config.mjs> \
@@ -15,6 +16,8 @@
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
+
+import { declaredTokens } from '../src/internal/derive.mjs';
 
 const PACKAGE = '@otto-nation/brand';
 // .svg is deliberately absent. An SVG served as a favicon or an <img> src is
@@ -111,6 +114,25 @@ function* walk(dir) {
   }
 }
 
+// Every file that references a token, not just the last one scanned: a report
+// that names one offender per token turns a single run into a round of
+// whack-a-mole, where the developer fixes what was named and re-runs into a
+// failure that was there all along.
+function scanUndeclared(dirs, declared) {
+  const undeclared = new Map();
+  for (const dir of dirs) {
+    for (const file of walk(dir)) {
+      const source = stripComments(readFileSync(file, 'utf8'));
+      for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
+        if (declared.has(token)) continue;
+        if (!undeclared.has(token)) undeclared.set(token, new Set());
+        undeclared.get(token).add(file);
+      }
+    }
+  }
+  return undeclared;
+}
+
 function read(path, label) {
   try {
     return readFileSync(path, 'utf8');
@@ -184,31 +206,41 @@ if (!transpile || !transpile[1].includes(PACKAGE)) {
 
 // tokens.css is read from this package's own src, so the check always measures
 // against the version actually installed rather than a copy in the consumer.
+// The parse itself lives in src/internal/derive.mjs because otto-brand-verify
+// needs the same list, and two copies of the regex would drift the moment
+// tokens.css changed shape — the file is read here rather than there so the
+// reindented copy the tests build still resolves beside this script.
 const tokens = readFileSync(new URL('../src/tokens.css', import.meta.url), 'utf8');
-const declared = new Set(
-  [...tokens.matchAll(/^\s*(--ow-[a-z-]+):/gm)].map(([, name]) => name),
-);
+const declared = declaredTokens(tokens);
 
-// Every file that references a token, not just the last one scanned: a report
-// that names one offender per token turns a single run into a round of
-// whack-a-mole, where the developer fixes what was named and re-runs into a
-// failure that was there all along.
-const undeclared = new Map();
-try {
-  for (const dir of args.src) {
-    for (const file of walk(dir)) {
-      const source = stripComments(readFileSync(file, 'utf8'));
-      for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
-        if (declared.has(token)) continue;
-        if (!undeclared.has(token)) undeclared.set(token, new Set());
-        undeclared.get(token).add(file);
-      }
-    }
+// An empty parse is a broken package, not a clean consumer. With nothing
+// declared every --ow-* name a consumer writes would be accepted, so a source
+// tree that happens to reference none would pass while asserting nothing at
+// all. src/verify.mjs fails the same way for the same reason — the two share
+// this parse, and either of them treating an empty result as "no expectations"
+// would go green on every build from here on. The source scan is skipped
+// rather than run against the empty set: every reference in the tree would be
+// reported undeclared, naming a fault that is not the consumer's.
+let undeclared = new Map();
+if (declared.size === 0) {
+  failures.push(
+    `${PACKAGE}/tokens.css: no --ow-* declaration remains to derive from.\n` +
+      `  The parse reads a name only where it opens a line, so this is either a\n` +
+      `  reformatted stylesheet — declarations folded onto one line, or moved inside\n` +
+      `  an @theme block — or a renamed prefix. Either way there is no list left to\n` +
+      `  check your source against, so the --ow-* scan was skipped rather than run\n` +
+      `  against nothing.\n` +
+      `  This is a fault in the installed ${PACKAGE}, not in your configuration:\n` +
+      `  fix declaredTokens in src/internal/derive.mjs to match the new shape.`,
+  );
+} else {
+  try {
+    undeclared = scanUndeclared(args.src, declared);
+  } catch (error) {
+    if (!(error instanceof SourceScanError)) throw error;
+    console.error(`otto-brand-check: ${error.message}`);
+    process.exit(1);
   }
-} catch (error) {
-  if (!(error instanceof SourceScanError)) throw error;
-  console.error(`otto-brand-check: ${error.message}`);
-  process.exit(1);
 }
 for (const [token, files] of undeclared) {
   // One file stays on the headline; more than one goes to an indented list, so
