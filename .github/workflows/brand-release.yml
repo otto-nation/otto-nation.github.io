@@ -1,0 +1,60 @@
+name: Release brand package
+
+on:
+  push:
+    tags:
+      - "brand-v*"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Pack and publish
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: "npm"
+
+      # A tag that disagrees with the manifest would publish a tarball whose
+      # filename and contents name different versions, and every consumer would
+      # pin a URL that does not describe what it installs.
+      - name: Verify tag matches the manifest version
+        run: |
+          manifest="$(node -p "require('./packages/brand/package.json').version")"
+          tagged="${GITHUB_REF_NAME#brand-v}"
+          if [[ "$manifest" != "$tagged" ]]; then
+            echo "tag $GITHUB_REF_NAME says $tagged, packages/brand/package.json says $manifest" >&2
+            exit 1
+          fi
+          echo "version=$manifest" >> "$GITHUB_OUTPUT"
+        id: version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Pack
+        run: npm pack --workspace @otto-nation/brand --pack-destination /tmp
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "/tmp/otto-nation-brand-${VERSION}.tgz" \
+            --title "@otto-nation/brand v${VERSION}" \
+            --notes "Install: \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"

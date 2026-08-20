@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+@import '@otto-nation/brand/tokens.css';
+@import '@otto-nation/brand/fonts.css';
+@source '../node_modules/@otto-nation/brand/**/*.tsx';

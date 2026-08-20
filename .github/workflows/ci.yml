@@ -20,7 +20,7 @@ jobs:
   test:
     name: Test and build
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,3 +50,38 @@ jobs:
 
       - name: Verify rendered output
         run: npm run verify --workspace otto-nation-site
+
+      - name: Pack the brand tarball
+        run: npm pack --workspace @otto-nation/brand --pack-destination /tmp
+
+      - name: Build the tarball fixture
+        working-directory: fixtures/tarball-consumer
+        run: |
+          version="$(node -p "require('../../packages/brand/package.json').version")"
+          npm install "/tmp/otto-nation-brand-${version}.tgz"
+          npm run build
+
+      - name: Assert the tarball actually styled the fixture
+        working-directory: fixtures/tarball-consumer
+        # Four assertions, each pinned to a distinct failure. `ow-canvas` proves the
+        # bare-specifier `@import` resolved from a real directory. `letter-spacing:.15em`
+        # proves `@source` reached the package's `.tsx` (that utility lives only in
+        # Eyebrow) — Tailwind drops the leading zero and escapes the period when it
+        # compiles `tracking-[0.15em]`, so the literal source text never appears in the
+        # built CSS; this is the compiled declaration instead. `--include='*.css'` is
+        # what makes that assertion real — `tracking-[0.15em]` also shows up verbatim in
+        # the JS chunk regardless of whether Tailwind emitted anything, so a grep that
+        # reaches the JS is green even when `@source` never ran. `py-7` only exists in
+        # this fixture's own markup (verified absent from every file under
+        # packages/brand/src), so it is the control: without it, a passing
+        # `letter-spacing:.15em` check can't distinguish "the scanner reached the
+        # package" from "the scanner produced no CSS at all". The recursive
+        # `_next/static/` is deliberate too: Turbopack emits to `chunks/*.css`, and the
+        # webpack-era `_next/static/css/` does not exist. Without any of this the landing
+        # site's workspace symlink is the only path ever exercised, and a packaging
+        # regression would be found by otto-workbench's CI after the release.
+        run: |
+          grep -rq --include='*.css' "ow-canvas" out/_next/static/
+          grep -rqF --include='*.css' "letter-spacing:.15em" out/_next/static/
+          grep -rqF --include='*.css' ".py-7{" out/_next/static/
+          ls out/_next/static/media/ | grep -qi league
