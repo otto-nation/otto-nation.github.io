@@ -26,6 +26,9 @@ const TRACKING = trackingValue(source('../src/primitives/eyebrow.tsx'));
 const DECLARATION = `letter-spacing:${minifyLength(TRACKING)}`;
 const STEMS = fontStems(source('../src/fonts.css'));
 const CONTROL = 'py-7';
+// A path no fixture ever creates, for the two tests that ask what an absent
+// export directory reports.
+const NOWHERE = join(tmpdir(), 'brand-verify-nowhere');
 
 const tempDirs = [];
 process.on('exit', () => {
@@ -97,6 +100,17 @@ async function verifierWithSources(overrides = {}) {
     overrides.eyebrow ?? source('../src/primitives/eyebrow.tsx'),
   );
   return import(pathToFileURL(join(dir, 'src', 'verify.mjs')).href);
+}
+
+// The well-formed argv, with one field varied at a time — the same shape as
+// exportFixture above. Only the tests whose subject is the argv itself (a
+// missing flag, a repeated one, a stray word) spell it out, since for those the
+// literal list is what is being asserted.
+function cliArgs(overrides = {}) {
+  return [
+    '--out', overrides.out ?? exportFixture(),
+    '--control', overrides.control ?? CONTROL,
+  ];
 }
 
 function runCli(argv) {
@@ -229,7 +243,7 @@ test('a content-hashed woff2 filename still matches its stem', () => {
 
 test('an out directory that does not exist throws a diagnostic, not an ENOENT', () => {
   assert.throws(
-    () => verifyExport({ out: join(tmpdir(), 'brand-verify-nowhere'), control: CONTROL }),
+    () => verifyExport({ out: NOWHERE, control: CONTROL }),
     (error) => {
       assert.match(error.message, /static export not found/);
       assert.match(error.message, /brand-verify-nowhere/);
@@ -348,16 +362,14 @@ test('a token added to tokens.css becomes a new expectation on its own', async (
 });
 
 test('the CLI exits 0 with a one-line summary on a good export', () => {
-  const { code, output } = runCli(['--out', exportFixture(), '--control', CONTROL]);
+  const { code, output } = runCli(cliArgs());
   assert.equal(code, 0);
   assert.equal(output.trim().split('\n').length, 1);
   assert.match(output, /^otto-brand-verify: /);
 });
 
 test('the CLI exits 1 and names the failing check', () => {
-  const { code, output } = runCli([
-    '--out', exportFixture({ media: null }), '--control', CONTROL,
-  ]);
+  const { code, output } = runCli(cliArgs({ out: exportFixture({ media: null }) }));
   assert.equal(code, 1);
   assert.match(output, /1 problem\(s\)/);
   assert.match(output, /_next\/static\/media/);
@@ -371,7 +383,7 @@ test('the CLI exits 2 when a required flag is absent', () => {
 });
 
 test('the CLI exits 2 on an argument it does not recognise', () => {
-  const { code, output } = runCli(['--out', exportFixture(), '--control', CONTROL, 'stray']);
+  const { code, output } = runCli([...cliArgs(), 'stray']);
   assert.equal(code, 2);
   assert.match(output, /unexpected argument: stray/);
 });
@@ -394,9 +406,7 @@ test('the CLI exits 2 when a flag is repeated rather than keeping the last value
 // A missing out/ is a well-formed invocation against a build that did not run,
 // so it exits like a failed check rather than a usage error.
 test('the CLI exits 1, not 2, when the export directory is absent', () => {
-  const { code, output } = runCli([
-    '--out', join(tmpdir(), 'brand-verify-nowhere'), '--control', CONTROL,
-  ]);
+  const { code, output } = runCli(cliArgs({ out: NOWHERE }));
   assert.equal(code, 1);
   assert.match(output, /static export not found/);
   assert.doesNotMatch(output, /ENOENT/);
