@@ -64,12 +64,18 @@ function run(dir, { src = join(dir, 'app'), check = CHECK } = {}) {
 // Copies the check script into its own temp bin/ with a reindented copy of the
 // real tokens.css alongside it in src/, since the script always resolves
 // tokens.css relative to its own file location rather than a --src argument.
+// src/verify.mjs comes along because the script imports the token parse from
+// there; without it the copy fails to resolve its own import.
 function checkWithReindentedTokens(indent) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-check-pkg-'));
   tempDirs.push(dir);
   mkdirSync(join(dir, 'bin'), { recursive: true });
   mkdirSync(join(dir, 'src'), { recursive: true });
   copyFileSync(CHECK, join(dir, 'bin', 'otto-brand-check.mjs'));
+  copyFileSync(
+    fileURLToPath(new URL('../src/verify.mjs', import.meta.url)),
+    join(dir, 'src', 'verify.mjs'),
+  );
   const tokensPath = fileURLToPath(new URL('../src/tokens.css', import.meta.url));
   const reindented = readFileSync(tokensPath, 'utf8')
     .replace(/^ {2}(--ow-[a-z-]+):/gm, `${indent}$1:`);

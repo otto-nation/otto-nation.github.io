@@ -56,32 +56,25 @@ jobs:
 
       - name: Build the tarball fixture
         working-directory: fixtures/tarball-consumer
+        # --no-save keeps the tarball path out of the fixture's package.json, which
+        # is tracked: without it every run rewrites the manifest with a version-pinned
+        # /tmp path that means nothing on the next runner or on a contributor's machine.
         run: |
           version="$(node -p "require('../../packages/brand/package.json').version")"
-          npm install "/tmp/otto-nation-brand-${version}.tgz"
+          npm install --no-save "/tmp/otto-nation-brand-${version}.tgz"
           npm run build
 
       - name: Assert the tarball actually styled the fixture
         working-directory: fixtures/tarball-consumer
-        # Four assertions, each pinned to a distinct failure. `ow-canvas` proves the
-        # bare-specifier `@import` resolved from a real directory. `letter-spacing:.15em`
-        # proves `@source` reached the package's `.tsx` (that utility lives only in
-        # Eyebrow) — Tailwind drops the leading zero and escapes the period when it
-        # compiles `tracking-[0.15em]`, so the literal source text never appears in the
-        # built CSS; this is the compiled declaration instead. `--include='*.css'` is
-        # what makes that assertion real — `tracking-[0.15em]` also shows up verbatim in
-        # the JS chunk regardless of whether Tailwind emitted anything, so a grep that
-        # reaches the JS is green even when `@source` never ran. `py-7` only exists in
-        # this fixture's own markup (verified absent from every file under
-        # packages/brand/src), so it is the control: without it, a passing
-        # `letter-spacing:.15em` check can't distinguish "the scanner reached the
-        # package" from "the scanner produced no CSS at all". The recursive
-        # `_next/static/` is deliberate too: Turbopack emits to `chunks/*.css`, and the
-        # webpack-era `_next/static/css/` does not exist. Without any of this the landing
-        # site's workspace symlink is the only path ever exercised, and a packaging
-        # regression would be found by otto-workbench's CI after the release.
-        run: |
-          grep -rq --include='*.css' "ow-canvas" out/_next/static/
-          grep -rqF --include='*.css' "letter-spacing:.15em" out/_next/static/
-          grep -rqF --include='*.css' ".py-7{" out/_next/static/
-          ls out/_next/static/media/ | grep -qi league
+        # The assertions live in the package, not here: otto-brand-verify derives every
+        # package-owned expectation — the --ow-* names, the package-only utility class,
+        # the vendored woff2 filenames — from the installed package's own source, so the
+        # tarball is checked against the version it actually shipped rather than against
+        # a copy of four strings pinned in this file. `--control py-7` is the one fact
+        # this consumer owns: a class in the fixture's own markup that the package never
+        # uses, without which a build emitting no CSS at all is indistinguishable from a
+        # working one. The bin resolves from the fixture's own node_modules because the
+        # tarball is installed there, which is the whole point of this job — the landing
+        # site exercises only the workspace-symlink path, so without it a packaging
+        # regression would surface in otto-workbench's CI after the release.
+        run: ./node_modules/.bin/otto-brand-verify --out out --control py-7

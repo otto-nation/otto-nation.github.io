@@ -14,10 +14,12 @@
     "./tokens.css": "./src/tokens.css",
     "./fonts.css": "./src/fonts.css",
     "./search-button": "./src/chrome/search-button.tsx",
+    "./verify": "./src/verify.mjs",
     "./package.json": "./package.json"
   },
   "bin": {
-    "otto-brand-check": "./bin/otto-brand-check.mjs"
+    "otto-brand-check": "./bin/otto-brand-check.mjs",
+    "otto-brand-verify": "./bin/otto-brand-verify.mjs"
   },
   "scripts": {
     "test": "tsc --noEmit && node --test"
