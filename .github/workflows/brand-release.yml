@@ -58,6 +58,8 @@ jobs:
       - name: Verify the packed tarball
         id: tarball
         uses: ./.github/actions/verify-brand-tarball
+        with:
+          version: ${{ steps.version.outputs.version }}
 
       - name: Create the release
         env:

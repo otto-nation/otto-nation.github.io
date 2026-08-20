@@ -6,6 +6,16 @@ description: >-
   publishes the one this proved. Assumes the repo is checked out, Node is set
   up, and the root install has already run.
 
+inputs:
+  version:
+    description: >-
+      Package version to expect in the packed tarball's filename. When
+      omitted, derived from packages/brand/package.json — the caller passes
+      this when it has already read the version, so it has one owner instead
+      of two.
+    required: false
+    default: ""
+
 outputs:
   tarball:
     description: Absolute path of the packed tarball this action verified.
@@ -22,8 +32,13 @@ runs:
     - name: Pack the brand tarball
       id: pack
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
-        version="$(node -p "require('./packages/brand/package.json').version")"
+        version="$VERSION"
+        if [[ -z "$version" ]]; then
+          version="$(node -p "require('./packages/brand/package.json').version")"
+        fi
         npm pack --workspace @otto-nation/brand --pack-destination "$RUNNER_TEMP"
         echo "tarball=$RUNNER_TEMP/otto-nation-brand-${version}.tgz" >> "$GITHUB_OUTPUT"
 
