@@ -53,9 +53,13 @@ cannot see — those surface as errors in your own build.
 
 The package declares an `engines` floor for Node in its `package.json`; that
 field is the authority, not this sentence. It is set by `fs.Dirent.parentPath`,
-which `otto-brand-verify` uses to walk a static export, and it sits above what
-the `next` peer dependency already requires — so a consumer on a supported Next
-is already above it.
+which `otto-brand-verify` uses to walk a static export, and it is higher than
+the floor `next` declares for itself — so satisfying your Next version is not
+enough to satisfy this package, and a Node that installs Next cleanly can still
+fail here with `entry.parentPath is undefined`. Read the field. npm's default is
+to report a mismatch as an `EBADENGINE` warning rather than an error, so unless
+you set `engine-strict`, an install that prints one still finishes and the break
+arrives later, in a build.
 
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:

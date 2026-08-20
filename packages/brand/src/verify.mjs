@@ -37,11 +37,11 @@ const PACKAGE = '@otto-nation/brand';
 const packageSource = (target) => readFileSync(new URL(target, import.meta.url), 'utf8');
 
 // entry.parentPath is what sets this package's engines floor: it replaced the
-// deprecated entry.path, and on a runtime without it every collected path would
-// be `undefined/<name>` and every check would report a stylesheet that is
-// actually there. package.json declares the floor rather than this file
-// guarding it, so the failure is an install-time warning naming the version
-// instead of a mid-run TypeError naming nothing.
+// deprecated entry.path, and on a runtime without it every collected path is
+// `undefined/<name>`, so every check reports a stylesheet that is actually
+// there. package.json declares the floor rather than this file guarding it,
+// which buys an EBADENGINE warning naming the version at install time — a
+// warning, not a gate, so an older runtime still reaches this line.
 function collectFiles(dir, predicate) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && predicate(entry.name))
