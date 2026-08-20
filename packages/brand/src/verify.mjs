@@ -36,6 +36,12 @@ const PACKAGE = '@otto-nation/brand';
 // actually installed rather than whatever copy sits near their build output.
 const packageSource = (target) => readFileSync(new URL(target, import.meta.url), 'utf8');
 
+// entry.parentPath is what sets this package's engines floor: it replaced the
+// deprecated entry.path, and on a runtime without it every collected path would
+// be `undefined/<name>` and every check would report a stylesheet that is
+// actually there. package.json declares the floor rather than this file
+// guarding it, so the failure is an install-time warning naming the version
+// instead of a mid-run TypeError naming nothing.
 function collectFiles(dir, predicate) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && predicate(entry.name))
@@ -145,10 +151,9 @@ function checkControl(control, sheetCount, emittedCss, staticDir) {
 function checkTokens(declared, emittedCss, staticDir) {
   // An empty parse is the failure this check is least able to notice on its own:
   // with nothing declared, nothing can be missing, and it would pass on every
-  // build from here on. otto-brand-check shares the same parse and only turns an
-  // empty one into a failure for a consumer whose source references an --ow-*
-  // name — one that references none passes it silently — so nothing upstream of
-  // here can be relied on to catch it.
+  // build from here on. bin/otto-brand-check.mjs shares the parse and fails the
+  // same way, but it runs before the build and a consumer may not run it at all,
+  // so this check cannot lean on it — each entry point states the guard itself.
   if (declared.size === 0) {
     return {
       ok: false,

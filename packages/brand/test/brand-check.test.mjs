@@ -61,12 +61,12 @@ function run(dir, { src = join(dir, 'app'), check = CHECK } = {}) {
   }
 }
 
-// Copies the check script into its own temp bin/ with a reindented copy of the
-// real tokens.css alongside it in src/, since the script always resolves
-// tokens.css relative to its own file location rather than a --src argument.
-// src/internal/derive.mjs comes along because the script imports the token
-// parse from there; without it the copy fails to resolve its own import.
-function checkWithReindentedTokens(indent) {
+// Copies the check script into its own temp bin/ with the given tokens.css
+// alongside it in src/, since the script always resolves tokens.css relative to
+// its own file location rather than a --src argument. src/internal/derive.mjs
+// comes along because the script imports the token parse from there; without it
+// the copy fails to resolve its own import.
+function checkWithTokens(tokensCss) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-check-pkg-'));
   tempDirs.push(dir);
   mkdirSync(join(dir, 'bin'), { recursive: true });
@@ -76,11 +76,15 @@ function checkWithReindentedTokens(indent) {
     fileURLToPath(new URL('../src/internal/derive.mjs', import.meta.url)),
     join(dir, 'src', 'internal', 'derive.mjs'),
   );
-  const tokensPath = fileURLToPath(new URL('../src/tokens.css', import.meta.url));
-  const reindented = readFileSync(tokensPath, 'utf8')
-    .replace(/^ {2}(--ow-[a-z-]+):/gm, `${indent}$1:`);
-  writeFileSync(join(dir, 'src', 'tokens.css'), reindented);
+  writeFileSync(join(dir, 'src', 'tokens.css'), tokensCss);
   return join(dir, 'bin', 'otto-brand-check.mjs');
+}
+
+function checkWithReindentedTokens(indent) {
+  const tokensPath = fileURLToPath(new URL('../src/tokens.css', import.meta.url));
+  return checkWithTokens(
+    readFileSync(tokensPath, 'utf8').replace(/^ {2}(--ow-[a-z-]+):/gm, `${indent}$1:`),
+  );
 }
 
 test('a correctly configured consumer passes', () => {
@@ -212,6 +216,33 @@ test('a four-space indented tokens.css still resolves --ow-* declarations', () =
   const check = checkWithReindentedTokens('    ');
   const { code } = run(fixture(), { check });
   assert.equal(code, 0);
+});
+
+// An empty parse is a broken package, not a clean consumer: with nothing
+// declared, nothing can be undeclared, so a source tree that happens to
+// reference no --ow-* name would pass while the check asserted nothing at all.
+// src/verify.mjs guards the same shared parse the same way — this is the guard
+// on the other entry point, not a second copy of it.
+test('a tokens.css that parses to zero --ow-* names fails instead of passing', () => {
+  const check = checkWithTokens('');
+  const { code, output } = run(
+    fixture({ page: `export default () => <p className="text-sm" />;\n` }),
+    { check },
+  );
+  assert.equal(code, 1);
+  assert.match(output, /no --ow-\* declaration remains/);
+});
+
+// The same empty parse arrives from a reformat rather than an empty file: these
+// declarations are real, they have just stopped opening a line. The consumer's
+// own references must not be blamed for it — reporting every --ow-* name in
+// their tree as undeclared names a fault that is not theirs.
+test('a reformatted tokens.css blames the package, not the consumer references', () => {
+  const check = checkWithTokens('@theme{--ow-canvas:#fff;--ow-ink:#000}\n');
+  const { code, output } = run(fixture(), { check });
+  assert.equal(code, 1);
+  assert.match(output, /no --ow-\* declaration remains/);
+  assert.doesNotMatch(output, /references --ow-ink/);
 });
 
 test('a --src directory that does not exist produces a clean message, not a crash', () => {
