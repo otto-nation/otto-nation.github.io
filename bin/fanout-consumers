@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Open a version-bump pull request in every repo listed in consumers.yml.
+#
+# Called by .github/workflows/brand-release.yml on a brand-v* tag. Needs GH_TOKEN
+# to be an org PAT scoped to the consumer repos — GITHUB_TOKEN cannot open a pull
+# request in another repository.
+#
+# Idempotent: a rerun for the same version force-updates the same branch and
+# reuses the existing PR rather than opening a second one.
+set -euo pipefail
+
+VERSION="${TAG#brand-v}"
+URL="https://github.com/otto-nation/otto-nation.github.io/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
+BRANCH="brand/bump-${VERSION}"
+FAILED=()
+
+while IFS=$'\t' read -r repo manifest; do
+  echo "==> ${repo} (${manifest})"
+  work="$(mktemp -d)"
+
+  if ! gh repo clone "$repo" "$work" -- --depth 1; then
+    FAILED+=("$repo: clone failed")
+    continue
+  fi
+
+  git -C "$work" switch -c "$BRANCH"
+
+  # jq rather than sed: the value is a URL full of slashes, and the dependency
+  # may or may not already be present.
+  tmp="$(mktemp)"
+  jq --arg url "$URL" '.dependencies["@otto-nation/brand"] = $url' \
+    "$work/$manifest" > "$tmp"
+  mv "$tmp" "$work/$manifest"
+
+  # Refresh the lockfile so the consumer's `npm ci` resolves the new tarball.
+  # Failing here is worth surfacing rather than opening a PR with a stale lock.
+  if ! npm install --prefix "$(dirname "$work/$manifest")" --package-lock-only; then
+    FAILED+=("$repo: npm install failed")
+    continue
+  fi
+
+  if git -C "$work" diff --quiet; then
+    echo "    already on ${VERSION}, nothing to do"
+    continue
+  fi
+
+  git -C "$work" -c user.name="otto-nation-bot" -c user.email="bot@otto-nation.invalid" \
+    commit -am "deps: bump @otto-nation/brand to ${VERSION}"
+  git -C "$work" push --force origin "$BRANCH"
+
+  if gh pr view "$BRANCH" --repo "$repo" --json number >/dev/null 2>&1; then
+    echo "    PR already open, branch updated"
+    continue
+  fi
+
+  gh pr create --repo "$repo" --head "$BRANCH" --base main \
+    --title "deps: bump @otto-nation/brand to ${VERSION}" \
+    --body "## What
+
+Bumps \`@otto-nation/brand\` to ${VERSION}.
+
+    ${URL}
+
+## Why
+
+Released as [\`${TAG}\`](https://github.com/otto-nation/otto-nation.github.io/releases/tag/${TAG}).
+Opened automatically by that release's fan-out job."
+done < <(yq -r '.consumers[] | [.repo, .manifest] | @tsv' consumers.yml)
+
+if (( ${#FAILED[@]} > 0 )); then
+  echo "fan-out failed for ${#FAILED[@]} consumer(s):" >&2
+  printf '  %s\n' "${FAILED[@]}" >&2
+  exit 1
+fi

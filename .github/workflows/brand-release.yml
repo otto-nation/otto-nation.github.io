@@ -71,3 +71,30 @@ jobs:
             "$TARBALL" \
             --title "@otto-nation/brand v${VERSION}" \
             --notes "Install: \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"
+
+  fanout:
+    name: Open version-bump PRs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: release
+    # GITHUB_TOKEN cannot open a pull request in another repository, so this job
+    # is the only part of the release that needs a credential of its own. The
+    # release itself completes without it; consumers are bumped by hand if the
+    # secret is absent.
+    if: ${{ github.repository == 'otto-nation/otto-nation.github.io' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Consumer lockfiles are refreshed with `npm install --package-lock-only`,
+      # so this job needs a Node toolchain even though it builds nothing.
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Open a bump PR in each consumer
+        env:
+          GH_TOKEN: ${{ secrets.CONSUMER_PAT }}
+          TAG: ${{ github.ref_name }}
+        run: bin/fanout-consumers
