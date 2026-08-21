@@ -1,0 +1,10 @@
+# Repos that receive an automated version-bump pull request on each brand-v* tag.
+# Adding a consumer is one entry here plus two config lines in that repo
+# (@source and transpilePackages) — otto-brand-check, which ships with the
+# package, is what fails their build if either is missing.
+#
+# `manifest` is the package.json holding the @otto-nation/brand dependency,
+# relative to that repo's root.
+consumers:
+  - repo: otto-nation/otto-workbench
+    manifest: site/package.json
