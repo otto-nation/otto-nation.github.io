@@ -24,5 +24,13 @@ into this tree.
 
 A `brand-v*` tag releases the package: `.github/workflows/brand-release.yml`
 packs it, proves the tarball builds a real consumer in `fixtures/tarball-consumer/`,
-and attaches that same tarball to a GitHub release. There is still no list of
-downstream consumers, so a version bump reaches one by hand.
+and attaches that same tarball to a GitHub release. The same workflow then runs
+`bin/fanout-consumers`, which opens a version-bump pull request in every repo
+listed in `consumers.yml`. Nothing is merged automatically — each consumer's own
+CI decides whether the new version is safe, and `otto-brand-check` fails that
+build if the repo is misconfigured.
+
+Onboarding a consumer is one entry in `consumers.yml` plus two lines of config in
+that repo. Fan-out needs a `CONSUMER_PAT` secret scoped to the listed repos,
+because `GITHUB_TOKEN` cannot open a pull request in another repository; without
+it the release still succeeds and the bump is done by hand.
