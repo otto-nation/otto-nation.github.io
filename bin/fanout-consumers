@@ -15,7 +15,12 @@
 # and every consumer after it would silently never be attempted.
 set -euo pipefail
 
-REPO="otto-nation/otto-nation.github.io"
+# Actions sets GITHUB_REPOSITORY, which is the one place this name should come
+# from — a rename then reaches the release URL and the pull request body without
+# anyone editing this file. The fallback is for running the script by hand
+# outside a runner, where it would otherwise trip `set -u` before reaching a
+# single guard.
+REPO="${GITHUB_REPOSITORY:-otto-nation/otto-nation.github.io}"
 
 # TAG arrives from a tag push, where the workflow's own trigger constrains its
 # shape, or from a manual dispatch, where nothing does. A tag that is not
@@ -67,9 +72,8 @@ fi
 # `gh repo clone` leaves an https remote behind, and git does not read GH_TOKEN —
 # only gh does. Without a credential helper the push below has no credentials at
 # all, asks for a username, and dies on a runner with no terminal to ask. This
-# routes the same token into git. --hostname is required: with the token supplied
-# by the environment rather than a stored login, gh has no host list to infer
-# from and the bare command fails.
+# routes the same token into git. --hostname names the host explicitly rather
+# than leaving gh to infer one from a login this job does not have.
 if ! gh auth setup-git --hostname github.com; then
   echo "could not register gh as git's credential helper" >&2
   exit 1
@@ -138,7 +142,7 @@ Bumps \`@otto-nation/brand\` to ${VERSION}.
 
 ## Why
 
-Released as [\`${TAG}\`](https://github.com/otto-nation/otto-nation.github.io/releases/tag/${TAG}).
+Released as [\`${TAG}\`](https://github.com/${REPO}/releases/tag/${TAG}).
 Opened automatically by that release's fan-out job."; then
     FAILED+=("$repo: could not open a pull request")
   fi
