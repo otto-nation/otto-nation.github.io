@@ -34,3 +34,12 @@ Onboarding a consumer is one entry in `consumers.yml` plus two lines of config i
 that repo. Fan-out needs a `CONSUMER_PAT` secret scoped to the listed repos,
 because `GITHUB_TOKEN` cannot open a pull request in another repository; without
 it the release still succeeds and the bump is done by hand.
+
+A fan-out that fails leaves the release published, and that tag cannot be pushed
+again to retry it. Run the fan-out on its own instead, against a release that is
+already out:
+
+    gh workflow run brand-release.yml -f tag=brand-v1.2.3
+
+It reruns safely: a consumer already on the version is skipped, and one whose
+branch is still open has it updated rather than opening a second pull request.

@@ -4,6 +4,18 @@ on:
   push:
     tags:
       - "brand-v*"
+  # The fan-out can fail after the release has already published, and a tag
+  # cannot be replayed: `gh release create` refuses a release that exists, and
+  # rerunning the original run checks out the tag, so it would replay the same
+  # code that just failed. Without a way in, every fan-out fix would need a
+  # version bump nobody wants. This dispatches the fan-out alone against a
+  # release that is already out.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing brand-v* tag to fan out to consumers"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -17,6 +29,9 @@ jobs:
     name: Verify and publish
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # A dispatch targets a release that already published; there is nothing here
+    # left to do for it.
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -81,10 +96,23 @@ jobs:
     # is the only part of the release that needs a credential of its own. The
     # release itself completes without it; consumers are bumped by hand if the
     # secret is absent.
-    if: ${{ github.repository == 'otto-nation/otto-nation.github.io' }}
+    #
+    # `always()` is what lets a dispatch reach this job at all — `release` is
+    # skipped there, and a skipped dependency blocks a dependent job under the
+    # default condition. The result is still checked, so a failed publish on the
+    # tag-push path does not fan out a release that never happened.
+    if: >-
+      ${{ always()
+      && (needs.release.result == 'success' || needs.release.result == 'skipped')
+      && github.repository == 'otto-nation/otto-nation.github.io' }}
     steps:
+      # No ref: the fan-out script has to come from the default branch, not from
+      # the tag. A tag freezes the script as it was when it was cut, which is
+      # exactly the copy that failed if this is a rerun of a broken fan-out.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       # Consumer lockfiles are refreshed with `npm install --package-lock-only`,
       # so this job needs a Node toolchain even though it builds nothing.
@@ -96,5 +124,5 @@ jobs:
       - name: Open a bump PR in each consumer
         env:
           GH_TOKEN: ${{ secrets.CONSUMER_PAT }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: bin/fanout-consumers

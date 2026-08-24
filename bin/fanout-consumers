@@ -15,10 +15,36 @@
 # and every consumer after it would silently never be attempted.
 set -euo pipefail
 
+# Actions sets GITHUB_REPOSITORY, which is the one place this name should come
+# from — a rename then reaches the release URL and the pull request body without
+# anyone editing this file. The fallback is for running the script by hand
+# outside a runner, where it would otherwise trip `set -u` before reaching a
+# single guard.
+REPO="${GITHUB_REPOSITORY:-otto-nation/otto-nation.github.io}"
+
+# TAG arrives from a tag push, where the workflow's own trigger constrains its
+# shape, or from a manual dispatch, where nothing does. A tag that is not
+# brand-v* leaves VERSION equal to TAG and builds a download URL for a release
+# that cannot exist, so the shape is checked before anything is derived from it.
+if [[ "$TAG" != brand-v* ]]; then
+  echo "TAG must name a brand-v* tag, got: ${TAG}" >&2
+  exit 1
+fi
+
 VERSION="${TAG#brand-v}"
-URL="https://github.com/otto-nation/otto-nation.github.io/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
+URL="https://github.com/${REPO}/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
 BRANCH="brand/bump-${VERSION}"
 FAILED=()
+
+# A consumer's package.json is only as good as the URL in it, and npm does not
+# resolve that URL until someone installs. Opening the pull requests first and
+# discovering the asset is missing later would pin every consumer to a 404, so
+# the asset is confirmed to exist before any repo is touched.
+if ! gh release view "$TAG" --repo "$REPO" --json assets \
+  --jq '.assets[].name' | grep -qxF "otto-nation-brand-${VERSION}.tgz"; then
+  echo "no otto-nation-brand-${VERSION}.tgz asset on ${TAG} — nothing to bump consumers to" >&2
+  exit 1
+fi
 
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
@@ -40,6 +66,16 @@ grep -v '^[[:space:]]*$' "$SCRATCH/consumers.raw" > "$CONSUMERS" || true
 
 if [[ ! -s "$CONSUMERS" ]]; then
   echo "consumers.yml lists no consumers — refusing to report a successful fan-out" >&2
+  exit 1
+fi
+
+# `gh repo clone` leaves an https remote behind, and git does not read GH_TOKEN —
+# only gh does. Without a credential helper the push below has no credentials at
+# all, asks for a username, and dies on a runner with no terminal to ask. This
+# routes the same token into git. --hostname names the host explicitly rather
+# than leaving gh to infer one from a login this job does not have.
+if ! gh auth setup-git --hostname github.com; then
+  echo "could not register gh as git's credential helper" >&2
   exit 1
 fi
 
@@ -106,7 +142,7 @@ Bumps \`@otto-nation/brand\` to ${VERSION}.
 
 ## Why
 
-Released as [\`${TAG}\`](https://github.com/otto-nation/otto-nation.github.io/releases/tag/${TAG}).
+Released as [\`${TAG}\`](https://github.com/${REPO}/releases/tag/${TAG}).
 Opened automatically by that release's fan-out job."; then
     FAILED+=("$repo: could not open a pull request")
   fi
