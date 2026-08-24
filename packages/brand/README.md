@@ -65,7 +65,7 @@ arrives later, in a build.
    consumer, contributor, or CI job needs a token to install:
 
    ```json
-   "@otto-nation/brand": "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.0/otto-nation-brand-1.0.0.tgz"
+   "@otto-nation/brand": "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.1/otto-nation-brand-1.0.1.tgz"
    ```
 
 2. In your Tailwind entrypoint:
