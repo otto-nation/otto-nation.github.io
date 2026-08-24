@@ -15,10 +15,31 @@
 # and every consumer after it would silently never be attempted.
 set -euo pipefail
 
+REPO="otto-nation/otto-nation.github.io"
+
+# TAG arrives from a tag push, where the workflow's own trigger constrains its
+# shape, or from a manual dispatch, where nothing does. A tag that is not
+# brand-v* leaves VERSION equal to TAG and builds a download URL for a release
+# that cannot exist, so the shape is checked before anything is derived from it.
+if [[ "$TAG" != brand-v* ]]; then
+  echo "TAG must name a brand-v* tag, got: ${TAG}" >&2
+  exit 1
+fi
+
 VERSION="${TAG#brand-v}"
-URL="https://github.com/otto-nation/otto-nation.github.io/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
+URL="https://github.com/${REPO}/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
 BRANCH="brand/bump-${VERSION}"
 FAILED=()
+
+# A consumer's package.json is only as good as the URL in it, and npm does not
+# resolve that URL until someone installs. Opening the pull requests first and
+# discovering the asset is missing later would pin every consumer to a 404, so
+# the asset is confirmed to exist before any repo is touched.
+if ! gh release view "$TAG" --repo "$REPO" --json assets \
+  --jq '.assets[].name' | grep -qxF "otto-nation-brand-${VERSION}.tgz"; then
+  echo "no otto-nation-brand-${VERSION}.tgz asset on ${TAG} — nothing to bump consumers to" >&2
+  exit 1
+fi
 
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
@@ -40,6 +61,17 @@ grep -v '^[[:space:]]*$' "$SCRATCH/consumers.raw" > "$CONSUMERS" || true
 
 if [[ ! -s "$CONSUMERS" ]]; then
   echo "consumers.yml lists no consumers — refusing to report a successful fan-out" >&2
+  exit 1
+fi
+
+# `gh repo clone` leaves an https remote behind, and git does not read GH_TOKEN —
+# only gh does. Without a credential helper the push below has no credentials at
+# all, asks for a username, and dies on a runner with no terminal to ask. This
+# routes the same token into git. --hostname is required: with the token supplied
+# by the environment rather than a stored login, gh has no host list to infer
+# from and the bare command fails.
+if ! gh auth setup-git --hostname github.com; then
+  echo "could not register gh as git's credential helper" >&2
   exit 1
 fi
 
