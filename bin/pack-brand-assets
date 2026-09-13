@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Packs the plain-CSS half of @otto-nation/brand — tokens.css, fonts.css, the
+# vendored font files, and their OFL licenses — into a standalone zip. This is
+# the release asset for a consumer with no npm and no Tailwind build at all: a
+# static HTML page, a Vite app with no @otto-nation/brand dependency, anything
+# that today would otherwise hand-copy these files out of packages/brand/src
+# (as homelab's training-log and otto-nation/plans both do — the latter's own
+# copy notes it would rather point at a real release than a hand-copy).
+#
+# Called by .github/workflows/brand-release.yml on a brand-v* tag, alongside
+# the npm tarball. Also runnable by hand:
+#   bin/pack-brand-assets [dest-dir]
+#
+# The file list below is the one place it's named. packages/brand/test/
+# pack-assets.test.mjs asserts the zip's contents against this same list by
+# running this script and inspecting its output, so a file added or removed
+# here becomes a new expectation with no second edit to keep in step — the
+# same "derive from source, don't duplicate" rule otto-brand-check follows
+# for declaredTokens (see that script's comment on src/internal/derive.mjs).
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BRAND_SRC="$REPO_ROOT/packages/brand/src"
+DEST="${1:-$REPO_ROOT}"
+
+VERSION="$(node -p "require('$REPO_ROOT/packages/brand/package.json').version")"
+
+# Relative to $BRAND_SRC. Listed flat rather than derived from `find fonts/`
+# because a stray file dropped into src/fonts/ — a scratch export, a
+# .DS_Store — must not silently ride along into a release asset nobody
+# reviewed for it.
+FILES=(
+  "tokens.css"
+  "fonts.css"
+  "fonts/LeagueSpartanVariable.woff2"
+  "fonts/LeagueMonoVariable.woff2"
+  "fonts/OFL-LeagueSpartan.txt"
+  "fonts/OFL-LeagueMono.txt"
+)
+
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+
+for file in "${FILES[@]}"; do
+  src="$BRAND_SRC/$file"
+  if [[ ! -f "$src" ]]; then
+    echo "pack-brand-assets: missing $src" >&2
+    exit 1
+  fi
+  mkdir -p "$STAGE/$(dirname "$file")"
+  cp "$src" "$STAGE/$file"
+done
+
+ZIP="$DEST/otto-nation-brand-assets-${VERSION}.zip"
+rm -f "$ZIP"
+# -X drops zip's own extended-attribute/timestamp metadata, so packing the
+# same source twice produces byte-identical output — useful for the test,
+# which packs into two different temp dirs and diffs the extracted contents
+# rather than trusting the zip alone.
+(cd "$STAGE" && zip -qrX "$ZIP" .)
+
+echo "$ZIP"

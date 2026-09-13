@@ -65,7 +65,7 @@ arrives later, in a build.
    consumer, contributor, or CI job needs a token to install:
 
    ```json
-   "@otto-nation/brand": "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.1/otto-nation-brand-1.0.1.tgz"
+   "@otto-nation/brand": "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.2/otto-nation-brand-1.0.2.tgz"
    ```
 
 2. In your Tailwind entrypoint:
@@ -124,6 +124,40 @@ arrives later, in a build.
    to the package's source. The package typechecks itself under `strict` with
    `moduleResolution: "bundler"` (`packages/brand/tsconfig.json`, run by
    `npm test`), so that combination is the supported one.
+
+## No-build installation
+
+Steps 1–5 above are all for a Next.js + Tailwind consumer. A consumer with no
+npm and no build step at all — a static HTML page, a Vite app that hasn't
+taken this package on as a dependency — can't use any of that: the React
+components need a JSX/Tailwind build to render, but `tokens.css` and
+`fonts.css` are themselves plain CSS with no build step of their own.
+
+Every `brand-v*` release attaches a second asset alongside the npm tarball —
+`otto-nation-brand-assets-<version>.zip` — containing exactly `tokens.css`,
+`fonts.css`, the two vendored woff2 files, and their OFL licenses, packed by
+`bin/pack-brand-assets` from the same source the npm tarball ships. Download
+and vendor it into the consumer's own repo:
+
+```bash
+curl -LO https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.2/otto-nation-brand-assets-1.0.2.zip
+unzip otto-nation-brand-assets-1.0.2.zip -d path/to/vendored/theme
+```
+
+Then reference the two stylesheets however the consumer loads CSS — a plain
+`<link>` for a static page, an `@import` for anything with its own build.
+Nothing here is enforced by `otto-brand-check`: that script assumes a
+Tailwind entrypoint and a Next config, neither of which exists in a no-build
+consumer, so getting the reference paths right is on the consumer. Pin the
+version in whatever the consumer's own vendoring note is (a README next to
+the vendored files works) and re-run the two commands above to upgrade —
+there is no automatic sync, the same as the npm path has none.
+
+This is the same shape `homelab`'s `services/training-log` and
+`otto-nation/plans` were already hand-copying `tokens.css`/`fonts.css` out of
+`packages/brand/src` to get, before this asset existed. Point new vendoring
+at this zip instead of at another repo's copy of the two files — each copy
+of a copy is one more place the pin can go stale unnoticed.
 
 ## Verifying a build
 
