@@ -76,16 +76,29 @@ jobs:
         with:
           version: ${{ steps.version.outputs.version }}
 
+      # Second release asset, for a consumer with no npm and no Tailwind build
+      # at all — a static HTML page, a Vite app with no @otto-nation/brand
+      # dependency. packages/brand/test/pack-assets.test.mjs (run above, in
+      # the Test step) already proved this script's output byte-matches
+      # packages/brand/src, so nothing here re-verifies the zip's contents.
+      - name: Pack the vanilla CSS assets
+        id: assets
+        run: echo "zip=$(bin/pack-brand-assets "$RUNNER_TEMP")" >> "$GITHUB_OUTPUT"
+
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           TARBALL: ${{ steps.tarball.outputs.tarball }}
+          ASSETS_ZIP: ${{ steps.assets.outputs.zip }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
             "$TARBALL" \
+            "$ASSETS_ZIP" \
             --title "@otto-nation/brand v${VERSION}" \
-            --notes "Install: \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"
+            --notes "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`
+
+No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-assets-${VERSION}.zip\`"
 
   fanout:
     name: Open version-bump PRs
