@@ -85,20 +85,39 @@ jobs:
         id: assets
         run: echo "zip=$(bin/pack-brand-assets "$RUNNER_TEMP")" >> "$GITHUB_OUTPUT"
 
+      # A multi-line --notes string that goes straight into a YAML `|` block
+      # scalar is one stray unindented line away from ending the block early
+      # and producing a workflow file GitHub can't even parse — which is
+      # exactly the failure a prior version of this step hit (0 jobs
+      # scheduled, no release published). Building the notes as a file sidesteps
+      # that whole class of quoting/indentation hazard: nothing about its
+      # content is YAML-significant.
+      - name: Write the release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          path="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"
+            echo
+            echo "No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-assets-${VERSION}.zip\`"
+          } > "$path"
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           TARBALL: ${{ steps.tarball.outputs.tarball }}
           ASSETS_ZIP: ${{ steps.assets.outputs.zip }}
+          NOTES: ${{ steps.notes.outputs.path }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
             "$TARBALL" \
             "$ASSETS_ZIP" \
             --title "@otto-nation/brand v${VERSION}" \
-            --notes "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`
-
-No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-assets-${VERSION}.zip\`"
+            --notes-file "$NOTES"
 
   fanout:
     name: Open version-bump PRs
