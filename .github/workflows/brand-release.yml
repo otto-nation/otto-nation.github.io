@@ -1,13 +1,24 @@
 name: Release brand package
 
 on:
-  # release-please runs on every push to main, opening or updating a release PR
-  # for any conventional commit touching packages/brand/. Merging that PR is
-  # itself a push to main — this same trigger — and that's the run where
-  # release-please tags the release and release_created comes back true,
-  # gating the packaging job below.
+  # release-please runs on every push to main that touches packages/brand/ or
+  # its own config, opening or updating a release PR for any conventional
+  # commit found there. Merging that PR is itself a push to main — this same
+  # trigger — and that's the run where release-please tags the release and
+  # release_created comes back true, gating the packaging job below.
+  #
+  # The path filter is safe to add on top of what release-please already does
+  # internally: it restricts commits to this same path when deciding what
+  # belongs to the packages/brand component, so nothing this filter excludes
+  # would have counted toward a release anyway — it only skips the job on a
+  # push (site/-only, README-only, an unrelated workflow) release-please's own
+  # analysis would have found nothing to do for.
   push:
     branches: [main]
+    paths:
+      - "packages/brand/**"
+      - ".github/.release-please-config.json"
+      - ".github/.release-please-manifest.json"
   # The fan-out can fail after the release has already published, and merging
   # the release PR again does nothing — release-please has no new conventional
   # commits to propose it for. Without a way in, every fan-out fix would need a
@@ -46,11 +57,8 @@ jobs:
       tag_name: ${{ steps.release.outputs['packages/brand--tag_name'] }}
       body: ${{ steps.release.outputs['packages/brand--body'] }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
+      # No checkout: release-please-action reads config-file/manifest-file and
+      # commit history through the GitHub API, not the local working tree.
       - name: Create or update the release PR
         id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
