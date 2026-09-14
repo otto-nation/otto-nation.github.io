@@ -22,22 +22,26 @@ into this tree.
     npm test        # typechecks packages/brand and runs its node --test suite
     npm run build   # builds site/; the brand package ships source and has no build step
 
-A `brand-v*` tag releases the package: `.github/workflows/brand-release.yml`
-packs it, proves the tarball builds a real consumer in `fixtures/tarball-consumer/`,
-and attaches that same tarball to a GitHub release. The same workflow then runs
-`bin/fanout-consumers`, which opens a version-bump pull request in every repo
-listed in `consumers.yml`. Nothing is merged automatically — each consumer's own
-CI decides whether the new version is safe, and `otto-brand-check` fails that
-build if the repo is misconfigured.
+A conventional commit touching `packages/brand/` merged to `main` opens or
+updates a release PR: `release-please` bumps `packages/brand/package.json` and
+writes `packages/brand/CHANGELOG.md`. Merging that PR tags the release, and
+`.github/workflows/brand-release.yml` packs the package, proves the tarball
+builds a real consumer in `fixtures/tarball-consumer/`, and attaches that
+tarball plus a vanilla-CSS assets zip to the GitHub release release-please
+created. The same workflow then runs `bin/fanout-consumers`, which opens a
+version-bump pull request in every repo listed in `consumers.yml`. Nothing is
+merged automatically — each consumer's own CI decides whether the new version
+is safe, and `otto-brand-check` fails that build if the repo is misconfigured.
 
 Onboarding a consumer is one entry in `consumers.yml` plus two lines of config in
 that repo. Fan-out needs a `CONSUMER_PAT` secret scoped to the listed repos,
 because `GITHUB_TOKEN` cannot open a pull request in another repository; without
 it the release still succeeds and the bump is done by hand.
 
-A fan-out that fails leaves the release published, and that tag cannot be pushed
-again to retry it. Run the fan-out on its own instead, against a release that is
-already out:
+A fan-out that fails leaves the release published, and merging the release PR
+again does nothing — release-please has no new conventional commits to propose
+it for. Run the fan-out on its own instead, against a release that is already
+out:
 
     gh workflow run brand-release.yml -f tag=brand-v1.2.3
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Open a version-bump pull request in every repo listed in consumers.yml.
 #
-# Called by .github/workflows/brand-release.yml on a brand-v* tag. Needs GH_TOKEN
-# to be an org PAT scoped to the consumer repos — GITHUB_TOKEN cannot open a pull
-# request in another repository.
+# Called by .github/workflows/brand-release.yml once release-please tags a
+# release, or via workflow_dispatch against an existing brand-v* tag. Needs
+# GH_TOKEN to be an org PAT scoped to the consumer repos — GITHUB_TOKEN cannot
+# open a pull request in another repository.
 #
 # Idempotent: a rerun for the same version force-updates the same branch and
 # reuses the existing PR rather than opening a second one.

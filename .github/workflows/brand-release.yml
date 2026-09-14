@@ -1,15 +1,30 @@
 name: Release brand package
 
 on:
+  # release-please runs on every push to main that touches packages/brand/ or
+  # its own config, opening or updating a release PR for any conventional
+  # commit found there. Merging that PR is itself a push to main — this same
+  # trigger — and that's the run where release-please tags the release and
+  # release_created comes back true, gating the packaging job below.
+  #
+  # The path filter is safe to add on top of what release-please already does
+  # internally: it restricts commits to this same path when deciding what
+  # belongs to the packages/brand component, so nothing this filter excludes
+  # would have counted toward a release anyway — it only skips the job on a
+  # push (site/-only, README-only, an unrelated workflow) release-please's own
+  # analysis would have found nothing to do for.
   push:
-    tags:
-      - "brand-v*"
-  # The fan-out can fail after the release has already published, and a tag
-  # cannot be replayed: `gh release create` refuses a release that exists, and
-  # rerunning the original run checks out the tag, so it would replay the same
-  # code that just failed. Without a way in, every fan-out fix would need a
+    branches: [main]
+    paths:
+      - "packages/brand/**"
+      - ".github/.release-please-config.json"
+      - ".github/.release-please-manifest.json"
+  # The fan-out can fail after the release has already published, and merging
+  # the release PR again does nothing — release-please has no new conventional
+  # commits to propose it for. Without a way in, every fan-out fix would need a
   # version bump nobody wants. This dispatches the fan-out alone against a
-  # release that is already out.
+  # release that is already out — `package` never runs on a dispatch (see its
+  # own `if`), since there is nothing left there to verify or upload either.
   workflow_dispatch:
     inputs:
       tag:
@@ -19,22 +34,64 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  # release-please-action labels the release PR (autorelease: pending/tagged)
+  # by default — labeling a PR goes through the Issues API and needs this even
+  # though nothing here touches an issue directly.
+  issues: write
+
+# Two pushes touching packages/brand close together would otherwise start two
+# overlapping release_please runs against the same release-please branch/PR;
+# serializing (not cancelling) them is what otto-workbench's own pipeline does
+# for the same reason — a cancelled mid-run release-please invocation is worse
+# than a queued one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  release:
+  # Job id has no hyphen: `needs.release-please.x` in an expression parses the
+  # hyphen as subtraction, not as part of the identifier.
+  release_please:
+    name: Release please
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'push' }}
+    outputs:
+      release_created: ${{ steps.release.outputs['packages/brand--release_created'] }}
+      tag_name: ${{ steps.release.outputs['packages/brand--tag_name'] }}
+      body: ${{ steps.release.outputs['packages/brand--body'] }}
+    steps:
+      # No checkout: release-please-action reads config-file/manifest-file and
+      # commit history through the GitHub API, not the local working tree.
+      - name: Create or update the release PR
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .github/.release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+
+  package:
     name: Verify and publish
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    # A dispatch targets a release that already published; there is nothing here
-    # left to do for it.
-    if: ${{ github.event_name == 'push' }}
+    needs: release_please
+    # A dispatch targets a release that already published — there is nothing
+    # here left to verify or upload for it, only the fan-out below. This job
+    # only ever runs for the push that release-please just tagged.
+    if: ${{ needs.release_please.outputs.release_created == 'true' }}
+    outputs:
+      tag: ${{ needs.release_please.outputs.tag_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release_please.outputs.tag_name }}
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -42,19 +99,21 @@ jobs:
           node-version-file: .node-version
           cache: "npm"
 
-      # A tag that disagrees with the manifest would publish a tarball whose
-      # filename and contents name different versions, and every consumer would
-      # pin a URL that does not describe what it installs.
-      - name: Verify tag matches the manifest version
-        run: |
-          manifest="$(node -p "require('./packages/brand/package.json').version")"
-          tagged="${GITHUB_REF_NAME#brand-v}"
-          if [[ "$manifest" != "$tagged" ]]; then
-            echo "tag $GITHUB_REF_NAME says $tagged, packages/brand/package.json says $manifest" >&2
-            exit 1
-          fi
-          echo "version=$manifest" >> "$GITHUB_OUTPUT"
+      # release-please already bumped and committed this before tagging, so
+      # this just reads what it wrote rather than deriving or verifying
+      # anything — a tag that disagreed with the manifest is a state
+      # release-please cannot produce.
+      #
+      # The version is assigned to a variable before being echoed rather than
+      # substituted straight into the echo argument: under `set -e`, a failing
+      # `$(...)` only aborts the script when it's the assignment's own exit
+      # status — embedded in another command's argument, that command's (here
+      # echo's, always 0) exit status is what `-e` sees instead.
+      - name: Read the release version
         id: version
+        run: |
+          version="$(node -p "require('./packages/brand/package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -66,10 +125,7 @@ jobs:
       # reached through a symlink into the repo rather than through what `files`
       # actually packed. A tarball missing a file the tests never noticed would
       # pass it and break on install, so the publish is gated on the same
-      # pack → install → build → verify sequence CI runs. A tag cut from a commit
-      # that never went through the PR-gated ci.yml — a direct push to main, a
-      # rebase or cherry-pick before tagging — otherwise reaches consumers with
-      # no packaging guard in front of it at all.
+      # pack → install → build → verify sequence CI runs.
       - name: Verify the packed tarball
         id: tarball
         uses: ./.github/actions/verify-brand-tarball
@@ -85,57 +141,64 @@ jobs:
         id: assets
         run: echo "zip=$(bin/pack-brand-assets "$RUNNER_TEMP")" >> "$GITHUB_OUTPUT"
 
-      # A multi-line --notes string that goes straight into a YAML `|` block
-      # scalar is one stray unindented line away from ending the block early
-      # and producing a workflow file GitHub can't even parse — which is
-      # exactly the failure a prior version of this step hit (0 jobs
-      # scheduled, no release published). Building the notes as a file sidesteps
-      # that whole class of quoting/indentation hazard: nothing about its
-      # content is YAML-significant.
-      - name: Write the release notes
-        id: notes
+      # release-please already created the release and wrote its own
+      # changelog-based notes (passed through as this job's `body` output)
+      # saying *what* changed. This appends the install-URL addendum saying
+      # *how* to install it rather than replacing those notes — both are
+      # worth keeping.
+      - name: Append install notes to the release
         env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release_please.outputs.tag_name }}
           VERSION: ${{ steps.version.outputs.version }}
+          BODY: ${{ needs.release_please.outputs.body }}
         run: |
           path="$RUNNER_TEMP/release-notes.md"
           {
-            echo "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-${VERSION}.tgz\`"
+            echo "$BODY"
             echo
-            echo "No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/otto-nation-brand-assets-${VERSION}.zip\`"
+            echo "---"
+            echo
+            echo "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz\`"
+            echo
+            echo "No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/otto-nation-brand-assets-${VERSION}.zip\`"
           } > "$path"
-          echo "path=$path" >> "$GITHUB_OUTPUT"
+          gh release edit "$TAG" --notes-file "$path"
 
-      - name: Create the release
+      # release-please already created the release object before this job's
+      # assets exist, so a packaging failure now leaves a published release
+      # with no tarball rather than no release. The tarball verify step above
+      # re-runs on every attempt, so a *broken* asset is never uploaded, and
+      # --clobber makes a retry idempotent.
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ needs.release_please.outputs.tag_name }}
           TARBALL: ${{ steps.tarball.outputs.tarball }}
           ASSETS_ZIP: ${{ steps.assets.outputs.zip }}
-          NOTES: ${{ steps.notes.outputs.path }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            "$TARBALL" \
-            "$ASSETS_ZIP" \
-            --title "@otto-nation/brand v${VERSION}" \
-            --notes-file "$NOTES"
+          gh release upload "$TAG" "$TARBALL" "$ASSETS_ZIP" --clobber
 
   fanout:
     name: Open version-bump PRs
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    needs: release
+    needs: package
     # GITHUB_TOKEN cannot open a pull request in another repository, so this job
     # is the only part of the release that needs a credential of its own. The
     # release itself completes without it; consumers are bumped by hand if the
     # secret is absent.
     #
-    # `always()` is what lets a dispatch reach this job at all — `release` is
-    # skipped there, and a skipped dependency blocks a dependent job under the
-    # default condition. The result is still checked, so a failed publish on the
-    # tag-push path does not fan out a release that never happened.
+    # `package` is skipped both on a dispatch (by design — see its own `if`)
+    # and on the far more common case of an ordinary push that release-please
+    # only turns into an updated release PR, not a publish. Those two skips
+    # must be told apart: `always()` is what lets a dispatch reach this job at
+    # all past a skipped dependency, and the event-name check is what stops an
+    # ordinary push's skip from doing the same.
     if: >-
       ${{ always()
-      && (needs.release.result == 'success' || needs.release.result == 'skipped')
+      && ((github.event_name == 'push' && needs.package.result == 'success')
+      || github.event_name == 'workflow_dispatch')
       && github.repository == 'otto-nation/otto-nation.github.io' }}
     steps:
       # No ref: the fan-out script has to come from the default branch, not from
@@ -156,5 +219,5 @@ jobs:
       - name: Open a bump PR in each consumer
         env:
           GH_TOKEN: ${{ secrets.CONSUMER_PAT }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ needs.package.outputs.tag || inputs.tag }}
         run: bin/fanout-consumers
