@@ -40,6 +40,15 @@ permissions:
   # though nothing here touches an issue directly.
   issues: write
 
+# Two pushes touching packages/brand close together would otherwise start two
+# overlapping release_please runs against the same release-please branch/PR;
+# serializing (not cancelling) them is what otto-workbench's own pipeline does
+# for the same reason — a cancelled mid-run release-please invocation is worse
+# than a queued one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash

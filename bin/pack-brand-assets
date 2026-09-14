@@ -7,8 +7,8 @@
 # (as homelab's training-log and otto-nation/plans both do — the latter's own
 # copy notes it would rather point at a real release than a hand-copy).
 #
-# Called by .github/workflows/brand-release.yml on a brand-v* tag, alongside
-# the npm tarball. Also runnable by hand:
+# Called by .github/workflows/brand-release.yml once release-please tags a
+# release, alongside the npm tarball. Also runnable by hand:
 #   bin/pack-brand-assets [dest-dir]
 #
 # The file list below is the one place it's named. packages/brand/test/
