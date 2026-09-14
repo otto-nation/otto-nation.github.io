@@ -11,8 +11,9 @@ on:
   # The fan-out can fail after the release has already published, and merging
   # the release PR again does nothing — release-please has no new conventional
   # commits to propose it for. Without a way in, every fan-out fix would need a
-  # version bump nobody wants. This dispatches packaging + the fan-out alone
-  # against a release that is already out.
+  # version bump nobody wants. This dispatches the fan-out alone against a
+  # release that is already out — `package` never runs on a dispatch (see its
+  # own `if`), since there is nothing left there to verify or upload either.
   workflow_dispatch:
     inputs:
       tag:
@@ -23,6 +24,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # release-please-action labels the release PR (autorelease: pending/tagged)
+  # by default — labeling a PR goes through the Issues API and needs this even
+  # though nothing here touches an issue directly.
+  issues: write
 
 defaults:
   run:
@@ -39,6 +44,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs['packages/brand--release_created'] }}
       tag_name: ${{ steps.release.outputs['packages/brand--tag_name'] }}
+      body: ${{ steps.release.outputs['packages/brand--body'] }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,16 +69,12 @@ jobs:
     # only ever runs for the push that release-please just tagged.
     if: ${{ needs.release_please.outputs.release_created == 'true' }}
     outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+      tag: ${{ needs.release_please.outputs.tag_name }}
     steps:
-      - name: Determine the release tag
-        id: tag
-        run: echo "tag=${{ needs.release_please.outputs.tag_name }}" >> "$GITHUB_OUTPUT"
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.tag.outputs.tag }}
+          ref: ${{ needs.release_please.outputs.tag_name }}
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -84,9 +86,17 @@ jobs:
       # this just reads what it wrote rather than deriving or verifying
       # anything — a tag that disagreed with the manifest is a state
       # release-please cannot produce.
+      #
+      # The version is assigned to a variable before being echoed rather than
+      # substituted straight into the echo argument: under `set -e`, a failing
+      # `$(...)` only aborts the script when it's the assignment's own exit
+      # status — embedded in another command's argument, that command's (here
+      # echo's, always 0) exit status is what `-e` sees instead.
       - name: Read the release version
         id: version
-        run: echo "version=$(node -p "require('./packages/brand/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          version="$(node -p "require('./packages/brand/package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -115,41 +125,42 @@ jobs:
         run: echo "zip=$(bin/pack-brand-assets "$RUNNER_TEMP")" >> "$GITHUB_OUTPUT"
 
       # release-please already created the release and wrote its own
-      # changelog-based notes saying *what* changed. This appends the
-      # install-URL addendum saying *how* to install it rather than
-      # replacing those notes — both are worth keeping.
+      # changelog-based notes (passed through as this job's `body` output)
+      # saying *what* changed. This appends the install-URL addendum saying
+      # *how* to install it rather than replacing those notes — both are
+      # worth keeping.
       - name: Append install notes to the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
+          TAG: ${{ needs.release_please.outputs.tag_name }}
           VERSION: ${{ steps.version.outputs.version }}
+          BODY: ${{ needs.release_please.outputs.body }}
         run: |
           path="$RUNNER_TEMP/release-notes.md"
-          gh release view "$TAG" --json body --jq .body > "$path"
           {
+            echo "$BODY"
             echo
             echo "---"
             echo
             echo "Install (npm): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz\`"
             echo
             echo "No-build (tokens.css + fonts.css + fonts, no npm/Tailwind required): \`https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/otto-nation-brand-assets-${VERSION}.zip\`"
-          } >> "$path"
+          } > "$path"
           gh release edit "$TAG" --notes-file "$path"
 
       # release-please already created the release object before this job's
       # assets exist, so a packaging failure now leaves a published release
       # with no tarball rather than no release. The tarball verify step above
       # re-runs on every attempt, so a *broken* asset is never uploaded, and
-      # --clobber makes a retry (including a workflow_dispatch replay) idempotent.
+      # --clobber makes a retry idempotent.
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
+          TAG: ${{ needs.release_please.outputs.tag_name }}
+          TARBALL: ${{ steps.tarball.outputs.tarball }}
+          ASSETS_ZIP: ${{ steps.assets.outputs.zip }}
         run: |
-          gh release upload "$TAG" \
-            "${{ steps.tarball.outputs.tarball }}" \
-            "${{ steps.assets.outputs.zip }}" \
-            --clobber
+          gh release upload "$TAG" "$TARBALL" "$ASSETS_ZIP" --clobber
 
   fanout:
     name: Open version-bump PRs
