@@ -1,10 +1,24 @@
 # Repos that receive an automated version-bump pull request on each brand-v* tag.
-# Adding a consumer is one entry here plus two config lines in that repo
-# (@source and transpilePackages) — otto-brand-check, which ships with the
-# package, is what fails their build if either is missing.
+# Adding a consumer is one entry here; what else is needed in that repo depends on
+# how it consumes the package. A Next.js+Tailwind consumer also needs two config
+# lines (@source and transpilePackages) — otto-brand-check, which ships with the
+# package, fails their build if either is missing. A CSS-only consumer (tokens.css/
+# fonts.css via a plain npm dependency, no Next.js) needs neither, and
+# otto-brand-check does not apply to it.
 #
 # `manifest` is the package.json holding the @otto-nation/brand dependency,
 # relative to that repo's root.
+#
+# The fan-out authenticates per consumer as CONSUMER_<OWNER>_PAT — derived from
+# each entry's `repo` owner (uppercased, non-alphanumeric characters stripped; see
+# bin/fanout-consumers) — because a single PAT cannot span repos under different
+# GitHub accounts/orgs. Adding a consumer under an owner not already represented
+# below also needs that secret added to this repo (`gh secret set
+# CONSUMER_<OWNER>_PAT`) and one new env line in
+# .github/workflows/brand-release.yml's fanout job: GitHub Actions cannot look up
+# a secret by a name computed at runtime, so each distinct owner's secret has to
+# be spelled out there literally. Adding another consumer under an owner already
+# listed here needs neither — only this file changes.
 consumers:
   - repo: otto-nation/otto-workbench
     manifest: site/package.json
