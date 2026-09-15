@@ -2,9 +2,13 @@
 # Open a version-bump pull request in every repo listed in consumers.yml.
 #
 # Called by .github/workflows/brand-release.yml once release-please tags a
-# release, or via workflow_dispatch against an existing brand-v* tag. Needs
-# GH_TOKEN to be an org PAT scoped to the consumer repos — GITHUB_TOKEN cannot
-# open a pull request in another repository.
+# release, or via workflow_dispatch against an existing brand-v* tag.
+# GITHUB_TOKEN cannot open a pull request in another repository, so each
+# consumer authenticates with a PAT of its own, read from an env var named
+# CONSUMER_<OWNER>_PAT — OWNER is that consumer's `repo` owner, uppercased
+# with non-alphanumeric characters stripped (see the loop below). A single
+# PAT cannot span repos under different GitHub accounts/orgs, which is why
+# there is one per owner rather than one for the whole file.
 #
 # Idempotent: a rerun for the same version force-updates the same branch and
 # reuses the existing PR rather than opening a second one.
@@ -70,18 +74,34 @@ if [[ ! -s "$CONSUMERS" ]]; then
   exit 1
 fi
 
-# `gh repo clone` leaves an https remote behind, and git does not read GH_TOKEN —
-# only gh does. Without a credential helper the push below has no credentials at
-# all, asks for a username, and dies on a runner with no terminal to ask. This
-# routes the same token into git. --hostname names the host explicitly rather
-# than leaving gh to infer one from a login this job does not have.
-if ! gh auth setup-git --hostname github.com; then
-  echo "could not register gh as git's credential helper" >&2
-  exit 1
-fi
-
 while IFS=$'\t' read -r repo manifest; do
   echo "==> ${repo} (${manifest})"
+
+  # Derive this consumer's secret name from its owner and look it up by
+  # indirect expansion. A missing secret is this one consumer's failure, not
+  # the whole job's — see the fanout job's own comment in brand-release.yml.
+  owner="${repo%%/*}"
+  secret_var="CONSUMER_$(printf '%s' "$owner" | tr '[:lower:]' '[:upper:]' | tr -cd '[:alnum:]')_PAT"
+  token="${!secret_var:-}"
+  if [[ -z "$token" ]]; then
+    FAILED+=("$repo: $secret_var is not set — add it as a repo secret and expose it in brand-release.yml's fanout job env")
+    continue
+  fi
+  export GH_TOKEN="$token"
+
+  # `gh repo clone` leaves an https remote behind, and git does not read GH_TOKEN —
+  # only gh does. Without a credential helper the push below has no credentials at
+  # all, asks for a username, and dies on a runner with no terminal to ask. This
+  # routes the current consumer's token into git. --hostname names the host
+  # explicitly rather than leaving gh to infer one from a login this job does not
+  # have. Called once per consumer (not once up front) because it has to run with
+  # that consumer's token already exported, in case gh needs an authenticated
+  # session to configure the credential helper at all.
+  if ! gh auth setup-git --hostname github.com; then
+    FAILED+=("$repo: could not register gh as git's credential helper")
+    continue
+  fi
+
   work="$(mktemp -d "$SCRATCH/repo.XXXXXX")"
 
   if ! gh repo clone "$repo" "$work" -- --depth 1; then

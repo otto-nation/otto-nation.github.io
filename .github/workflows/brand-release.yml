@@ -185,9 +185,12 @@ jobs:
     timeout-minutes: 20
     needs: package
     # GITHUB_TOKEN cannot open a pull request in another repository, so this job
-    # is the only part of the release that needs a credential of its own. The
-    # release itself completes without it; consumers are bumped by hand if the
-    # secret is absent.
+    # is the only part of the release that needs credentials of its own — one
+    # per distinct consumer owner in consumers.yml, since a single PAT cannot
+    # span repos under different GitHub accounts/orgs. The release itself
+    # completes without them; a consumer whose owner's secret is absent is
+    # bumped by hand instead (bin/fanout-consumers reports it as that one
+    # consumer's failure, not a job-wide one).
     #
     # `package` is skipped both on a dispatch (by design — see its own `if`)
     # and on the far more common case of an ordinary push that release-please
@@ -218,6 +221,19 @@ jobs:
 
       - name: Open a bump PR in each consumer
         env:
-          GH_TOKEN: ${{ secrets.CONSUMER_PAT }}
+          # One line per distinct consumer owner in consumers.yml, named
+          # CONSUMER_<OWNER>_PAT (owner uppercased, non-alphanumeric characters
+          # stripped) — bin/fanout-consumers derives this same name from each
+          # entry's `repo` at runtime, so this list only grows when a new owner
+          # appears, never per consumer added under an owner already here.
+          # GitHub Actions cannot look up a secret by a name computed at
+          # runtime, so each one has to be spelled out literally.
+          CONSUMER_OTTONATION_PAT: ${{ secrets.CONSUMER_OTTONATION_PAT }}
+          CONSUMER_ISAACGARZA_PAT: ${{ secrets.CONSUMER_ISAACGARZA_PAT }}
+          # Baseline for the script's own pre-loop check against this repo's own
+          # release (read-only, same-repo) — gh falls back to this when GH_TOKEN
+          # isn't set. Each loop iteration exports GH_TOKEN with that consumer's
+          # PAT, which gh prefers over this one for every call made inside it.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.package.outputs.tag || inputs.tag }}
         run: bin/fanout-consumers
