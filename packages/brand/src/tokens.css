@@ -14,6 +14,8 @@
  *   --ow-block-*   the dark band surfaces, measured against --ow-block, not canvas.
  *                  Dark and warm in both themes, but restated in .dark so the band
  *                  still separates from a dark page.
+ *   --ow-done      5.57:1 on canvas. Success state, text-safe.
+ *   --ow-warn      5.04:1 on canvas. Warning state, text-safe.
  *
  * The ratios below are asserted by test/contrast.test.mjs, which parses them out
  * of this comment and recomputes them from the hexes. Edit a hex without editing
@@ -30,6 +32,8 @@
   --ow-rosa: #d81e5b;
   --ow-barro: #c4552f;
   --ow-anil: #2b4ba8;
+  --ow-done: #486a2f;
+  --ow-warn: #866118;
 
   /* The install block and the footer stay dark in both themes — a shell prompt
    * has to read as a terminal, and the footer closes the page on a solid band.
@@ -80,11 +84,15 @@
    *   --ow-block            1.54:1 against the dark canvas. A distinct band.
    *   --ow-block-ink        9.78:1 on the dark block. Body copy.
    *   --ow-block-ink-muted  4.74:1 on the dark block. Labels and buttons, AA.
-   *   --ow-block-hairline   1.48:1 on the dark block, matching light's 1.46. */
+   *   --ow-block-hairline   1.48:1 on the dark block, matching light's 1.46.
+   *   --ow-done             9.02:1 on the dark canvas. Success state, text-safe.
+   *   --ow-warn             8.90:1 on the dark canvas. Warning state, text-safe. */
   --ow-block: #393328;
   --ow-block-ink: #e8e3d8;
   --ow-block-ink-muted: #a89e8f;
   --ow-block-hairline: #544c3c;
+  --ow-done: #93be74;
+  --ow-warn: #d6aa51;
 
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded

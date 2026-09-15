@@ -1,6 +1,6 @@
 {
   "name": "@otto-nation/brand",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "otto-nation design tokens, marks, and page chrome",
   "license": "MIT AND OFL-1.1",
   "type": "module",
