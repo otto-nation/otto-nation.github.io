@@ -24,3 +24,5 @@ consumers:
     manifest: site/package.json
   - repo: isaacgarza/homelab
     manifest: services/training-log/web/package.json
+  - repo: isaacgarza/homelab
+    manifest: services/docs/package.json

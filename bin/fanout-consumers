@@ -38,7 +38,6 @@ fi
 
 VERSION="${TAG#brand-v}"
 URL="https://github.com/${REPO}/releases/download/${TAG}/otto-nation-brand-${VERSION}.tgz"
-BRANCH="brand/bump-${VERSION}"
 FAILED=()
 
 # A consumer's package.json is only as good as the URL in it, and npm does not
@@ -76,6 +75,14 @@ fi
 
 while IFS=$'\t' read -r repo manifest; do
   echo "==> ${repo} (${manifest})"
+
+  # Keyed on manifest as well as version: two consumers under the same repo
+  # (e.g. two manifests both owned by isaacgarza/homelab) would otherwise share
+  # one branch name, and the second consumer's force-push would silently
+  # overwrite the first consumer's bump instead of opening its own PR.
+  manifest_slug="$(printf '%s' "$manifest" | tr -cs '[:alnum:]' '-')"
+  manifest_slug="${manifest_slug%-}"
+  BRANCH="brand/bump-${VERSION}-${manifest_slug}"
 
   # Derive this consumer's secret name from its owner and look it up by
   # indirect expansion. A missing secret is this one consumer's failure, not
