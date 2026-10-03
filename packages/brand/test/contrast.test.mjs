@@ -56,7 +56,7 @@ function contrast(fg, bg) {
 // "--ow-rosa      4.42:1 on canvas" and "--ow-block-ink  13.96:1 on the block".
 function documentedClaims() {
   const claims = [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block)\b/g),
+    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo)\b/g),
   ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
   // "It reaches 9.73:1 on the dark terminal block." — amarillo's second claim,
   // phrased as prose rather than as a table row, so it needs its own pattern.
@@ -71,7 +71,7 @@ function documentedClaims() {
 // canvas", which is what keeps them out of the light set above.
 function documentedDarkClaims() {
   return [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block)\b/g),
+    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface)\b/g),
   ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
 }
 
@@ -96,6 +96,32 @@ function assertReadable(tokens) {
   assert.ok(contrast(tokens.get('--ow-block-ink'), tokens.get('--ow-block')) >= 4.5);
   assert.ok(contrast(tokens.get('--ow-block-ink-muted'), tokens.get('--ow-block')) >= 4.5);
 }
+
+// Content inside a card sits on --ow-surface, and accent fills carry text of
+// their own. Each pairing a component is told to use has to hold on both ramps.
+function assertAccentPairings(tokens, theme) {
+  // contrast() sorts by luminance, so contrast(fg, bg) === contrast(bg, fg):
+  // the '--ow-anil'/'--ow-canvas' and '--ow-canvas'/'--ow-anil' rows below
+  // compute the same ratio. Both are kept because they document two distinct
+  // semantic roles — anil as a link on the page, and canvas as text on an
+  // anil fill — not because the number differs between them.
+  const pairs = [
+    ['--ow-ink-muted', '--ow-surface'],
+    ['--ow-anil', '--ow-canvas'],
+    ['--ow-anil', '--ow-surface'],
+    ['--ow-canvas', '--ow-anil'],
+    ['--ow-on-amarillo', '--ow-amarillo'],
+  ];
+  for (const [fg, bg] of pairs) {
+    const ratio = contrast(tokens.get(fg), tokens.get(bg));
+    assert.ok(ratio >= 4.5, `${theme}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1, under AA`);
+  }
+}
+
+test('accent and card pairings clear AA in both themes', () => {
+  assertAccentPairings(lightTokens(), 'light');
+  assertAccentPairings(darkTokens(), 'dark');
+});
 
 test('tokens.css documents at least five contrast claims', () => {
   assert.ok(documentedClaims().length >= 5, 'contrast claims disappeared from the header');
