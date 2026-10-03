@@ -100,6 +100,11 @@ function assertReadable(tokens) {
 // Content inside a card sits on --ow-surface, and accent fills carry text of
 // their own. Each pairing a component is told to use has to hold on both ramps.
 function assertAccentPairings(tokens, theme) {
+  // contrast() sorts by luminance, so contrast(fg, bg) === contrast(bg, fg):
+  // the '--ow-anil'/'--ow-canvas' and '--ow-canvas'/'--ow-anil' rows below
+  // compute the same ratio. Both are kept because they document two distinct
+  // semantic roles — anil as a link on the page, and canvas as text on an
+  // anil fill — not because the number differs between them.
   const pairs = [
     ['--ow-ink-muted', '--ow-surface'],
     ['--ow-anil', '--ow-canvas'],
