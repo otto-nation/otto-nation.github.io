@@ -18,7 +18,7 @@ uses `next/font`, so a consumer's build needs no network access.
 ### Fallback faces
 
 Neither League face draws eighth fractions (`⅛ ⅜ ⅝ ⅞`), primes (`′ ″`),
-subscripts or arrows (`↗ →`), and League Mono also lacks `¼ ½ ¾ ¹ ²`. Without a
+subscripts, arrows (`↗ →`) or the check mark (`✓`), and League Mono also lacks `¼ ½ ¾ ¹ ²`. Without a
 fallback those fell through to the OS — Times, Menlo and Hiragino on macOS — so
 one measurement could mix three typefaces, differently per machine. No newer
 League release fills the gap: League Spartan's current Google Fonts build and
@@ -29,8 +29,8 @@ League still draws everything it has:
 
 | Face | Variable | Source | Version / commit | Licence |
 |---|---|---|---|---|
-| Otto Fallback Sans | `--font-display`, after League Spartan | https://github.com/IBM/plex, release `@ibm/plex-sans-variable@0.2.0`, asset `plex-sans-variable.zip` (sha256 `f83825d527be6cd39c8971c932b9bf22688a3ad3e5ac6305b6143d02f52b87b6`), member `fonts/complete/woff2/IBM Plex Sans Var-Roman.woff2` | subset sha256 `9e9290ce5118a8ffc6db03716f8513a4d0f14643c4624c3bf303037e4f22d87d` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
-| Otto Fallback Mono | `--font-mono`, after League Mono | https://github.com/IBM/plex, release `@ibm/plex-mono-variable@1.0.0`, asset `plex-mono-variable.zip` (sha256 `46bbde4aeab959180ebad197f5b841c6bb5c8070146ba02c31240556e1e0b40d`), member `fonts/complete/woff2/IBM Plex Mono Var-Roman.woff2` | subset sha256 `ed8164ce1603afb28cbd25025ae39b1e63dbd1c570419ba09d7930b4010c07c6` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
+| Otto Fallback Sans | `--font-display`, after League Spartan | https://github.com/IBM/plex, release `@ibm/plex-sans-variable@0.2.0`, asset `plex-sans-variable.zip` (sha256 `f83825d527be6cd39c8971c932b9bf22688a3ad3e5ac6305b6143d02f52b87b6`), member `fonts/complete/woff2/IBM Plex Sans Var-Roman.woff2` | subset sha256 `f2d5276ff121577f1808213b9e6643c6cd5f1c8dc9c3eb1680adfa176bb35282` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
+| Otto Fallback Mono | `--font-mono`, after League Mono | https://github.com/IBM/plex, release `@ibm/plex-mono-variable@1.0.0`, asset `plex-mono-variable.zip` (sha256 `46bbde4aeab959180ebad197f5b841c6bb5c8070146ba02c31240556e1e0b40d`), member `fonts/complete/woff2/IBM Plex Mono Var-Roman.woff2` | subset sha256 `73ab1c508a74d2a09e9a4ad76f3a47980bc7a6b09efdc021242422b0354eb1cd` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
 
 Both are produced by `bin/subset-fallback-fonts`, which downloads the pinned
 assets, checks their hashes, subsets to the `unicode-range` declared on the two
