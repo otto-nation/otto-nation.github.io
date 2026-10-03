@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# Regenerates the two fallback faces @otto-nation/brand ships for the
+# characters League Spartan and League Mono do not draw — eighth fractions,
+# primes, sub/superscripts, arrows. Each is a subset of an IBM Plex variable
+# font, renamed, written to packages/brand/src/fonts/.
+#
+# Usage:
+#   bin/subset-fallback-fonts
+#
+# Requires: curl, unzip, shasum, uv (runs fontTools in a throwaway env).
+#
+# Side effects: overwrites packages/brand/src/fonts/OttoFallbackSans.woff2,
+# OttoFallbackMono.woff2 and OFL-IBMPlex.txt. Nothing else is touched; the
+# README provenance table records the upstream hashes pinned below and must be
+# updated by hand if they change.
+#
+# What gets kept is read from fonts.css: the unicode-range on the two
+# 'Otto Fallback' @font-face rules. That declaration is the one place the
+# covered characters are listed, so the subset and the range the browser is
+# told about cannot drift apart. Both rules must declare the same range.
+#
+# Renaming is a licence requirement, not a preference: IBM Plex reserves the
+# font name "Plex" under the SIL OFL, and a subset is a Modified Version, so
+# the name table is rewritten to the 'Otto Fallback' family before saving.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FONTS_DIR="$REPO_ROOT/packages/brand/src/fonts"
+FONTS_CSS="$REPO_ROOT/packages/brand/src/fonts.css"
+
+# Pinned upstream: release tag, asset, sha256 of the asset, and the variable
+# woff2 inside it. A changed hash fails the run rather than vendoring an
+# unreviewed binary.
+SANS_URL="https://github.com/IBM/plex/releases/download/%40ibm%2Fplex-sans-variable%400.2.0/plex-sans-variable.zip"
+SANS_SHA="f83825d527be6cd39c8971c932b9bf22688a3ad3e5ac6305b6143d02f52b87b6"
+SANS_MEMBER="fonts/complete/woff2/IBM Plex Sans Var-Roman.woff2"
+MONO_URL="https://github.com/IBM/plex/releases/download/%40ibm%2Fplex-mono-variable%401.0.0/plex-mono-variable.zip"
+MONO_SHA="46bbde4aeab959180ebad197f5b841c6bb5c8070146ba02c31240556e1e0b40d"
+MONO_MEMBER="fonts/complete/woff2/IBM Plex Mono Var-Roman.woff2"
+LICENSE_MEMBER="fonts/complete/woff2/license.txt"
+FONTTOOLS="fonttools[woff]==4.60.1"
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+fetch() {
+  local url="$1" sha="$2" out="$3"
+  curl -fsSL "$url" -o "$out"
+  local actual
+  actual="$(shasum -a 256 "$out" | cut -d' ' -f1)"
+  if [[ "$actual" != "$sha" ]]; then
+    echo "subset-fallback-fonts: $url hashed $actual, expected $sha" >&2
+    exit 1
+  fi
+}
+
+fetch "$SANS_URL" "$SANS_SHA" "$WORK/sans.zip"
+fetch "$MONO_URL" "$MONO_SHA" "$WORK/mono.zip"
+unzip -q "$WORK/sans.zip" "$SANS_MEMBER" "$LICENSE_MEMBER" -d "$WORK/sans"
+unzip -q "$WORK/mono.zip" "$MONO_MEMBER" -d "$WORK/mono"
+
+uv run --quiet --no-project --with "$FONTTOOLS" python - "$FONTS_CSS" "$FONTS_DIR" \
+  "$WORK/sans/$SANS_MEMBER" "$WORK/mono/$MONO_MEMBER" <<'PY'
+import re
+import sys
+from fontTools import subset
+from fontTools.ttLib import TTFont
+
+css_path, out_dir, sans_src, mono_src = sys.argv[1:]
+css = open(css_path, encoding="utf-8").read()
+
+# Every 'Otto Fallback' rule's unicode-range; they must agree.
+ranges = {
+    family: rng.strip()
+    for family, rng in re.findall(
+        r"@font-face\s*{[^}]*font-family:\s*'(Otto Fallback [A-Za-z]+)'[^}]*unicode-range:\s*([^;]+);",
+        css,
+    )
+}
+if set(ranges) != {"Otto Fallback Sans", "Otto Fallback Mono"}:
+    sys.exit(f"subset-fallback-fonts: expected both Otto Fallback faces in fonts.css, found {sorted(ranges)}")
+if len(set(ranges.values())) != 1:
+    sys.exit("subset-fallback-fonts: the two Otto Fallback faces declare different unicode-ranges")
+
+unicodes = []
+for part in next(iter(ranges.values())).split(","):
+    lo, _, hi = part.strip().removeprefix("U+").partition("-")
+    unicodes.extend(range(int(lo, 16), int(hi or lo, 16) + 1))
+
+
+def build(src, family, out_name):
+    # recalcTimestamp=False keeps head.modified at upstream's value, so two
+    # runs over the same pinned inputs produce byte-identical files.
+    font = TTFont(src, recalcTimestamp=False)
+    options = subset.Options()
+    options.flavor = "woff2"
+    options.layout_features = ["*"]
+    options.name_IDs = ["*"]
+    options.notdef_outline = True
+    subsetter = subset.Subsetter(options)
+    subsetter.populate(unicodes=unicodes)
+    subsetter.subset(font)
+
+    # Drop every name that could carry the reserved "Plex" name, then state
+    # the new family. IDs 1/2/4/6 are what a renderer reads; 16/17 would
+    # otherwise still say "IBM Plex". Named variable instances keep their own
+    # PostScript names in IDs 256+ ("IBMPlexSansVar-Thin"), so those are
+    # rewritten in place. Copyright (0), trademark (7) and licence (13/14)
+    # notices name Plex as attribution and are kept verbatim.
+    postscript = family.replace(" ", "")
+    names = font["name"]
+    for record in list(names.names):
+        if record.nameID in (1, 2, 3, 4, 6, 16, 17, 21, 22, 25):
+            names.removeNames(nameID=record.nameID)
+    for name_id, value in ((1, family), (2, "Regular"), (3, f"{postscript}-subset"),
+                           (4, family), (6, postscript), (16, family), (17, "Regular")):
+        names.setName(value, name_id, 3, 1, 0x409)
+    for record in names.names:
+        if record.nameID >= 256:
+            text = record.toUnicode()
+            text = re.sub(r"IBMPlex(Sans|Mono)Var", postscript, text)
+            text = re.sub(r"IBM Plex (Sans|Mono)( Var)?", family, text)
+            record.string = text
+    leftover = [r.toUnicode() for r in names.names if "Plex" in r.toUnicode() and r.nameID not in (0, 7, 13, 14)]
+    if leftover:
+        sys.exit(f"subset-fallback-fonts: {family} still names Plex: {leftover}")
+    font.save(f"{out_dir}/{out_name}")
+
+
+build(sans_src, "Otto Fallback Sans", "OttoFallbackSans.woff2")
+build(mono_src, "Otto Fallback Mono", "OttoFallbackMono.woff2")
+PY
+
+cp "$WORK/sans/$LICENSE_MEMBER" "$FONTS_DIR/OFL-IBMPlex.txt"

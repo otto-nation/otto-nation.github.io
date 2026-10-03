@@ -15,6 +15,35 @@ uses `next/font`, so a consumer's build needs no network access.
 | League Spartan | `--font-display` | https://github.com/theleagueof/league-spartan, release asset `variable/WOFF2/LeagueSpartan-VF.woff2` from tag `2.220` (2020-10-28) | `2.220`, sha256 `268294f19c129945d188288e01166b341edbadbe47a6d2cc19d1aa829f3ec4ff` | SIL OFL — `fonts/OFL-LeagueSpartan.txt` |
 | League Mono | `--font-mono` | https://github.com/theleagueof/league-mono | unconfirmed — see note below, sha256 `6be53ec3d4bcede8d20063542627fb92e3d82d363cc65042e7426ce28f5e7588` | SIL OFL — `fonts/OFL-LeagueMono.txt` |
 
+### Fallback faces
+
+Neither League face draws eighth fractions (`⅛ ⅜ ⅝ ⅞`), primes (`′ ″`),
+subscripts or arrows (`↗ →`), and League Mono also lacks `¼ ½ ¾ ¹ ²`. Without a
+fallback those fell through to the OS — Times, Menlo and Hiragino on macOS — so
+one measurement could mix three typefaces, differently per machine. No newer
+League release fills the gap: League Spartan's current Google Fonts build and
+League Mono `2.300` were both checked and lack the same characters.
+
+`fonts.css` therefore declares two more faces, each second in its stack so
+League still draws everything it has:
+
+| Face | Variable | Source | Version / commit | Licence |
+|---|---|---|---|---|
+| Otto Fallback Sans | `--font-display`, after League Spartan | https://github.com/IBM/plex, release `@ibm/plex-sans-variable@0.2.0`, asset `plex-sans-variable.zip` (sha256 `f83825d527be6cd39c8971c932b9bf22688a3ad3e5ac6305b6143d02f52b87b6`), member `fonts/complete/woff2/IBM Plex Sans Var-Roman.woff2` | subset sha256 `9e9290ce5118a8ffc6db03716f8513a4d0f14643c4624c3bf303037e4f22d87d` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
+| Otto Fallback Mono | `--font-mono`, after League Mono | https://github.com/IBM/plex, release `@ibm/plex-mono-variable@1.0.0`, asset `plex-mono-variable.zip` (sha256 `46bbde4aeab959180ebad197f5b841c6bb5c8070146ba02c31240556e1e0b40d`), member `fonts/complete/woff2/IBM Plex Mono Var-Roman.woff2` | subset sha256 `ed8164ce1603afb28cbd25025ae39b1e63dbd1c570419ba09d7930b4010c07c6` | SIL OFL — `fonts/OFL-IBMPlex.txt` |
+
+Both are produced by `bin/subset-fallback-fonts`, which downloads the pinned
+assets, checks their hashes, subsets to the `unicode-range` declared on the two
+faces in `fonts.css` (the one place that range is written), and renames them.
+The rename is required: IBM Plex reserves the font name "Plex" under the OFL,
+and a subset is a Modified Version. The output is byte-reproducible from the
+pinned inputs, so re-running the script and diffing the hashes above is the
+provenance check. `test/fonts.test.mjs` holds the stack order and the shared
+range.
+
+The `unicode-range` also means a page using none of those characters never
+downloads either file.
+
 League Mono's binary is a byte-for-byte copy of the file already vendored at
 `otto-workbench/site/app/fonts/LeagueMonoVariable.woff2` (introduced in that repo's
 `f0f90d44`), verified by matching sha256 on both sides. Its hash does not match the
@@ -210,7 +239,7 @@ breaking release.
 | Export | Shape |
 |---|---|
 | `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
-| `@otto-nation/brand/fonts.css` | `@font-face` for both faces; defines `--font-display`, `--font-mono` |
+| `@otto-nation/brand/fonts.css` | `@font-face` for both faces and their fallbacks; defines `--font-display`, `--font-mono` |
 | `@otto-nation/brand/verify` | `verifyExport({ out, control })` — see [Verifying a build](#verifying-a-build) |
 | `Greca` | `{ size?: number; onDark?: boolean, className? }` |
 | `GrecaDivider` | `{ className? }` |

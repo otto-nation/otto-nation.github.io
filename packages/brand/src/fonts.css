@@ -38,11 +38,46 @@
   font-display: swap;
 }
 
+/*
+ * Neither League face draws eighth fractions, primes, sub/superscripts or
+ * arrows, and League Mono also lacks the common fractions and superscripts.
+ * Without these two faces those characters fell through to whatever the OS
+ * had — Times, Menlo, Hiragino on macOS — so a single measurement like 52¾″
+ * mixed three typefaces, differently on every machine.
+ *
+ * Each is an IBM Plex variable font subset to the range below and renamed
+ * (Plex reserves its font name under the OFL; a subset is a Modified
+ * Version). They sit second in each stack, so League still draws every
+ * character it has; the browser reaches these only for the ones it lacks, and
+ * unicode-range keeps the file from loading on a page that uses none.
+ *
+ * bin/subset-fallback-fonts reads this unicode-range to build the subset, so
+ * the range is stated once, here. Both rules must carry the same value.
+ */
+
+@font-face {
+  font-family: 'Otto Fallback Sans';
+  src: url('./fonts/OttoFallbackSans.woff2') format('woff2');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2034, U+2070-209F, U+2150-218F, U+2190-21FF;
+}
+
+@font-face {
+  font-family: 'Otto Fallback Mono';
+  src: url('./fonts/OttoFallbackMono.woff2') format('woff2');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2034, U+2070-209F, U+2150-218F, U+2190-21FF;
+}
+
 /* The fallback stack lives in the variable, not at each use site. Tailwind's
  * own .font-sans and .font-mono utilities compile to a bare
  * var(--font-display) / var(--font-mono), so a fallback stated only at a use
  * site in tokens.css would not reach a consumer using the utility class. */
 :root {
-  --font-display: 'League Spartan', system-ui, sans-serif;
-  --font-mono: 'League Mono', ui-monospace, monospace;
+  --font-display: 'League Spartan', 'Otto Fallback Sans', system-ui, sans-serif;
+  --font-mono: 'League Mono', 'Otto Fallback Mono', ui-monospace, monospace;
 }

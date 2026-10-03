@@ -34,8 +34,11 @@ FILES=(
   "fonts.css"
   "fonts/LeagueSpartanVariable.woff2"
   "fonts/LeagueMonoVariable.woff2"
+  "fonts/OttoFallbackSans.woff2"
+  "fonts/OttoFallbackMono.woff2"
   "fonts/OFL-LeagueSpartan.txt"
   "fonts/OFL-LeagueMono.txt"
+  "fonts/OFL-IBMPlex.txt"
 )
 
 STAGE="$(mktemp -d)"
