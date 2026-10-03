@@ -23,6 +23,19 @@
  *   --ow-on-amarillo 9.73:1 on amarillo. The text colour for an amarillo fill.
  *                  Amarillo does not change between themes, so neither does this:
  *                  --ow-ink inverts to a light colour in .dark and would vanish.
+ *   --ow-on-rosa   4.57:1 on rosa. The text colour for a rosa fill, invariant for
+ *                  the same reason. --ow-canvas reads 4.42:1 there and the dark
+ *                  canvas 3.90:1 — both under AA for the small labels a fill carries.
+ *   --ow-outline   3.26:1 on canvas. The boundary of a control whose edge is how
+ *                  you find it — a text input. Clears the 3:1 non-text floor;
+ *                  --ow-hairline (1.24:1) stays for dividers and card edges.
+ *   --ow-outline   3.37:1 on surface.
+ *   --ow-done-soft, --ow-warn-soft: tinted panels behind done and warning
+ *                  content. Text on them is measured against the tint:
+ *   --ow-ink-muted 6.27:1 on done-soft.
+ *   --ow-done      5.22:1 on done-soft.
+ *   --ow-ink-muted 6.20:1 on warn-soft.
+ *   --ow-warn      4.67:1 on warn-soft.
  *
  * The ratios below are asserted by test/contrast.test.mjs, which parses them out
  * of this comment and recomputes them from the hexes. Edit a hex without editing
@@ -42,6 +55,10 @@
   --ow-done: #486a2f;
   --ow-warn: #866118;
   --ow-on-amarillo: #1a1712;
+  --ow-on-rosa: #fbf6ea;
+  --ow-outline: #8f8575;
+  --ow-done-soft: #e6ede7;
+  --ow-warn-soft: #f3e9d6;
 
   /* The install block and the footer stay dark in both themes — a shell prompt
    * has to read as a terminal, and the footer closes the page on a solid band.
@@ -88,6 +105,19 @@
    *   --ow-anil             6.41:1 on the dark surface. Links on cards.
    *   --ow-ink-muted        5.21:1 on the dark surface. Muted copy on cards. */
   --ow-anil: #7f9cf0;
+
+  /* The outline and the soft tints move with the ramp. A tint light enough to
+   * read as a panel on the dark surface pulls muted copy under AA, so these sit
+   * close to the surface — a quiet tint, with the border carrying the state:
+   *   --ow-outline          3.44:1 against the dark canvas.
+   *   --ow-outline          3.05:1 on the dark surface.
+   *   --ow-ink-muted        4.73:1 on the dark done-soft.
+   *   --ow-done             7.25:1 on the dark done-soft.
+   *   --ow-ink-muted        4.77:1 on the dark warn-soft.
+   *   --ow-warn             7.21:1 on the dark warn-soft. */
+  --ow-outline: #706756;
+  --ow-done-soft: #1e2719;
+  --ow-warn-soft: #2a2314;
 
   /* The block ramp lifts rather than staying frozen. One of the four changes
    * README § The four intended pixel changes enumerates. Against the light canvas

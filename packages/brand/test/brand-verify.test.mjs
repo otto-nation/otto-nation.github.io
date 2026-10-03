@@ -130,7 +130,12 @@ test('the derivations read the real package source', () => {
   assert.ok(TOKENS.length > 10, 'tokens.css parse produced an implausibly short list');
   assert.equal(TRACKING, '0.15em');
   assert.equal(DECLARATION, 'letter-spacing:.15em');
-  assert.deepEqual([...STEMS].sort(), ['LeagueMonoVariable', 'LeagueSpartanVariable']);
+  assert.deepEqual([...STEMS].sort(), [
+    'LeagueMonoVariable',
+    'LeagueSpartanVariable',
+    'OttoFallbackMono',
+    'OttoFallbackSans',
+  ]);
 });
 
 // verifyExport is the public contract from 1.0.0 on and the exports map has no

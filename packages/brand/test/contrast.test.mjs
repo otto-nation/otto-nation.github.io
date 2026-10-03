@@ -56,7 +56,7 @@ function contrast(fg, bg) {
 // "--ow-rosa      4.42:1 on canvas" and "--ow-block-ink  13.96:1 on the block".
 function documentedClaims() {
   const claims = [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo)\b/g),
+    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo|rosa|done-soft|warn-soft)\b/g),
   ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
   // "It reaches 9.73:1 on the dark terminal block." — amarillo's second claim,
   // phrased as prose rather than as a table row, so it needs its own pattern.
@@ -71,7 +71,7 @@ function documentedClaims() {
 // canvas", which is what keeps them out of the light set above.
 function documentedDarkClaims() {
   return [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface)\b/g),
+    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface|done-soft|warn-soft)\b/g),
   ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
 }
 
@@ -111,10 +111,22 @@ function assertAccentPairings(tokens, theme) {
     ['--ow-anil', '--ow-surface'],
     ['--ow-canvas', '--ow-anil'],
     ['--ow-on-amarillo', '--ow-amarillo'],
+    ['--ow-on-rosa', '--ow-rosa'],
+    ['--ow-ink', '--ow-done-soft'],
+    ['--ow-ink-muted', '--ow-done-soft'],
+    ['--ow-done', '--ow-done-soft'],
+    ['--ow-ink', '--ow-warn-soft'],
+    ['--ow-ink-muted', '--ow-warn-soft'],
+    ['--ow-warn', '--ow-warn-soft'],
   ];
   for (const [fg, bg] of pairs) {
     const ratio = contrast(tokens.get(fg), tokens.get(bg));
     assert.ok(ratio >= 4.5, `${theme}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1, under AA`);
+  }
+  // Non-text floor (WCAG 1.4.11): a control's boundary against what it sits on.
+  for (const bg of ['--ow-canvas', '--ow-surface']) {
+    const ratio = contrast(tokens.get('--ow-outline'), tokens.get(bg));
+    assert.ok(ratio >= 3, `${theme}: --ow-outline on ${bg} is ${ratio.toFixed(2)}:1, under 3:1`);
   }
 }
 
