@@ -83,3 +83,16 @@ export function fontStems(fontsCss) {
   return [...fontsCss.matchAll(/url\(\s*['"]?([^'")]+\.woff2)['"]?\s*\)/g)]
     .map(([, url]) => basename(url, '.woff2'));
 }
+
+/**
+ * The ordered font-family list a `--font-*` custom property declares in
+ * fontsCss, e.g. `['League Spartan', 'Otto Fallback Sans', 'system-ui', 'sans-serif']`.
+ * Each entry is unquoted; a bare keyword (`system-ui`, `sans-serif`) comes back
+ * the same as a quoted family name. Returns null when the variable is not
+ * declared at all, which a caller is expected to treat as a real failure.
+ */
+export function fontStack(fontsCss, variable) {
+  const value = fontsCss.match(new RegExp(`${variable}:\\s*([^;]+);`))?.[1];
+  if (!value) return null;
+  return [...value.matchAll(/'([^']+)'|([^,\s][^,]*)/g)].map(([, quoted, bare]) => (quoted ?? bare).trim());
+}

@@ -108,6 +108,15 @@ def build(src, family, out_name):
     subsetter.populate(unicodes=unicodes)
     subsetter.subset(font)
 
+    # The subsetter silently drops a code point upstream does not draw, which
+    # would leave fonts.css promising a glyph the file lacks — the browser then
+    # loads this face for that character and still falls through. Fail instead,
+    # so the declared range is always exactly what the file covers.
+    missing = sorted(set(unicodes) - set(font.getBestCmap()))
+    if missing:
+        listed = ", ".join(f"U+{c:04X}" for c in missing)
+        sys.exit(f"subset-fallback-fonts: {family} does not draw {listed}; narrow the unicode-range in fonts.css")
+
     # Drop every name that could carry the reserved "Plex" name, then state
     # the new family. IDs 1/2/4/6 are what a renderer reads; 16/17 would
     # otherwise still say "IBM Plex". Named variable instances keep their own
@@ -139,3 +148,8 @@ build(mono_src, "Otto Fallback Mono", "OttoFallbackMono.woff2")
 PY
 
 cp "$WORK/sans/$LICENSE_MEMBER" "$FONTS_DIR/OFL-IBMPlex.txt"
+# Upstream's copy has no final newline; add one so the vendored file matches
+# the other OFL texts and a re-run leaves the tree clean.
+if [[ -n "$(tail -c 1 "$FONTS_DIR/OFL-IBMPlex.txt")" ]]; then
+  echo >> "$FONTS_DIR/OFL-IBMPlex.txt"
+fi
