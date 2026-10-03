@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.1.1...brand-v1.2.0) (2026-10-03)
+
+
+### Features
+
+* **brand:** add Plex fallback faces and contrast tokens ([#19](https://github.com/otto-nation/otto-nation.github.io/issues/19)) ([21b4fcf](https://github.com/otto-nation/otto-nation.github.io/commit/21b4fcf4047225a3a2b53fd0323f34a828980af1))
+
 ## [1.1.1](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.1.0...brand-v1.1.1) (2026-10-03)
 
 
