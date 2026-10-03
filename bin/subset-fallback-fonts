@@ -57,7 +57,14 @@ fetch() {
 fetch "$SANS_URL" "$SANS_SHA" "$WORK/sans.zip"
 fetch "$MONO_URL" "$MONO_SHA" "$WORK/mono.zip"
 unzip -q "$WORK/sans.zip" "$SANS_MEMBER" "$LICENSE_MEMBER" -d "$WORK/sans"
-unzip -q "$WORK/mono.zip" "$MONO_MEMBER" -d "$WORK/mono"
+unzip -q "$WORK/mono.zip" "$MONO_MEMBER" "$LICENSE_MEMBER" -d "$WORK/mono"
+
+# The licence is only vendored from the Sans release; this just checks the
+# Mono release's own copy says the same thing rather than assuming it.
+if ! diff -q "$WORK/sans/$LICENSE_MEMBER" "$WORK/mono/$LICENSE_MEMBER" >/dev/null; then
+  echo "subset-fallback-fonts: Sans and Mono releases carry different $LICENSE_MEMBER" >&2
+  exit 1
+fi
 
 uv run --quiet --no-project --with "$FONTTOOLS" python - "$FONTS_CSS" "$FONTS_DIR" \
   "$WORK/sans/$SANS_MEMBER" "$WORK/mono/$MONO_MEMBER" <<'PY'

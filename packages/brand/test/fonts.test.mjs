@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { fontStack } from '../src/internal/derive.mjs';
 
 const FONTS_CSS = readFileSync(fileURLToPath(new URL('../src/fonts.css', import.meta.url)), 'utf8');
 const SUBSET_SCRIPT = readFileSync(
@@ -18,9 +19,9 @@ function fontFaces() {
 }
 
 function stack(variable) {
-  const value = FONTS_CSS.match(new RegExp(`${variable}:\\s*([^;]+);`))?.[1];
+  const value = fontStack(FONTS_CSS, variable);
   assert.ok(value, `${variable} is not declared in fonts.css`);
-  return [...value.matchAll(/'([^']+)'|([^,\s][^,]*)/g)].map(([, quoted, bare]) => (quoted ?? bare).trim());
+  return value;
 }
 
 const fallbacks = () => fontFaces().filter((face) => face.family.startsWith('Otto Fallback'));

@@ -61,7 +61,7 @@
   font-weight: 100 700;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2034, U+2070-209F, U+2150-218F, U+2190-21FF;
+  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2033, U+2070, U+2074-2079, U+2080-2089, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6;
 }
 
 @font-face {
@@ -70,7 +70,7 @@
   font-weight: 100 700;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2034, U+2070-209F, U+2150-218F, U+2190-21FF;
+  unicode-range: U+00B2-00B3, U+00B9, U+00BC-00BE, U+2032-2033, U+2070, U+2074-2079, U+2080-2089, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6;
 }
 
 /* The fallback stack lives in the variable, not at each use site. Tailwind's

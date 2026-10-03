@@ -64,6 +64,9 @@ Each face's `@font-face` `font-weight` range in `fonts.css` matches its actual `
 - League Spartan: `200 900` (axis default 200)
 - League Mono: `100 800` (axis default 100; also carries an unused `wdth` axis,
   50–200, default 100, not exposed by `fonts.css`)
+- Otto Fallback Sans: `100 700` (axis default 400; also carries an unused `wdth`
+  axis, 85–100, default 100, not exposed by `fonts.css`)
+- Otto Fallback Mono: `100 700` (axis default 400)
 
 No automatic update. Refresh by repeating the acquisition above and updating this
 table — a committed binary with no provenance is the failure mode this exists to
