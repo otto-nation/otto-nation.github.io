@@ -15,8 +15,10 @@ import {
   documentedClaims,
   documentedDarkClaims,
   fdPrimaryToken,
+  fontRoles,
   fontStack,
   headingLetterSpacing,
+  lengthTokens,
   lightTokenHexes,
   trackingValue,
 } from '../src/internal/derive.mjs';
@@ -55,6 +57,15 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
   const eyebrowTracking = trackingValue(eyebrowSource);
   if (!display || !mono || !bodyTracking || !headingTracking || !eyebrowTracking) {
     throw new Error('could not derive typography families and tracking from fonts.css/tokens.css/eyebrow.tsx');
+  }
+
+  const roles = fontRoles(tokensCss);
+  if (roles.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-font-* roles');
+  }
+  const lengths = lengthTokens(tokensCss);
+  if (lengths.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-* px lengths');
   }
 
   const colors = { primary: quoteColor(primaryHex) };
@@ -98,6 +109,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     '  eyebrow:',
     `    fontFamily: ${mono}`,
     `    letterSpacing: ${quoteDimension(eyebrowTracking)}`,
+    ...typographyRoleLines(roles, fontsCss),
     'rounded:',
     // Tailwind v4 defaults, which is what the components actually use
     // (rounded-md on Button, rounded-lg on CardGrid / InstallBlock).
@@ -112,6 +124,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     '  4: 16px',
     '  5: 20px',
     '  6: 24px',
+    ...[...lengths].map(([name, value]) => `  ${name}: ${value}`),
     '',
   ];
   return lines.join('\n');
@@ -123,6 +136,24 @@ function quoteColor(hex) {
 
 function quoteDimension(value) {
   return value.startsWith('-') ? `"${value}"` : value;
+}
+
+function typographyRoleLines(roles, fontsCss) {
+  const lines = [];
+  for (const [role, spec] of roles) {
+    const family = fontStack(fontsCss, spec.fontVariable)?.[0];
+    if (!family) {
+      throw new Error(`could not resolve ${spec.fontVariable} for --ow-font-${role}`);
+    }
+    lines.push(
+      `  ${role}:`,
+      `    fontFamily: ${family}`,
+      `    fontSize: ${spec.fontSize}`,
+      `    fontWeight: ${spec.fontWeight}`,
+      `    lineHeight: ${spec.lineHeight}`,
+    );
+  }
+  return lines;
 }
 
 function contrastTable(tokensCss) {

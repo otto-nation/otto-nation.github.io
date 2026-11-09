@@ -179,6 +179,46 @@ export function documentedDarkClaims(tokensCss) {
     .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
 }
 
+const FONT_SHORTHAND = /^(400|500|600) (\d+)px\/(\d+)px var\((--font-[a-z]+)\)$/;
+
+/**
+ * `--ow-font-<role>` shorthands on `:root`.
+ * Shape: `<400|500|600> <size>px/<leading>px var(--font-x)`.
+ * Throws on any declaration that does not match.
+ */
+export function fontRoles(tokensCss) {
+  const roles = new Map();
+  for (const [, name, role, value] of lightBlock(tokensCss).matchAll(
+    /^\s*(--ow-font-([a-z]+)):\s*([^;]+);/gm,
+  )) {
+    const match = FONT_SHORTHAND.exec(value.trim());
+    if (!match) {
+      throw new Error(`${name}: unmodelled font shorthand ${value.trim()}`);
+    }
+    const [, weight, size, leading, fontVariable] = match;
+    roles.set(role, {
+      fontWeight: Number(weight),
+      fontSize: `${size}px`,
+      lineHeight: `${leading}px`,
+      fontVariable,
+    });
+  }
+  return roles;
+}
+
+/**
+ * `--ow-<name>: <n>px` declarations on `:root`. Empty when none exist.
+ */
+export function lengthTokens(tokensCss) {
+  const lengths = new Map();
+  for (const [, name, value] of lightBlock(tokensCss).matchAll(
+    /^\s*(--ow-[a-z-]+):\s*(\d+px)\s*;/gm,
+  )) {
+    lengths.set(name.replace(/^--ow-/, ''), value);
+  }
+  return lengths;
+}
+
 function letterSpacingIn(block) {
   return block?.match(/letter-spacing:\s*([^;]+)/)?.[1].trim() ?? null;
 }

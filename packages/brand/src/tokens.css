@@ -106,6 +106,24 @@
   --color-fd-accent: var(--ow-surface);
   --color-fd-accent-foreground: var(--ow-ink);
   --color-fd-ring: var(--ow-amarillo);
+
+  /* App type roles. CSS consumers write `font: var(--ow-font-body)`.
+   * Weights are 400/500/600. Tracking is the body rule's -0.01em. */
+  --ow-font-meta: 400 11px/16px var(--font-display);
+  --ow-font-section: 600 11px/16px var(--font-display);
+  --ow-font-label: 500 12px/16px var(--font-display);
+  --ow-font-body: 400 13px/18px var(--font-display);
+  --ow-font-title: 600 14px/20px var(--font-display);
+  --ow-font-code: 400 12px/16px var(--font-mono);
+
+  /* App lengths. Owned here and emitted as spacing.* in DESIGN.md. */
+  --ow-control-height: 28px;
+  --ow-control-height-dense: 24px;
+  --ow-row-height: 32px;
+  --ow-row-height-dense: 28px;
+  --ow-control-padding: 10px;
+  --ow-card-padding: 12px;
+  --ow-column-min: 260px;
 }
 
 .dark {

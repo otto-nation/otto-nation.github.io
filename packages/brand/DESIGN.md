@@ -71,6 +71,36 @@ typography:
   eyebrow:
     fontFamily: League Mono
     letterSpacing: 0.15em
+  meta:
+    fontFamily: League Spartan
+    fontSize: 11px
+    fontWeight: 400
+    lineHeight: 16px
+  section:
+    fontFamily: League Spartan
+    fontSize: 11px
+    fontWeight: 600
+    lineHeight: 16px
+  label:
+    fontFamily: League Spartan
+    fontSize: 12px
+    fontWeight: 500
+    lineHeight: 16px
+  body:
+    fontFamily: League Spartan
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 18px
+  title:
+    fontFamily: League Spartan
+    fontSize: 14px
+    fontWeight: 600
+    lineHeight: 20px
+  code:
+    fontFamily: League Mono
+    fontSize: 12px
+    fontWeight: 400
+    lineHeight: 16px
 rounded:
   sm: 4px
   md: 6px
@@ -82,6 +112,13 @@ spacing:
   4: 16px
   5: 20px
   6: 24px
+  control-height: 28px
+  control-height-dense: 24px
+  row-height: 32px
+  row-height-dense: 28px
+  control-padding: 10px
+  card-padding: 12px
+  column-min: 260px
 ---
 
 # otto-nation
@@ -199,12 +236,36 @@ Two faces, both variable, plus Otto Fallback for glyphs League does not draw.
 | Eyebrow / labels | League Mono (`--font-mono`) | `font-mono text-[10px]` plus `{typography.eyebrow}` |
 | Code / meta | League Mono | `font-mono text-xs`; install prompt `text-[9px]` |
 
-Sizes live as those Tailwind classes, not as a pixel type scale. Do not invent one.
+Pages use those Tailwind classes. App UI uses the roles below and nothing else.
+CSS consumers write `font: var(--ow-font-body)`. Weights are 400/500/600. App
+roles inherit `{typography.display}` tracking and emit no `letterSpacing` key.
+
+| Role | Token | Use |
+| --- | --- | --- |
+| meta | `{typography.meta}` | Counts, timestamps, glyph captions |
+| section | `{typography.section}` | Section labels |
+| label | `{typography.label}` | Buttons, segmented, tags |
+| body | `{typography.body}` | Rows, default app text |
+| title | `{typography.title}` | Card/pane titles |
+| code | `{typography.code}` | Branches, SHAs, paths |
 
 ## Layout
 
 Spacing follows Tailwind's 4px base (`{spacing.1}` is one step). Chrome uses
 `px-6`. Cards `p-4`. Hero `pt-11 pb-9` with content `sm:max-w-[62%]`.
+
+App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
+`var(--ow-control-height)`):
+
+| Token | Size | Use |
+| --- | --- | --- |
+| control-height | `{spacing.control-height}` | Buttons, inputs, segmented |
+| control-height-dense | `{spacing.control-height-dense}` | Dense controls (WCAG 2.5.8 24px) |
+| row-height | `{spacing.row-height}` | List rows |
+| row-height-dense | `{spacing.row-height-dense}` | Dense list rows |
+| control-padding | `{spacing.control-padding}` | Control inline padding |
+| card-padding | `{spacing.card-padding}` | App cards |
+| column-min | `{spacing.column-min}` | Board column min width |
 
 CardGrid: 2 columns at `gap-4`; 3 columns at `gap-6` because linked cards add a
 `-m-4` hit area.
