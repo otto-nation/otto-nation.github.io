@@ -1,4 +1,11 @@
-import { StatusGlyph, Tag, type StatusGlyphStatus } from '@otto-nation/brand';
+import {
+  ActionButton,
+  SectionLabel,
+  StatusGlyph,
+  Tag,
+  type ActionButtonVariant,
+  type StatusGlyphStatus,
+} from '@otto-nation/brand';
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -11,6 +18,13 @@ const STATUSES: { status: StatusGlyphStatus; label: string }[] = [
   { status: 'warn', label: 'Warning' },
   { status: 'none', label: 'None' },
 ];
+
+const ACTION_VARIANTS: ActionButtonVariant[] = ['solid', 'outline', 'ghost'];
+const ACTION_STATES = [
+  { state: 'rest', dense: false, disabled: false },
+  { state: 'dense', dense: true, disabled: false },
+  { state: 'disabled', dense: false, disabled: true },
+] as const;
 
 export default function UiPage() {
   return (
@@ -31,6 +45,24 @@ export default function UiPage() {
       <section data-specimen="tag">
         <Tag>queued</Tag>
       </section>
+      <section data-specimen="section-label">
+        <SectionLabel>Open</SectionLabel>
+      </section>
+      <section data-specimen="section-label-count">
+        <SectionLabel count={3}>Open</SectionLabel>
+      </section>
+      {ACTION_VARIANTS.map((variant) =>
+        ACTION_STATES.map(({ state, dense, disabled }) => (
+          <section
+            key={`${variant}-${state}`}
+            data-specimen={`action-${variant}-${state}`}
+          >
+            <ActionButton variant={variant} dense={dense} disabled={disabled}>
+              Action
+            </ActionButton>
+          </section>
+        )),
+      )}
     </main>
   );
 }

@@ -5,6 +5,8 @@ export { Button } from './primitives/button';
 export { CardGrid, type CardItem } from './primitives/card-grid';
 export { StatusGlyph, type StatusGlyphStatus } from './primitives/status-glyph';
 export { Tag } from './primitives/tag';
+export { SectionLabel } from './primitives/section-label';
+export { ActionButton, type ActionButtonVariant } from './primitives/action-button';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';
 export { Hero } from './chrome/hero';

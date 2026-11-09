@@ -51,6 +51,54 @@ const STATUS_SPECIMENS = {
   none: { char: '\u00B7', label: 'None', token: '--ow-ink-muted' },
 };
 
+test('the /ui specimen renders SectionLabel and ActionButton', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const label = section(html, 'section-label');
+  assert.ok(label.includes('Open'), 'section label text missing');
+  assert.ok(label.includes('--ow-font-section'), 'section font token missing');
+  assert.ok(label.includes('--ow-ink-muted'), 'section ink-muted token missing');
+  assert.ok(!label.includes('--ow-font-meta'), 'count-less label used meta role');
+  const counted = section(html, 'section-label-count');
+  assert.ok(counted.includes('Open'), 'counted section label text missing');
+  assert.ok(counted.includes('3'), 'section count missing');
+  assert.ok(counted.includes('--ow-font-meta'), 'count meta font token missing');
+
+  for (const variant of ['solid', 'outline', 'ghost']) {
+    for (const state of ['rest', 'dense', 'disabled']) {
+      const block = section(html, `action-${variant}-${state}`);
+      const button = block.match(/<button\b[^>]*>/)?.[0];
+      assert.ok(button, `${variant} ${state} is not a button`);
+      assert.ok(block.includes('Action'), `${variant} ${state} label missing`);
+      assert.doesNotMatch(
+        button,
+        /hover:border/,
+        `${variant} ${state} changes the border on hover`,
+      );
+      if (state === 'disabled') {
+        assert.match(button, /\bdisabled\b/, `${variant} disabled is not disabled`);
+      } else {
+        assert.doesNotMatch(
+          button,
+          /\bdisabled\b/,
+          `${variant} ${state} should not be disabled`,
+        );
+      }
+      if (state === 'dense') {
+        assert.ok(
+          block.includes('--ow-control-height-dense'),
+          `${variant} dense height token missing`,
+        );
+      } else {
+        assert.ok(
+          block.includes('--ow-control-height') &&
+            !block.includes('--ow-control-height-dense'),
+          `${variant} ${state} should use control-height`,
+        );
+      }
+    }
+  }
+});
+
 test('the /ui specimen renders StatusGlyph and Tag', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {
