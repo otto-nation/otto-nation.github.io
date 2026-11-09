@@ -9,6 +9,8 @@ export { SectionLabel } from './primitives/section-label';
 export { ActionButton, type ActionButtonVariant } from './primitives/action-button';
 export { SegmentedControl, type SegmentedOption } from './primitives/segmented-control';
 export { ListRow } from './primitives/list-row';
+export { AppCard, type AppCardVariant } from './primitives/app-card';
+export { Input } from './primitives/input';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';
 export { Hero } from './chrome/hero';

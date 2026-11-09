@@ -1,11 +1,14 @@
 import {
   ActionButton,
+  AppCard,
+  Input,
   ListRow,
   SectionLabel,
   SegmentedControl,
   StatusGlyph,
   Tag,
   type ActionButtonVariant,
+  type AppCardVariant,
   type SegmentedOption,
   type StatusGlyphStatus,
 } from '@otto-nation/brand';
@@ -39,6 +42,13 @@ const LIST_ROWS = [
   { state: 'rest', selected: false, dense: false },
   { state: 'dense', selected: false, dense: true },
   { state: 'selected', selected: true, dense: false },
+] as const;
+
+const CARD_VARIANTS: AppCardVariant[] = ['card', 'popover'];
+const INPUT_STATES = [
+  { state: 'rest', dense: false, disabled: false },
+  { state: 'dense', dense: true, disabled: false },
+  { state: 'disabled', dense: false, disabled: true },
 ] as const;
 
 export default function UiPage() {
@@ -98,6 +108,19 @@ export default function UiPage() {
           <ListRow selected={selected} dense={dense}>
             otto-nation/brand
           </ListRow>
+        </section>
+      ))}
+      {CARD_VARIANTS.map((variant) => (
+        <section key={variant} data-specimen={`app-card-${variant}`}>
+          <AppCard variant={variant}>{`${variant} body`}</AppCard>
+        </section>
+      ))}
+      <section data-specimen="app-card-title">
+        <AppCard title="Pane">Card body</AppCard>
+      </section>
+      {INPUT_STATES.map(({ state, dense, disabled }) => (
+        <section key={state} data-specimen={`input-${state}`}>
+          <Input dense={dense} disabled={disabled} defaultValue="branch" />
         </section>
       ))}
     </main>

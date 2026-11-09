@@ -166,6 +166,60 @@ test('the /ui specimen renders SegmentedControl and ListRow', () => {
   );
 });
 
+test('the /ui specimen renders AppCard and Input', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const card = section(html, 'app-card-card');
+  assert.ok(card.includes('card body'), 'app-card body missing');
+  assert.ok(card.includes('--ow-surface'), 'app-card surface fill missing');
+  assert.ok(card.includes('--ow-card-padding'), 'app-card padding missing');
+  assert.ok(card.includes('--ow-font-body'), 'app-card body font missing');
+  assert.match(card, /border-\[var\(--ow-hairline\)\]/);
+  assert.doesNotMatch(card, /border-\[var\(--ow-outline\)\]/);
+  assert.ok(!card.includes('--ow-font-title'), 'untitled card used title role');
+
+  const popover = section(html, 'app-card-popover');
+  assert.ok(popover.includes('popover body'), 'popover body missing');
+  assert.ok(popover.includes('--ow-surface'), 'popover surface fill missing');
+  assert.ok(popover.includes('--ow-card-padding'), 'popover padding missing');
+  assert.match(popover, /border-\[var\(--ow-outline\)\]/);
+  assert.doesNotMatch(popover, /border-\[var\(--ow-hairline\)\]/);
+
+  const titled = section(html, 'app-card-title');
+  assert.ok(titled.includes('Pane'), 'app-card title missing');
+  assert.ok(titled.includes('Card body'), 'titled app-card body missing');
+  assert.ok(titled.includes('--ow-font-title'), 'app-card title font missing');
+  assert.match(titled, /border-\[var\(--ow-hairline\)\]/);
+
+  for (const state of ['rest', 'dense', 'disabled']) {
+    const block = section(html, `input-${state}`);
+    const input = block.match(/<input\b[^>]*>/)?.[0];
+    assert.ok(input, `${state} is not an input`);
+    assert.match(input, /border-\[var\(--ow-outline\)\]/);
+    assert.doesNotMatch(input, /focus-visible/, `${state} input has a focus class`);
+    assert.doesNotMatch(input, /hover:border/, `${state} input changes the border on hover`);
+    assert.ok(input.includes('--ow-font-body'), `${state} input body font missing`);
+    if (state === 'disabled') {
+      assert.match(input, /\bdisabled\b/, 'disabled input is not disabled');
+      assert.ok(input.includes('--ow-ink-muted'), 'disabled input ink-muted missing');
+    } else {
+      assert.doesNotMatch(input, /\bdisabled\b/, `${state} input should not be disabled`);
+    }
+    if (state === 'dense') {
+      assert.ok(
+        input.includes('--ow-control-height-dense'),
+        'input dense height token missing',
+      );
+    } else {
+      assert.ok(
+        input.includes('--ow-control-height') &&
+          !input.includes('--ow-control-height-dense'),
+        `${state} input should use control-height`,
+      );
+    }
+  }
+});
+
 test('the /ui specimen renders StatusGlyph and Tag', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {
