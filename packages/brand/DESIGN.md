@@ -276,19 +276,29 @@ Flat. No shadows. Hierarchy is three edges:
 
 | Treatment | Token | Use |
 | --- | --- | --- |
-| Hairline | `{colors.hairline}` | Card edges, nav border, dividers |
-| Outline | `{colors.outline}` | Control boundary — how you find an input |
+| Hairline | `{colors.hairline}` | Containers that carry their own text label: cards, tags, the segmented track, text buttons, list dividers, popovers over content, nav |
+| Outline | `{colors.outline}` | Controls you find by their edge: inputs, checkboxes, icon-only buttons, and a window/popover that floats over canvas |
 | Block band | `{colors.block}` | Footer and install; stays dark in both themes |
+
+Borders do not change on hover. Focus adds a 2px `{colors.anil}` outline,
+offset 2px, in both themes; it does not swap the border.
 
 ## Shapes
 
-Buttons: `rounded-md` → `{rounded.md}`. Cards and the install block:
-`rounded-lg` → `{rounded.lg}`. No pills.
+Controls (buttons, segmented, inputs): `rounded-md` → `{rounded.md}` (6px).
+Cards, popovers, and windows: `rounded-lg` → `{rounded.lg}` (8px). Tags:
+`rounded-sm` → `{rounded.sm}` (4px). No `full`.
+
+Do not use pills. Default status is coloured text plus a glyph. A label
+that needs a container is a `tag`: hairline border, `{rounded.sm}`,
+`{typography.label}`, `{colors.ink-muted}` text, no fill. Otherwise show
+nothing.
 
 ## Components
 
-Pairs below match the `.tsx` exports. Borders, hover, and hit-area are prose —
-the format's component keys do not include them.
+Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
+and hit-area are prose — `borderColor` is not a component key. App entries use
+refs to the colour, type, and length tokens.
 
 ```yaml
 components:
@@ -296,10 +306,31 @@ components:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.canvas}"
     rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-outline:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-outline-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-ghost:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-ghost-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-on-dark:
     backgroundColor: "{colors.block-ink}"
     textColor: "{colors.block}"
@@ -329,19 +360,84 @@ components:
   footer:
     backgroundColor: "{colors.block}"
     textColor: "{colors.block-ink}"
+  tag:
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.sm}"
+    typography: "{typography.label}"
+  app-card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  list-row:
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  list-row-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  list-row-selected:
+    backgroundColor: "{colors.selected}"
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  section-label:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  segmented:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  segmented-selected:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  popover:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  input:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.body}"
 ```
 
-- **button-solid** — default CTA. `font-semibold`, `px-4 py-2`, `text-sm` (or `xs`).
-- **button-outline** — same radius; hairline border, no fill.
+- **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
+- **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
+- **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a 3px left rule; colour is the caller's (`accent` prop).
 - **card-linked** — no border until hover/focus paints hairline; `-m-4` hit area.
-- **eyebrow** — mono, 10px, ink-muted.
+- **eyebrow** — page only: mono, 10px, ink-muted.
+- **section-label** — app section: `{typography.section}`, sentence case, ink-muted.
 - **hero** — Rings mark, then eyebrow, headline, lede, actions.
 - **nav** — hairline bottom border; Greca + product wordmark; mono links.
 - **install-block** — block fill; amarillo `$ ` prefix on each command.
 - **footer** — block fill; Greca onDark; property links.
+- **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill.
+- **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
+- **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a 2px left rule in `{colors.primary}` (dark: amarillo) and ink text.
+- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
+- **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
+- **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
+
+| State | Treatment |
+| --- | --- |
+| hover | `{colors.hover}` fill. Rest border stays. Hover fill is never a border colour. |
+| pressed | `{colors.selected}` fill. |
+| selected | Never fill alone. Rows: selected fill plus a 2px `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
+| focus | 2px `{colors.anil}` outline, offset 2px, both themes. Does not swap the border. |
+| disabled | `{colors.ink-muted}` text, no fill change, no hover. |
 
 ## Do's and Don'ts
 
@@ -352,6 +448,11 @@ components:
 - Don't use rosa for inline prose; UI and large text only.
 - Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
 - Don't use `{colors.hover}` as a border colour.
+- Don't change a border colour on hover; focus is the anil ring.
+- Don't show selected by fill alone; rows take the primary left rule, segmented takes ink fill with canvas text.
+- Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`.
+- Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
+- Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
 

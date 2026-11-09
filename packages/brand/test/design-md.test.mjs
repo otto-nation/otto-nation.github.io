@@ -130,6 +130,54 @@ test('YAML spacing includes app length tokens after the Tailwind 1–6 steps', (
   }
 });
 
+function channel(byte) {
+  const v = byte / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => channel(parseInt(hex.slice(i, i + 2), 16)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(fg, bg) {
+  const [hi, lo] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function darkColor(ref, colors) {
+  const match = ref.match(/^\{colors\.([a-z0-9-]+)\}$/);
+  if (!match) return null;
+  const name = match[1];
+  const key = name.startsWith('dark-') ? name : `dark-${name}`;
+  return colors[key];
+}
+
+// The pinned linter checks light text/bg pairs. This walks the same YAML and
+// resolves each {colors.x} against the dark-* ramp so a dark-only miss fails.
+test('each component text/bg pair clears AA on the dark ramp', () => {
+  const designMd = read('DESIGN.md');
+  const colors = yamlColors(designMd);
+  const components = yamlComponents(designMd);
+  let pairs = 0;
+  for (const [name, props] of Object.entries(components)) {
+    const fgRef = props.textColor;
+    const bgRef = props.backgroundColor;
+    if (!fgRef || !bgRef) continue;
+    const fg = darkColor(fgRef, colors);
+    const bg = darkColor(bgRef, colors);
+    assert.ok(fg, `${name}: ${fgRef} has no dark-* colour`);
+    assert.ok(bg, `${name}: ${bgRef} has no dark-* colour`);
+    const ratio = contrast(fg, bg);
+    assert.ok(
+      ratio >= 4.5,
+      `dark ${name}: ${fgRef} on ${bgRef} is ${ratio.toFixed(2)}:1, under AA`,
+    );
+    pairs += 1;
+  }
+  assert.ok(pairs >= 12, `expected at least 12 text/bg pairs, got ${pairs}`);
+});
+
 test('the package exports DESIGN.md', () => {
   const require = createRequire(import.meta.url);
   assert.equal(
@@ -188,6 +236,26 @@ function yamlTypography(designMd) {
     typography[current][prop[1]] = prop[2].replace(/^"|"$/g, '');
   }
   return typography;
+}
+
+function yamlComponents(designMd) {
+  const fence = designMd.match(/```yaml\n(components:\n[\s\S]*?)```/);
+  assert.ok(fence, 'DESIGN.md missing components YAML fence');
+  const components = {};
+  let current = null;
+  for (const line of fence[1].split('\n')) {
+    if (line === 'components:' || line === '') continue;
+    const name = line.match(/^  ([a-z0-9-]+):$/);
+    if (name) {
+      current = name[1];
+      components[current] = {};
+      continue;
+    }
+    const prop = line.match(/^    ([a-zA-Z]+): "(.+)"$/);
+    assert.ok(current && prop, `unparseable components line: ${line}`);
+    components[current][prop[1]] = prop[2];
+  }
+  return components;
 }
 
 function yamlSpacing(designMd) {
