@@ -277,6 +277,15 @@ breaking release.
 | `Eyebrow` | `{ children, className? }` |
 | `Button` | `{ href, children, variant?: 'solid' \| 'outline', size?: 'sm' \| 'xs', onDark?, className? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
+| `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
+| `Tag` | `{ children, className? }` |
+| `SectionLabel` | `{ children, count?: number, className? }` |
+| `ActionButton` | `{ children, variant?: 'solid' \| 'outline' \| 'ghost', dense?: boolean, disabled?: boolean, onClick?, className? }` |
+| `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
+| `ListRow` | `{ children, selected?, dense?, onClick?, className? }` |
+| `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
+| `Input` | `{ dense?: boolean, className? }` |
+| `StateMessage` | `{ kind: 'empty' \| 'loading' \| 'stale' \| 'error', children, action?, className? }` |
 | `Nav` | `{ product, links, slot?, className? }` |
 | `Footer` | `{ cta?, className? }` |
 | `Hero` | `{ eyebrow, headline, lede, actions?, className? }` |
@@ -284,6 +293,8 @@ breaking release.
 | `SearchButton` | Client component, `@otto-nation/brand/search-button` only. The one export with no `className?` — see below |
 
 `CardItem` is `{ title, body, href?, accent?, meta? }`.
+
+The org site's `/ui/` page is the render coverage for the app primitives.
 
 Every component takes `className?` and merges it with `tailwind-merge` onto its
 outermost element, so your class beats the package default by prop rather than

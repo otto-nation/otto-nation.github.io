@@ -324,7 +324,9 @@ nothing.
 
 Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
 and hit-area are prose — `borderColor` is not a component key. App entries use
-refs to the colour, type, and length tokens.
+refs to the colour, type, and length tokens. React consumers: `ActionButton`,
+`SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard`, and `Input`
+implement these entries.
 
 ```yaml
 components:
@@ -577,5 +579,5 @@ terminal:
 This file ships with `@otto-nation/brand` from 1.3.0. Locate it with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. Terminal theme
 files ship from 1.4.0 (`terminal/otto-light.json`, `terminal/otto-dark.json`;
-generated; do not edit). For setup, tokens, and the no-build zip, see the
-package README.
+generated; do not edit). App-UI React primitives ship from 1.5.0. For setup,
+tokens, and the no-build zip, see the package README.
