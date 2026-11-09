@@ -187,9 +187,9 @@
    *   --ow-info             9.19:1 on the dark canvas. Working/running/info,
    *                  text-safe.
    *   --ow-info             8.13:1 on the dark surface.
- *   --ow-magenta          6.86:1 on the dark canvas. Text-safe magenta,
- *                  ANSI 5/13 only.
- *   --ow-magenta          6.07:1 on the dark surface. */
+   *   --ow-magenta          6.86:1 on the dark canvas. Text-safe magenta,
+   *                  ANSI 5/13 only.
+   *   --ow-magenta          6.07:1 on the dark surface. */
   --ow-block: #393328;
   --ow-block-ink: #e8e3d8;
   --ow-block-ink-muted: #a89e8f;
