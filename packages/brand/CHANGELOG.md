@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.2.0...brand-v1.3.0) (2026-11-09)
+
+
+### Features
+
+* **brand:** add app-UI React primitives ([#27](https://github.com/otto-nation/otto-nation.github.io/issues/27)) ([e84fc95](https://github.com/otto-nation/otto-nation.github.io/commit/e84fc95693fef93a3dda421087ceedb0865703af))
+* **brand:** add app-UI tokens, states, and dark ramp to DESIGN.md ([#24](https://github.com/otto-nation/otto-nation.github.io/issues/24)) ([0960000](https://github.com/otto-nation/otto-nation.github.io/commit/0960000b7c2320e72bbc6503c81c7c86fe309115))
+* **brand:** add pane, state, and terminal rules and themes ([#25](https://github.com/otto-nation/otto-nation.github.io/issues/25)) ([5e40156](https://github.com/otto-nation/otto-nation.github.io/commit/5e40156c3b8a59c98ffa56f65889743ff7526b66))
+
+
+### Bug Fixes
+
+* **brand:** terminal themes ship from 1.3.0, not 1.4.0 ([#29](https://github.com/otto-nation/otto-nation.github.io/issues/29)) ([99b6034](https://github.com/otto-nation/otto-nation.github.io/commit/99b6034c16a86f87c287b380dfe7612d6c6aa3b7))
+
 ## [1.2.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.1.1...brand-v1.2.0) (2026-10-03)
 
 
