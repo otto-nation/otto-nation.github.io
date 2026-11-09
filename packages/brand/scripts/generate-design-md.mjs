@@ -3,9 +3,8 @@
 // tokens.css / fonts.css / eyebrow.tsx. The rest of the file is hand-written
 // and left alone. Idempotent: a second run is a no-op on a current file.
 //
-// ceiling: YAML colors are the :root ramp only, until design.md has light/dark
-// modes. A custom top-level key holding hexes is a token-like-ignored warning,
-// so the dark ramp is a generated markdown table instead.
+// ceiling: dark ramp as dark-* colour keys until design.md supports modes
+// (upstream issue #13); switch once modes land.
 
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,7 +26,6 @@ const pkgRoot = fileURLToPath(new URL('..', import.meta.url));
 export function generate(designMd, { tokensCss, fontsCss, eyebrowSource }) {
   const yaml = frontMatter({ tokensCss, fontsCss, eyebrowSource });
   let out = replaceFrontMatter(designMd, yaml);
-  out = replaceMarkedRegion(out, 'dark-ramp', darkRampTable(tokensCss));
   out = replaceMarkedRegion(out, 'contrast-rules', contrastTable(tokensCss));
   return out;
 }
@@ -62,6 +60,21 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
   const colors = { primary: quoteColor(primaryHex) };
   for (const [name, hex] of light) {
     colors[name.replace(/^--ow-/, '')] = quoteColor(hex);
+  }
+
+  const dark = darkTokenHexes(tokensCss);
+  const darkPrimaryToken = fdPrimaryToken(tokensCss, 'dark');
+  const darkPrimaryHex = darkPrimaryToken ? dark.get(darkPrimaryToken) : undefined;
+  if (!darkPrimaryToken || !darkPrimaryHex) {
+    throw new Error('tokens.css .dark has no --color-fd-primary: var(--ow-*)');
+  }
+  colors['dark-primary'] = quoteColor(darkPrimaryHex);
+  for (const [name] of light) {
+    const darkHex = dark.get(name);
+    if (!darkHex) {
+      throw new Error(`tokens.css .dark cascade is missing ${name}`);
+    }
+    colors[`dark-${name.replace(/^--ow-/, '')}`] = quoteColor(darkHex);
   }
 
   const lines = [
@@ -110,21 +123,6 @@ function quoteColor(hex) {
 
 function quoteDimension(value) {
   return value.startsWith('-') ? `"${value}"` : value;
-}
-
-function darkRampTable(tokensCss) {
-  const light = lightTokenHexes(tokensCss);
-  const dark = darkTokenHexes(tokensCss);
-  const rows = [];
-  for (const [name, lightHex] of light) {
-    const darkHex = dark.get(name);
-    if (!darkHex || darkHex.toLowerCase() === lightHex.toLowerCase()) continue;
-    rows.push(`| ${name.replace(/^--ow-/, '')} | ${darkHex.toLowerCase()} |`);
-  }
-  if (rows.length === 0) {
-    throw new Error('tokens.css .dark restated no --ow-* hexes');
-  }
-  return ['| Token | Dark |', '| --- | --- |', ...rows, ''].join('\n');
 }
 
 function contrastTable(tokensCss) {

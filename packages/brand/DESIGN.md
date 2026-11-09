@@ -26,6 +26,27 @@ colors:
   block-ink: "#e8e3d8"
   block-ink-muted: "#8a8073"
   block-hairline: "#3d3420"
+  dark-primary: "#e5ba41"
+  dark-canvas: "#0f0e13"
+  dark-surface: "#1f1c14"
+  dark-ink: "#e8e3d8"
+  dark-ink-muted: "#978d7f"
+  dark-hairline: "#3d3420"
+  dark-amarillo: "#e5ba41"
+  dark-rosa: "#d81e5b"
+  dark-barro: "#c4552f"
+  dark-anil: "#7f9cf0"
+  dark-done: "#93be74"
+  dark-warn: "#d6aa51"
+  dark-on-amarillo: "#1a1712"
+  dark-on-rosa: "#fbf6ea"
+  dark-outline: "#706756"
+  dark-done-soft: "#1e2719"
+  dark-warn-soft: "#2a2314"
+  dark-block: "#393328"
+  dark-block-ink: "#e8e3d8"
+  dark-block-ink-muted: "#a89e8f"
+  dark-block-hairline: "#544c3c"
 typography:
   display:
     fontFamily: League Spartan
@@ -64,11 +85,13 @@ The page is a warm cream canvas, not white. Palette names are Mexican Spanish
 
 `{colors.x}` in this file is `var(--ow-x)` in CSS. `{colors.primary}` equals
 `{colors.rosa}` and `--color-fd-primary`. Dark mode swaps that mapping to
-`{colors.amarillo}`; it does not add a second YAML ramp.
+`{colors.amarillo}` (`{colors.dark-primary}`). `{colors.dark-x}` is every
+light token's `.dark` value; a missing key never means inherit.
 
 ## Colors
 
-YAML holds the light (`:root`) ramp. Roles below; values live in the tokens.
+YAML holds both ramps: `{colors.x}` from `:root`, `{colors.dark-x}` from the
+`.dark` cascade. Roles below; values live in the tokens.
 
 | Token | Role |
 | --- | --- |
@@ -86,27 +109,6 @@ YAML holds the light (`:root`) ramp. Roles below; values live in the tokens.
 | done-soft / warn-soft | Tinted panels behind those states |
 | on-amarillo / on-rosa | Text on those fills; invariant across themes |
 | block* | Install block and footer; dark band in both themes |
-
-`.dark` restatements (not a YAML key — the format has no modes):
-
-<!-- generated:dark-ramp -->
-| Token | Dark |
-| --- | --- |
-| canvas | #0f0e13 |
-| surface | #1f1c14 |
-| ink | #e8e3d8 |
-| ink-muted | #978d7f |
-| hairline | #3d3420 |
-| anil | #7f9cf0 |
-| done | #93be74 |
-| warn | #d6aa51 |
-| outline | #706756 |
-| done-soft | #1e2719 |
-| warn-soft | #2a2314 |
-| block | #393328 |
-| block-ink-muted | #a89e8f |
-| block-hairline | #544c3c |
-<!-- /generated:dark-ramp -->
 
 Documented contrast claims from `tokens.css`:
 
