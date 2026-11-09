@@ -452,7 +452,7 @@ components:
 - **nav** — hairline bottom border; Greca + product wordmark; mono links.
 - **install-block** — block fill; amarillo `$ ` prefix on each command.
 - **footer** — block fill; Greca onDark; property links.
-- **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill.
+- **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill, 4px (`px-1`) inline padding.
 - **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
 - **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a 2px left rule in `{colors.primary}` (dark: amarillo) and ink text.
 - **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
@@ -465,7 +465,7 @@ components:
 | pressed | `{colors.selected}` fill. |
 | selected | Never fill alone. Rows: selected fill plus a 2px `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | 2px `{colors.anil}` outline, offset 2px, both themes. Does not swap the border. |
-| disabled | `{colors.ink-muted}` text, no fill change, no hover. |
+| disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
 
 ## Do's and Don'ts
 
