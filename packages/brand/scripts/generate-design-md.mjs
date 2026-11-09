@@ -83,7 +83,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     ...GENERATED_HEADER,
     'version: alpha',
     'name: otto-nation',
-    'description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."',
+    'description: "Warm cream canvas, Mexican palette names, Greca fret. Unprefixed YAML colours are the light ramp; dark-* keys are the dark ramp."',
     'colors:',
     ...Object.entries(colors).map(([key, value]) => `  ${key}: ${value}`),
     'typography:',

@@ -3,7 +3,7 @@
 # `npm run design:generate -w packages/brand`. Do not edit; the prose below is hand-written.
 version: alpha
 name: otto-nation
-description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."
+description: "Warm cream canvas, Mexican palette names, Greca fret. Unprefixed YAML colours are the light ramp; dark-* keys are the dark ramp."
 colors:
   primary: "#d81e5b"
   canvas: "#f7f2e9"
