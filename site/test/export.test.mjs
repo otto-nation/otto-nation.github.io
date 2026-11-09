@@ -99,6 +99,73 @@ test('the /ui specimen renders SectionLabel and ActionButton', () => {
   }
 });
 
+test('the /ui specimen renders SegmentedControl and ListRow', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const id of ['segmented', 'segmented-dense']) {
+    const block = section(html, id);
+    assert.match(block, /role="group"/);
+    assert.match(block, /aria-label="Status"/);
+    assert.ok(block.includes('--ow-hairline'), `${id} track hairline missing`);
+    assert.ok(block.includes('--ow-font-label'), `${id} label font missing`);
+    const buttons = [...block.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
+    assert.equal(buttons.length, 3, `${id} should have three segments`);
+    const pressed = buttons.filter((tag) => /aria-pressed="true"/.test(tag));
+    assert.equal(pressed.length, 1, `${id} should have exactly one pressed segment`);
+    assert.ok(
+      pressed[0].includes('bg-[var(--ow-ink)]') &&
+        pressed[0].includes('text-[var(--ow-canvas)]'),
+      `${id} pressed segment is not ink fill with canvas text`,
+    );
+    const rest = buttons.filter((tag) => !/aria-pressed="true"/.test(tag));
+    for (const tag of rest) {
+      assert.match(tag, /aria-pressed="false"/, `${id} rest segment missing aria-pressed=false`);
+      assert.ok(tag.includes('--ow-ink-muted'), `${id} rest segment ink-muted missing`);
+      assert.ok(tag.includes('--ow-hover'), `${id} rest segment hover fill missing`);
+      assert.doesNotMatch(tag, /hover:border/, `${id} rest segment changes the border on hover`);
+    }
+    if (id === 'segmented-dense') {
+      assert.ok(
+        block.includes('--ow-control-height-dense'),
+        'segmented dense height token missing',
+      );
+    } else {
+      assert.ok(
+        block.includes('--ow-control-height') &&
+          !block.includes('--ow-control-height-dense'),
+        'segmented rest should use control-height',
+      );
+    }
+  }
+
+  const restRow = section(html, 'list-row-rest');
+  assert.ok(restRow.includes('otto-nation/brand'), 'list-row text missing');
+  assert.ok(restRow.includes('--ow-font-body'), 'list-row body font missing');
+  assert.ok(
+    restRow.includes('--ow-row-height') && !restRow.includes('--ow-row-height-dense'),
+    'list-row rest should use row-height',
+  );
+  assert.ok(restRow.includes('--ow-hover'), 'list-row rest hover fill missing');
+  assert.doesNotMatch(restRow, /aria-current="true"/);
+  assert.ok(!restRow.includes('--ow-selected'), 'rest row used selected fill');
+  assert.ok(!restRow.includes('--color-fd-primary'), 'rest row used the selected left rule');
+
+  const denseRow = section(html, 'list-row-dense');
+  assert.ok(
+    denseRow.includes('--ow-row-height-dense'),
+    'list-row dense height token missing',
+  );
+
+  const selectedRow = section(html, 'list-row-selected');
+  assert.match(selectedRow, /aria-current="true"/);
+  assert.ok(selectedRow.includes('--ow-selected'), 'selected row fill missing');
+  assert.ok(
+    selectedRow.includes('border-l-[2px]') &&
+      selectedRow.includes('border-l-[var(--color-fd-primary)]'),
+    'selected row left rule missing',
+  );
+});
+
 test('the /ui specimen renders StatusGlyph and Tag', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {

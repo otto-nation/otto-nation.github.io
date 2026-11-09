@@ -1,9 +1,12 @@
 import {
   ActionButton,
+  ListRow,
   SectionLabel,
+  SegmentedControl,
   StatusGlyph,
   Tag,
   type ActionButtonVariant,
+  type SegmentedOption,
   type StatusGlyphStatus,
 } from '@otto-nation/brand';
 
@@ -24,6 +27,18 @@ const ACTION_STATES = [
   { state: 'rest', dense: false, disabled: false },
   { state: 'dense', dense: true, disabled: false },
   { state: 'disabled', dense: false, disabled: true },
+] as const;
+
+const SEGMENTED_OPTIONS: SegmentedOption[] = [
+  { value: 'open', label: 'Open' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'all', label: 'All' },
+];
+
+const LIST_ROWS = [
+  { state: 'rest', selected: false, dense: false },
+  { state: 'dense', selected: false, dense: true },
+  { state: 'selected', selected: true, dense: false },
 ] as const;
 
 export default function UiPage() {
@@ -63,6 +78,28 @@ export default function UiPage() {
           </section>
         )),
       )}
+      <section data-specimen="segmented">
+        <SegmentedControl
+          options={SEGMENTED_OPTIONS}
+          value="open"
+          label="Status"
+        />
+      </section>
+      <section data-specimen="segmented-dense">
+        <SegmentedControl
+          options={SEGMENTED_OPTIONS}
+          value="open"
+          label="Status"
+          dense
+        />
+      </section>
+      {LIST_ROWS.map(({ state, selected, dense }) => (
+        <section key={state} data-specimen={`list-row-${state}`}>
+          <ListRow selected={selected} dense={dense}>
+            otto-nation/brand
+          </ListRow>
+        </section>
+      ))}
     </main>
   );
 }

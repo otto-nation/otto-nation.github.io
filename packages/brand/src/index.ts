@@ -7,6 +7,8 @@ export { StatusGlyph, type StatusGlyphStatus } from './primitives/status-glyph';
 export { Tag } from './primitives/tag';
 export { SectionLabel } from './primitives/section-label';
 export { ActionButton, type ActionButtonVariant } from './primitives/action-button';
+export { SegmentedControl, type SegmentedOption } from './primitives/segmented-control';
+export { ListRow } from './primitives/list-row';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';
 export { Hero } from './chrome/hero';
