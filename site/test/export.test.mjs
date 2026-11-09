@@ -6,11 +6,13 @@ import test from 'node:test';
 
 import { verifyExport } from '@otto-nation/brand/verify';
 
-// This is the render coverage for the landing page: the org site composes
-// every export @otto-nation/brand ships, so reading its built output is what
-// proves none of them turned out over-fitted to otto-workbench's copy. It
-// reads a build that already ran rather than invoking Next itself, so it
-// stays fast and does not duplicate `npm run build`'s job.
+// This is the render coverage for the landing page and the /ui/ specimen
+// page: the org site composes every export @otto-nation/brand ships, so
+// reading its built output is what proves none of them turned out over-fitted
+// to otto-workbench's copy. App primitives with branching the landing page
+// does not exercise live on /ui/. It reads a build that already ran rather
+// than invoking Next itself, so it stays fast and does not duplicate
+// `npm run build`'s job.
 const OUT_DIR = fileURLToPath(new URL('../out/', import.meta.url));
 
 if (!existsSync(OUT_DIR)) {
@@ -21,6 +23,248 @@ if (!existsSync(OUT_DIR)) {
 }
 
 const INDEX_HTML = readFileSync(join(OUT_DIR, 'index.html'), 'utf8');
+const UI_HTML_PATH = join(OUT_DIR, 'ui', 'index.html');
+
+// Slice one specimen block out of the /ui/ page by data-specimen="<id>".
+// Later phases assert each primitive variant from the matching block.
+function section(html, id) {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = html.match(
+    new RegExp(`<([a-zA-Z][\\w:-]*)([^>]*\\sdata-specimen="${escaped}"[^>]*)>([\\s\\S]*?)</\\1>`),
+  );
+  assert.ok(match, `specimen "${id}" missing`);
+  return match[0];
+}
+
+test('the /ui specimen page is built and noindexed', () => {
+  assert.ok(existsSync(UI_HTML_PATH), 'out/ui/index.html missing — the specimen page did not build');
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  assert.match(html, /<meta\b[^>]*\bnoindex\b/i);
+  assert.match(section(html, 'page'), /App UI specimens/);
+});
+
+const STATUS_SPECIMENS = {
+  pass: { char: '\u2713', label: 'Passed', token: '--ow-done' },
+  fail: { char: '\u00D7', label: 'Failed', token: '--ow-danger' },
+  running: { char: '\u2026', label: 'Running', token: '--ow-info' },
+  warn: { char: '!', label: 'Warning', token: '--ow-warn' },
+  none: { char: '\u00B7', label: 'None', token: '--ow-ink-muted' },
+};
+
+test('the /ui specimen renders SectionLabel and ActionButton', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const label = section(html, 'section-label');
+  assert.ok(label.includes('Open'), 'section label text missing');
+  assert.ok(label.includes('--ow-font-section'), 'section font token missing');
+  assert.ok(label.includes('--ow-ink-muted'), 'section ink-muted token missing');
+  assert.ok(!label.includes('--ow-font-meta'), 'count-less label used meta role');
+  const counted = section(html, 'section-label-count');
+  assert.ok(counted.includes('Open'), 'counted section label text missing');
+  assert.ok(counted.includes('3'), 'section count missing');
+  assert.ok(counted.includes('--ow-font-meta'), 'count meta font token missing');
+
+  for (const variant of ['solid', 'outline', 'ghost']) {
+    for (const state of ['rest', 'dense', 'disabled']) {
+      const block = section(html, `action-${variant}-${state}`);
+      const button = block.match(/<button\b[^>]*>/)?.[0];
+      assert.ok(button, `${variant} ${state} is not a button`);
+      assert.ok(block.includes('Action'), `${variant} ${state} label missing`);
+      assert.doesNotMatch(
+        button,
+        /hover:border/,
+        `${variant} ${state} changes the border on hover`,
+      );
+      if (state === 'disabled') {
+        assert.match(button, /\bdisabled\b/, `${variant} disabled is not disabled`);
+      } else {
+        assert.doesNotMatch(
+          button,
+          /\bdisabled\b/,
+          `${variant} ${state} should not be disabled`,
+        );
+      }
+      if (state === 'dense') {
+        assert.ok(
+          block.includes('--ow-control-height-dense'),
+          `${variant} dense height token missing`,
+        );
+      } else {
+        assert.ok(
+          block.includes('--ow-control-height') &&
+            !block.includes('--ow-control-height-dense'),
+          `${variant} ${state} should use control-height`,
+        );
+      }
+    }
+  }
+});
+
+test('the /ui specimen renders SegmentedControl and ListRow', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const id of ['segmented', 'segmented-dense']) {
+    const block = section(html, id);
+    assert.match(block, /role="group"/);
+    assert.match(block, /aria-label="Status"/);
+    assert.ok(block.includes('--ow-hairline'), `${id} track hairline missing`);
+    assert.ok(block.includes('--ow-font-label'), `${id} label font missing`);
+    const buttons = [...block.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
+    assert.equal(buttons.length, 3, `${id} should have three segments`);
+    const pressed = buttons.filter((tag) => /aria-pressed="true"/.test(tag));
+    assert.equal(pressed.length, 1, `${id} should have exactly one pressed segment`);
+    assert.ok(
+      pressed[0].includes('bg-[var(--ow-ink)]') &&
+        pressed[0].includes('text-[var(--ow-canvas)]'),
+      `${id} pressed segment is not ink fill with canvas text`,
+    );
+    const rest = buttons.filter((tag) => !/aria-pressed="true"/.test(tag));
+    for (const tag of rest) {
+      assert.match(tag, /aria-pressed="false"/, `${id} rest segment missing aria-pressed=false`);
+      assert.ok(tag.includes('--ow-ink-muted'), `${id} rest segment ink-muted missing`);
+      assert.ok(tag.includes('--ow-hover'), `${id} rest segment hover fill missing`);
+      assert.doesNotMatch(tag, /hover:border/, `${id} rest segment changes the border on hover`);
+    }
+    if (id === 'segmented-dense') {
+      assert.ok(
+        block.includes('--ow-control-height-dense'),
+        'segmented dense height token missing',
+      );
+    } else {
+      assert.ok(
+        block.includes('--ow-control-height') &&
+          !block.includes('--ow-control-height-dense'),
+        'segmented rest should use control-height',
+      );
+    }
+  }
+
+  const restRow = section(html, 'list-row-rest');
+  assert.ok(restRow.includes('otto-nation/brand'), 'list-row text missing');
+  assert.ok(restRow.includes('--ow-font-body'), 'list-row body font missing');
+  assert.ok(
+    restRow.includes('--ow-row-height') && !restRow.includes('--ow-row-height-dense'),
+    'list-row rest should use row-height',
+  );
+  assert.ok(restRow.includes('--ow-hover'), 'list-row rest hover fill missing');
+  assert.doesNotMatch(restRow, /aria-current="true"/);
+  assert.ok(!restRow.includes('--ow-selected'), 'rest row used selected fill');
+  assert.ok(!restRow.includes('--color-fd-primary'), 'rest row used the selected left rule');
+
+  const denseRow = section(html, 'list-row-dense');
+  assert.ok(
+    denseRow.includes('--ow-row-height-dense'),
+    'list-row dense height token missing',
+  );
+
+  const selectedRow = section(html, 'list-row-selected');
+  assert.match(selectedRow, /aria-current="true"/);
+  assert.ok(selectedRow.includes('--ow-selected'), 'selected row fill missing');
+  assert.ok(
+    selectedRow.includes('border-l-[2px]') &&
+      selectedRow.includes('border-l-[var(--color-fd-primary)]'),
+    'selected row left rule missing',
+  );
+});
+
+test('the /ui specimen renders AppCard and Input', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const card = section(html, 'app-card-card');
+  assert.ok(card.includes('card body'), 'app-card body missing');
+  assert.ok(card.includes('--ow-surface'), 'app-card surface fill missing');
+  assert.ok(card.includes('--ow-card-padding'), 'app-card padding missing');
+  assert.ok(card.includes('--ow-font-body'), 'app-card body font missing');
+  assert.match(card, /border-\[var\(--ow-hairline\)\]/);
+  assert.doesNotMatch(card, /border-\[var\(--ow-outline\)\]/);
+  assert.ok(!card.includes('--ow-font-title'), 'untitled card used title role');
+
+  const popover = section(html, 'app-card-popover');
+  assert.ok(popover.includes('popover body'), 'popover body missing');
+  assert.ok(popover.includes('--ow-surface'), 'popover surface fill missing');
+  assert.ok(popover.includes('--ow-card-padding'), 'popover padding missing');
+  assert.match(popover, /border-\[var\(--ow-outline\)\]/);
+  assert.doesNotMatch(popover, /border-\[var\(--ow-hairline\)\]/);
+
+  const titled = section(html, 'app-card-title');
+  assert.ok(titled.includes('Pane'), 'app-card title missing');
+  assert.ok(titled.includes('Card body'), 'titled app-card body missing');
+  assert.ok(titled.includes('--ow-font-title'), 'app-card title font missing');
+  assert.match(titled, /border-\[var\(--ow-hairline\)\]/);
+
+  for (const state of ['rest', 'dense', 'disabled']) {
+    const block = section(html, `input-${state}`);
+    const input = block.match(/<input\b[^>]*>/)?.[0];
+    assert.ok(input, `${state} is not an input`);
+    assert.match(input, /border-\[var\(--ow-outline\)\]/);
+    assert.doesNotMatch(input, /focus-visible/, `${state} input has a focus class`);
+    assert.doesNotMatch(input, /hover:border/, `${state} input changes the border on hover`);
+    assert.ok(input.includes('--ow-font-body'), `${state} input body font missing`);
+    if (state === 'disabled') {
+      assert.match(input, /\bdisabled\b/, 'disabled input is not disabled');
+      assert.ok(input.includes('--ow-ink-muted'), 'disabled input ink-muted missing');
+    } else {
+      assert.doesNotMatch(input, /\bdisabled\b/, `${state} input should not be disabled`);
+    }
+    if (state === 'dense') {
+      assert.ok(
+        input.includes('--ow-control-height-dense'),
+        'input dense height token missing',
+      );
+    } else {
+      assert.ok(
+        input.includes('--ow-control-height') &&
+          !input.includes('--ow-control-height-dense'),
+        `${state} input should use control-height`,
+      );
+    }
+  }
+});
+
+test('the /ui specimen renders StateMessage', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const empty = section(html, 'state-empty');
+  assert.ok(empty.includes('No pull requests'), 'empty copy missing');
+  assert.ok(empty.includes('--ow-ink-muted'), 'empty ink-muted missing');
+  assert.ok(empty.includes('--ow-font-body'), 'empty body font missing');
+  assert.ok(empty.includes('text-center'), 'empty is not centred');
+  assert.doesNotMatch(empty, /role="status"/);
+  assert.doesNotMatch(empty, /role="alert"/);
+
+  const loading = section(html, 'state-loading');
+  assert.match(loading, /role="status"/);
+  assert.ok(loading.includes('--ow-ink-muted'), 'loading ink-muted missing');
+  assert.ok(loading.includes('Loading'), 'loading copy missing');
+  assert.ok(loading.includes('\u2026'), 'loading is missing U+2026');
+
+  const stale = section(html, 'state-stale');
+  assert.match(stale, /role="status"/);
+  assert.ok(stale.includes('--ow-warn'), 'stale warn token missing');
+  assert.ok(stale.includes('stale 2m ago'), 'stale copy missing');
+
+  const error = section(html, 'state-error');
+  assert.match(error, /role="alert"/);
+  assert.ok(error.includes('--ow-danger'), 'error danger token missing');
+  assert.ok(error.includes('Could not load pull requests'), 'error copy missing');
+  assert.ok(error.includes('Retry'), 'error retry action missing');
+  assert.match(error, /border-\[var\(--ow-hairline\)\]/);
+});
+
+test('the /ui specimen renders StatusGlyph and Tag', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {
+    const block = section(html, `status-${status}`);
+    assert.ok(block.includes(char), `${status} glyph missing`);
+    assert.ok(block.includes(label), `${status} label missing`);
+    assert.ok(block.includes(token), `${status} colour token missing`);
+  }
+  const hidden = section(html, 'status-pass-sr');
+  assert.ok(hidden.includes('\u2713'), 'sr-only pass glyph missing');
+  assert.ok(hidden.includes('sr-only'), 'showLabel={false} did not emit sr-only');
+  const tag = section(html, 'tag');
+  assert.match(tag, /border-\[var\(--ow-hairline\)\]/);
+  assert.doesNotMatch(tag, /\bbg-/);
+});
 
 test('index.html renders output from every component on the page', () => {
   assert.match(INDEX_HTML, /ONE TOOLCHAIN/, 'Eyebrow text missing — Hero/Eyebrow did not render');
