@@ -11,11 +11,9 @@ import { resolveTerminal, terminalMap } from './terminal.mjs';
 
 const pkgRoot = fileURLToPath(new URL('..', import.meta.url));
 
-const THEME_KEYS = ['background', 'foreground', 'selection', 'cursor', 'ansi'];
-
 /**
  * `{ 'otto-light.json': string, 'otto-dark.json': string }` — 2-space JSON,
- * lowercase hex, trailing newline, keys in THEME_KEYS order.
+ * lowercase hex, trailing newline, keys in the order background, foreground, selection, cursor, ansi.
  */
 export function generate(designMd, tokensCss) {
   const resolved = resolveTerminal(terminalMap(designMd), tokensCss);
@@ -33,11 +31,6 @@ function stringifyTheme(slots) {
     cursor: slots.cursor,
     ansi: Array.from({ length: 16 }, (_, i) => slots[i]),
   };
-  for (const key of Object.keys(theme)) {
-    if (!THEME_KEYS.includes(key)) {
-      throw new Error(`unexpected theme key ${key}`);
-    }
-  }
   return `${JSON.stringify(theme, null, 2)}\n`;
 }
 
