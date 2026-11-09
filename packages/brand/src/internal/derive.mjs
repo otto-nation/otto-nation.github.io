@@ -136,13 +136,28 @@ export function darkTokenHexes(tokensCss) {
 }
 
 /**
+ * Declared `--ow-*` names without the prefix. Empty when tokens.css
+ * declares none.
+ */
+function claimSurfaceNames(tokensCss) {
+  return [...declaredTokens(tokensCss)].map((name) => name.replace(/^--ow-/, ''));
+}
+
+/**
  * Contrast claims in the tokens.css header, plus amarillo's aside on the block.
  * Shape: `{ token, ratio, background }` with `--ow-*` names.
+ *
+ * Surfaces come from `declaredTokens`, not a hard-coded list, so a new
+ * background cannot drift out of the matcher.
  */
 export function documentedClaims(tokensCss) {
+  const surfaces = new Set(claimSurfaceNames(tokensCss));
+  if (surfaces.size === 0) return [];
   const claims = [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo|rosa|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?([a-z-]+)\b/g),
+  ]
+    .filter((match) => surfaces.has(match[3]))
+    .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
   const [, aside] = tokensCss.match(/reaches ([\d.]+):1 on the dark terminal block/) ?? [];
   if (aside) {
     claims.push({ token: '--ow-amarillo', ratio: aside, background: '--ow-block' });
@@ -155,9 +170,13 @@ export function documentedClaims(tokensCss) {
  * the light set above.
  */
 export function documentedDarkClaims(tokensCss) {
+  const surfaces = new Set(claimSurfaceNames(tokensCss));
+  if (surfaces.size === 0) return [];
   return [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark ([a-z-]+)\b/g),
+  ]
+    .filter((match) => surfaces.has(match[3]))
+    .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
 }
 
 function letterSpacingIn(block) {

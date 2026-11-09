@@ -18,6 +18,10 @@
  *                  still separates from a dark page.
  *   --ow-done      5.57:1 on canvas. Success state, text-safe.
  *   --ow-warn      5.04:1 on canvas. Warning state, text-safe.
+ *   --ow-danger    5.86:1 on canvas. Error/fail, text-safe.
+ *   --ow-danger    6.06:1 on surface.
+ *   --ow-info      5.59:1 on canvas. Working/running/info, text-safe.
+ *   --ow-info      5.78:1 on surface.
  *   --ow-anil      7.04:1 on canvas. Text-safe: links, and a fill that carries
  *                  --ow-canvas text. Restated in .dark so it holds on both ramps.
  *   --ow-ink-muted 6.92:1 on surface. Cards sit on --ow-surface, not canvas, so
@@ -38,6 +42,11 @@
  *   --ow-done      5.22:1 on done-soft.
  *   --ow-ink-muted 6.20:1 on warn-soft.
  *   --ow-warn      4.67:1 on warn-soft.
+ *   --ow-danger-soft, --ow-info-soft: tinted panels behind danger and info.
+ *                  Text on them is measured against the tint:
+ *   --ow-danger    5.26:1 on danger-soft.
+ *   --ow-info      5.16:1 on info-soft.
+ *   --ow-warn      4.53:1 on selected. Tightest light text pairing.
  *
  * The ratios below are asserted by test/contrast.test.mjs, which parses them out
  * of this comment and recomputes them from the hexes. Edit a hex without editing
@@ -61,6 +70,12 @@
   --ow-outline: #8f8575;
   --ow-done-soft: #e6ede7;
   --ow-warn-soft: #f3e9d6;
+  --ow-danger: #a8361f;
+  --ow-danger-soft: #f5e3dc;
+  --ow-info: #1d6a75;
+  --ow-info-soft: #e0ecee;
+  --ow-hover: #f1ebdf;
+  --ow-selected: #eee6d6;
 
   /* The install block and the footer stay dark in both themes — a shell prompt
    * has to read as a terminal, and the footer closes the page on a solid band.
@@ -116,10 +131,19 @@
    *   --ow-ink-muted        4.73:1 on the dark done-soft.
    *   --ow-done             7.25:1 on the dark done-soft.
    *   --ow-ink-muted        4.77:1 on the dark warn-soft.
-   *   --ow-warn             7.21:1 on the dark warn-soft. */
+   *   --ow-warn             7.21:1 on the dark warn-soft.
+   *   --ow-danger           6.88:1 on the dark danger-soft.
+   *   --ow-info             7.64:1 on the dark info-soft.
+   *   --ow-ink-muted        4.74:1 on the dark hover.
+   *   --ow-ink-muted        4.56:1 on the dark selected. Tightest dark
+   *                  text pairing. */
   --ow-outline: #706756;
   --ow-done-soft: #1e2719;
   --ow-warn-soft: #2a2314;
+  --ow-danger-soft: #2e1d17;
+  --ow-info-soft: #152427;
+  --ow-hover: #28241b;
+  --ow-selected: #2b271d;
 
   /* The block ramp lifts rather than staying frozen. One of the four changes
    * README § The four intended pixel changes enumerates. Against the light canvas
@@ -134,13 +158,20 @@
    *   --ow-block-ink-muted  4.74:1 on the dark block. Labels and buttons, AA.
    *   --ow-block-hairline   1.48:1 on the dark block, matching light's 1.46.
    *   --ow-done             9.02:1 on the dark canvas. Success state, text-safe.
-   *   --ow-warn             8.90:1 on the dark canvas. Warning state, text-safe. */
+   *   --ow-warn             8.90:1 on the dark canvas. Warning state, text-safe.
+   *   --ow-danger           8.22:1 on the dark canvas. Error/fail, text-safe.
+   *   --ow-danger           7.27:1 on the dark surface.
+   *   --ow-info             9.19:1 on the dark canvas. Working/running/info,
+   *                  text-safe.
+   *   --ow-info             8.13:1 on the dark surface. */
   --ow-block: #393328;
   --ow-block-ink: #e8e3d8;
   --ow-block-ink-muted: #a89e8f;
   --ow-block-hairline: #544c3c;
   --ow-done: #93be74;
   --ow-warn: #d6aa51;
+  --ow-danger: #f0907a;
+  --ow-info: #6cc0cb;
 
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded

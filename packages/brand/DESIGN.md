@@ -22,6 +22,12 @@ colors:
   outline: "#8f8575"
   done-soft: "#e6ede7"
   warn-soft: "#f3e9d6"
+  danger: "#a8361f"
+  danger-soft: "#f5e3dc"
+  info: "#1d6a75"
+  info-soft: "#e0ecee"
+  hover: "#f1ebdf"
+  selected: "#eee6d6"
   block: "#1a1712"
   block-ink: "#e8e3d8"
   block-ink-muted: "#8a8073"
@@ -43,6 +49,12 @@ colors:
   dark-outline: "#706756"
   dark-done-soft: "#1e2719"
   dark-warn-soft: "#2a2314"
+  dark-danger: "#f0907a"
+  dark-danger-soft: "#2e1d17"
+  dark-info: "#6cc0cb"
+  dark-info-soft: "#152427"
+  dark-hover: "#28241b"
+  dark-selected: "#2b271d"
   dark-block: "#393328"
   dark-block-ink: "#e8e3d8"
   dark-block-ink-muted: "#a89e8f"
@@ -93,6 +105,14 @@ light token's `.dark` value; a missing key never means inherit.
 YAML holds both ramps: `{colors.x}` from `:root`, `{colors.dark-x}` from the
 `.dark` cascade. Roles below; values live in the tokens.
 
+Text is two tiers: `{colors.ink}` and `{colors.ink-muted}`. `{colors.outline}`
+is never text. A dim or faint slot maps to ink-muted.
+
+Hover is `{colors.hover}` (never a border colour). Pressed and selected fill
+is `{colors.selected}`; fill is never the only selected cue. CI pass is
+`{colors.done}`, fail is `{colors.danger}`, running/queued is `{colors.info}`,
+stale is `{colors.warn}`.
+
 | Token | Role |
 | --- | --- |
 | canvas | Page background |
@@ -100,13 +120,17 @@ YAML holds both ramps: `{colors.x}` from `:root`, `{colors.dark-x}` from the
 | ink | Body copy, solid button fill |
 | ink-muted | Secondary copy, eyebrows, nav links |
 | hairline | Dividers, card edges, outline-button border |
-| outline | Control boundary (inputs); non-text 3:1 |
+| outline | Control boundary (inputs); non-text 3:1. Never text |
 | amarillo | Rules, borders, prompts, SVG line-work. Never text on light |
 | rosa | UI and large text only; primary on light |
 | barro | Greca stroke on light |
 | anil | Links; fill that carries canvas text |
-| done / warn | Success / warning, text-safe |
+| done / warn | Success / warning, text-safe. CI pass / stale |
+| danger / info | Error/fail / working/running, text-safe |
 | done-soft / warn-soft | Tinted panels behind those states |
+| danger-soft / info-soft | Tinted panels behind danger and info |
+| hover | Hover fill; never a border colour |
+| selected | Selected/pressed fill; never the only selected cue |
 | on-amarillo / on-rosa | Text on those fills; invariant across themes |
 | block* | Install block and footer; dark band in both themes |
 
@@ -119,6 +143,10 @@ Documented contrast claims from `tokens.css`:
 | rosa | 4.42:1 | canvas | light |
 | done | 5.57:1 | canvas | light |
 | warn | 5.04:1 | canvas | light |
+| danger | 5.86:1 | canvas | light |
+| danger | 6.06:1 | surface | light |
+| info | 5.59:1 | canvas | light |
+| info | 5.78:1 | surface | light |
 | anil | 7.04:1 | canvas | light |
 | ink-muted | 6.92:1 | surface | light |
 | on-amarillo | 9.73:1 | amarillo | light |
@@ -129,6 +157,9 @@ Documented contrast claims from `tokens.css`:
 | done | 5.22:1 | done-soft | light |
 | ink-muted | 6.20:1 | warn-soft | light |
 | warn | 4.67:1 | warn-soft | light |
+| danger | 5.26:1 | danger-soft | light |
+| info | 5.16:1 | info-soft | light |
+| warn | 4.53:1 | selected | light |
 | block-ink | 13.96:1 | block | light |
 | block-ink-muted | 4.61:1 | block | light |
 | amarillo | 9.73:1 | block | light |
@@ -140,12 +171,20 @@ Documented contrast claims from `tokens.css`:
 | done | 7.25:1 | done-soft | dark |
 | ink-muted | 4.77:1 | warn-soft | dark |
 | warn | 7.21:1 | warn-soft | dark |
+| danger | 6.88:1 | danger-soft | dark |
+| info | 7.64:1 | info-soft | dark |
+| ink-muted | 4.74:1 | hover | dark |
+| ink-muted | 4.56:1 | selected | dark |
 | block | 1.54:1 | canvas | dark |
 | block-ink | 9.78:1 | block | dark |
 | block-ink-muted | 4.74:1 | block | dark |
 | block-hairline | 1.48:1 | block | dark |
 | done | 9.02:1 | canvas | dark |
 | warn | 8.90:1 | canvas | dark |
+| danger | 8.22:1 | canvas | dark |
+| danger | 7.27:1 | surface | dark |
+| info | 9.19:1 | canvas | dark |
+| info | 8.13:1 | surface | dark |
 <!-- /generated:contrast-rules -->
 
 ## Typography
@@ -250,6 +289,8 @@ components:
 - Do keep the block band dark in both themes.
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
+- Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
+- Don't use `{colors.hover}` as a border colour.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
 
