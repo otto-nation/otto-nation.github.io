@@ -1,4 +1,6 @@
 ---
+# Generated from src/tokens.css and src/fonts.css by
+# `npm run design:generate -w packages/brand`. Do not edit; the prose below is hand-written.
 version: alpha
 name: otto-nation
 description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."

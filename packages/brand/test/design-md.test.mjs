@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { lint } from '@google/design.md/linter';
-import { generate } from '../scripts/generate-design-md.mjs';
+import { GENERATED_HEADER, generate } from '../scripts/generate-design-md.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (rel) => readFileSync(fileURLToPath(new URL(rel, root)), 'utf8');
@@ -20,6 +20,15 @@ function sources(tokensCss = read('src/tokens.css')) {
 test('DESIGN.md matches a fresh generate from tokens.css', () => {
   const committed = read('DESIGN.md');
   assert.equal(generate(committed, sources()), committed);
+});
+
+test('generate opens the front matter with the do-not-edit header', () => {
+  const stripped = read('DESIGN.md').replace(`${GENERATED_HEADER.join('\n')}\n`, '');
+  const regenerated = generate(stripped, sources());
+  assert.ok(
+    regenerated.startsWith(`---\n${GENERATED_HEADER.join('\n')}\nversion: alpha\n`),
+    'front matter does not open with the generated header',
+  );
 });
 
 test('generate is idempotent', () => {

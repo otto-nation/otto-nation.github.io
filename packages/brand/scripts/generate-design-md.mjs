@@ -32,6 +32,13 @@ export function generate(designMd, { tokensCss, fontsCss, eyebrowSource }) {
   return out;
 }
 
+// Front matter is the region most likely to be hand-edited and lost on the
+// next regenerate, and unlike the body regions it has no HTML marker.
+export const GENERATED_HEADER = [
+  '# Generated from src/tokens.css and src/fonts.css by',
+  '# `npm run design:generate -w packages/brand`. Do not edit; the prose below is hand-written.',
+];
+
 function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
   const light = lightTokenHexes(tokensCss);
   if (light.size === 0) {
@@ -58,6 +65,9 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
   }
 
   const lines = [
+    // A YAML comment, not a key: the design.md parser never sees it, so it
+    // cannot trip the linter's unknown-key rules or leak into an export.
+    ...GENERATED_HEADER,
     'version: alpha',
     'name: otto-nation',
     'description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."',
