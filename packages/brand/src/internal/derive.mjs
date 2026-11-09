@@ -259,7 +259,7 @@ export function fdPrimaryToken(tokensCss, theme = 'light') {
  * Throws when the rule is missing or the outline is not a `var(--ow-*)`.
  */
 export function focusRingToken(tokensCss) {
-  const body = tokensCss.match(/:focus-visible\s*\{([^}]+)\}/)?.[1];
+  const body = tokensCss.replace(/\/\*[\s\S]*?\*\//g, '').match(/:focus-visible\s*\{([^}]+)\}/)?.[1];
   if (body == null) {
     throw new Error('tokens.css is missing a :focus-visible rule');
   }
