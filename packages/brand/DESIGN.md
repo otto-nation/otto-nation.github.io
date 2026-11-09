@@ -267,6 +267,17 @@ App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
 | card-padding | `{spacing.card-padding}` | App cards |
 | column-min | `{spacing.column-min}` | Board column min width |
 
+Pane widths are the pane's container width. A YAML `breakpoints` key warns,
+and `var()` is not allowed in `@container` conditions, so this table is
+prose only.
+
+| Pane | Width | Treatment |
+| --- | --- | --- |
+| rail | <160px | Icons and glyphs only |
+| compact | 160–559px | Single column, dense heights |
+| board | ≥560px | Columns `minmax(var(--ow-column-min), 1fr)` |
+| wide | ≥1100px | Board plus a detail pane |
+
 CardGrid: 2 columns at `gap-4`; 3 columns at `gap-6` because linked cards add a
 `-m-4` hit area.
 
@@ -282,6 +293,14 @@ Flat. No shadows. Hierarchy is three edges:
 
 Borders do not change on hover. Focus adds a 2px `{colors.anil}` outline,
 offset 2px, in both themes; it does not swap the border.
+
+Overlays stay flat. Depth is an edge, never a darker fill.
+
+| Layer | Treatment |
+| --- | --- |
+| Popover / menu | `{colors.surface}` fill, `{colors.outline}` edge, `{rounded.lg}`. Surface vs canvas is 1.03 light / 1.13 dark, so the edge does the separating. |
+| Window | Same as a popover. |
+| Scrim | Modal only: `color-mix(in srgb, var(--ow-block) 50%, transparent)`. No token — an alpha hex breaks the token parser. |
 
 ## Shapes
 
@@ -467,6 +486,26 @@ components:
 `src/marks/icon.svg` paints canvas, barro, and rosa as literal hexes: it is
 loaded as a favicon and as an `<img>`, an isolated document that cannot resolve
 `var(--ow-*)`. Greca is the same mark inline and uses tokens. Edit both together.
+
+## States
+
+Empty, loading, stale, and error copy is sentence case. Each status glyph is
+always paired with a text or aria label.
+
+| State | Treatment |
+| --- | --- |
+| empty | `{colors.ink-muted}` `{typography.body}`, sentence case, centred, no illustration. e.g. "No pull requests", "Not in a repository". |
+| loading | "Loading…" (U+2026) in `{colors.ink-muted}`. No spinner unless it runs >1s. |
+| stale | `{colors.warn}` "stale" plus relative time. |
+| error | `{colors.danger}` one-line reason plus a `button-outline` "Retry". |
+
+| Status | Glyph | Colour |
+| --- | --- | --- |
+| pass | ✓ U+2713 | `{colors.done}` |
+| fail | × U+00D7 | `{colors.danger}` |
+| running | … U+2026 | `{colors.info}` |
+| warn | ! | `{colors.warn}` |
+| none | · U+00B7 | `{colors.ink-muted}` |
 
 ## Consuming
 
