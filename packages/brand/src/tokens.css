@@ -24,6 +24,8 @@
  *   --ow-info      5.78:1 on surface.
  *   --ow-anil      7.04:1 on canvas. Text-safe: links, and a fill that carries
  *                  --ow-canvas text. Restated in .dark so it holds on both ramps.
+ *                  Focus ring: 2px outline, offset 2px, both themes (D7).
+ *                  --color-fd-ring follows this token so the docs ring matches.
  *   --ow-ink-muted 6.92:1 on surface. Cards sit on --ow-surface, not canvas, so
  *                  muted copy inside one is measured there too.
  *   --ow-on-amarillo 9.73:1 on amarillo. The text colour for an amarillo fill.
@@ -105,7 +107,7 @@
   --color-fd-secondary-foreground: var(--ow-ink);
   --color-fd-accent: var(--ow-surface);
   --color-fd-accent-foreground: var(--ow-ink);
-  --color-fd-ring: var(--ow-amarillo);
+  --color-fd-ring: var(--ow-anil);
 
   /* App type roles. CSS consumers write `font: var(--ow-font-body)`.
    * Weights are 400/500/600. Tracking is the body rule's -0.01em. */
@@ -216,4 +218,13 @@ h2,
 h3,
 h4 {
   letter-spacing: -0.02em;
+}
+
+/* Focus ring (D7). Layered so a consumer's own focus utility or unlayered CSS
+ * still wins. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ow-anil);
+    outline-offset: 2px;
+  }
 }

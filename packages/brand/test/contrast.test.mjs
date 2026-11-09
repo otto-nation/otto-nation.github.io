@@ -8,6 +8,8 @@ import {
   documentedClaims as claimsFrom,
   documentedDarkClaims as darkClaimsFrom,
   fdPrimaryToken,
+  fdRoleToken,
+  focusRingToken,
   lightTokenHexes,
 } from '../src/internal/derive.mjs';
 
@@ -239,6 +241,24 @@ test('anil clears 3:1 on canvas, surface, hover, and selected in both ramps', ()
       assert.ok(
         ratio >= 3,
         `${theme}: --ow-anil on ${bg} is ${ratio.toFixed(2)}:1, under 3:1`,
+      );
+    }
+  }
+});
+
+// One owner: the fumadocs ring token and the base :focus-visible rule name the
+// same --ow-*. That token must clear the non-text floor on every app surface.
+test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces', () => {
+  const ringToken = focusRingToken(TOKENS);
+  for (const [theme, tokens] of eachRamp()) {
+    const role = fdRoleToken(TOKENS, '--color-fd-ring', theme);
+    assert.equal(role, ringToken, `${theme}: --color-fd-ring is not the focus-rule token`);
+    assert.ok(role, `${theme}: missing --color-fd-ring`);
+    for (const bg of APP_SURFACES) {
+      const ratio = contrast(tokens.get(role), tokens.get(bg));
+      assert.ok(
+        ratio >= 3,
+        `${theme}: ${role} on ${bg} is ${ratio.toFixed(2)}:1, under 3:1`,
       );
     }
   }

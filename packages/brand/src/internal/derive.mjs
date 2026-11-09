@@ -233,13 +233,41 @@ export function headingLetterSpacing(tokensCss) {
   return letterSpacingIn(tokensCss.match(/(?:^|\n)h1,\s*h2,\s*h3,\s*h4\s*\{([^}]+)\}/)?.[1]);
 }
 
+function fdRoleIn(block, role) {
+  const escaped = role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return block.match(new RegExp(`${escaped}:\\s*var\\((--ow-[a-z-]+)\\)`))?.[1] ?? null;
+}
+
 /**
- * The `--ow-*` that `--color-fd-primary` references in `:root` or `.dark`.
- * Null when the declaration is missing or is not a `var(--ow-*)`.
+ * The `--ow-*` that a `--color-fd-*` role references. Dark falls back to
+ * `:root` when the role is not restated. Null when neither block declares a
+ * `var(--ow-*)`.
  */
+export function fdRoleToken(tokensCss, role, theme = 'light') {
+  const light = fdRoleIn(lightBlock(tokensCss), role);
+  if (theme !== 'dark') return light;
+  return fdRoleIn(darkBlock(tokensCss), role) ?? light;
+}
+
+/** The `--ow-*` that `--color-fd-primary` references. */
 export function fdPrimaryToken(tokensCss, theme = 'light') {
-  const block = theme === 'dark' ? darkBlock(tokensCss) : lightBlock(tokensCss);
-  return block.match(/--color-fd-primary:\s*var\((--ow-[a-z-]+)\)/)?.[1] ?? null;
+  return fdRoleToken(tokensCss, '--color-fd-primary', theme);
+}
+
+/**
+ * The `--ow-*` inside the `:focus-visible` rule's `outline`.
+ * Throws when the rule is missing or the outline is not a `var(--ow-*)`.
+ */
+export function focusRingToken(tokensCss) {
+  const body = tokensCss.match(/:focus-visible\s*\{([^}]+)\}/)?.[1];
+  if (body == null) {
+    throw new Error('tokens.css is missing a :focus-visible rule');
+  }
+  const token = body.match(/outline:\s*[^;]*var\((--ow-[a-z-]+)\)/)?.[1];
+  if (!token) {
+    throw new Error('tokens.css :focus-visible rule has no outline var(--ow-*)');
+  }
+  return token;
 }
 
 function channel(byte) {

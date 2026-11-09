@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -45,4 +45,15 @@ test('index.html renders output from every component on the page', () => {
 test('the built export carries @otto-nation/brand', () => {
   const result = verifyExport({ out: OUT_DIR, control: 'py-7' });
   assert.ok(result.ok, result.failures.join('\n\n'));
+});
+
+// lightningcss may split the outline shorthand, so this only requires a
+// :focus-visible rule whose declarations name --ow-anil.
+test('the built CSS carries the anil :focus-visible ring', () => {
+  const staticDir = join(OUT_DIR, '_next', 'static');
+  const cssFiles = readdirSync(staticDir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+    .map((entry) => join(entry.parentPath, entry.name));
+  const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
+  assert.match(css, /:focus-visible\s*\{[^}]*--ow-anil/);
 });
