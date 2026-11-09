@@ -241,3 +241,19 @@ export function fdPrimaryToken(tokensCss, theme = 'light') {
   const block = theme === 'dark' ? darkBlock(tokensCss) : lightBlock(tokensCss);
   return block.match(/--color-fd-primary:\s*var\((--ow-[a-z-]+)\)/)?.[1] ?? null;
 }
+
+function channel(byte) {
+  const v = byte / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => channel(parseInt(hex.slice(i, i + 2), 16)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG 2.x contrast ratio between two `#rrggbb` hexes. */
+export function contrast(fg, bg) {
+  const [hi, lo] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+  return (hi + 0.05) / (lo + 0.05);
+}
