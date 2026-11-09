@@ -220,6 +220,36 @@ test('the /ui specimen renders AppCard and Input', () => {
   }
 });
 
+test('the /ui specimen renders StateMessage', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const empty = section(html, 'state-empty');
+  assert.ok(empty.includes('No pull requests'), 'empty copy missing');
+  assert.ok(empty.includes('--ow-ink-muted'), 'empty ink-muted missing');
+  assert.ok(empty.includes('--ow-font-body'), 'empty body font missing');
+  assert.ok(empty.includes('text-center'), 'empty is not centred');
+  assert.doesNotMatch(empty, /role="status"/);
+  assert.doesNotMatch(empty, /role="alert"/);
+
+  const loading = section(html, 'state-loading');
+  assert.match(loading, /role="status"/);
+  assert.ok(loading.includes('--ow-ink-muted'), 'loading ink-muted missing');
+  assert.ok(loading.includes('Loading'), 'loading copy missing');
+  assert.ok(loading.includes('\u2026'), 'loading is missing U+2026');
+
+  const stale = section(html, 'state-stale');
+  assert.match(stale, /role="status"/);
+  assert.ok(stale.includes('--ow-warn'), 'stale warn token missing');
+  assert.ok(stale.includes('stale 2m ago'), 'stale copy missing');
+
+  const error = section(html, 'state-error');
+  assert.match(error, /role="alert"/);
+  assert.ok(error.includes('--ow-danger'), 'error danger token missing');
+  assert.ok(error.includes('Could not load pull requests'), 'error copy missing');
+  assert.ok(error.includes('Retry'), 'error retry action missing');
+  assert.match(error, /border-\[var\(--ow-hairline\)\]/);
+});
+
 test('the /ui specimen renders StatusGlyph and Tag', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {

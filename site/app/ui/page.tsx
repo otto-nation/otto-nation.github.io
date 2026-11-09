@@ -5,11 +5,13 @@ import {
   ListRow,
   SectionLabel,
   SegmentedControl,
+  StateMessage,
   StatusGlyph,
   Tag,
   type ActionButtonVariant,
   type AppCardVariant,
   type SegmentedOption,
+  type StateMessageKind,
   type StatusGlyphStatus,
 } from '@otto-nation/brand';
 
@@ -50,6 +52,17 @@ const INPUT_STATES = [
   { state: 'dense', dense: true, disabled: false },
   { state: 'disabled', dense: false, disabled: true },
 ] as const;
+
+const STATE_MESSAGES: {
+  kind: StateMessageKind;
+  children?: string;
+  action?: boolean;
+}[] = [
+  { kind: 'empty', children: 'No pull requests' },
+  { kind: 'loading' },
+  { kind: 'stale', children: 'stale 2m ago' },
+  { kind: 'error', children: 'Could not load pull requests', action: true },
+];
 
 export default function UiPage() {
   return (
@@ -121,6 +134,20 @@ export default function UiPage() {
       {INPUT_STATES.map(({ state, dense, disabled }) => (
         <section key={state} data-specimen={`input-${state}`}>
           <Input dense={dense} disabled={disabled} defaultValue="branch" />
+        </section>
+      ))}
+      {STATE_MESSAGES.map(({ kind, children, action }) => (
+        <section key={kind} data-specimen={`state-${kind}`}>
+          <StateMessage
+            kind={kind}
+            action={
+              action ? (
+                <ActionButton variant="outline">Retry</ActionButton>
+              ) : undefined
+            }
+          >
+            {children}
+          </StateMessage>
         </section>
       ))}
     </main>

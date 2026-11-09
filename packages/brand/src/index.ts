@@ -11,6 +11,7 @@ export { SegmentedControl, type SegmentedOption } from './primitives/segmented-c
 export { ListRow } from './primitives/list-row';
 export { AppCard, type AppCardVariant } from './primitives/app-card';
 export { Input } from './primitives/input';
+export { StateMessage, type StateMessageKind } from './primitives/state-message';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';
 export { Hero } from './chrome/hero';
