@@ -177,6 +177,7 @@ const TEXT_ON_SURFACE = [
   '--ow-warn',
   '--ow-danger',
   '--ow-info',
+  '--ow-magenta',
 ];
 
 const APP_SURFACES = [
@@ -190,7 +191,7 @@ function eachRamp() {
   return [['light', lightTokens()], ['dark', darkTokens()]];
 }
 
-// Every cell in the app-UI matrix must clear AA. Magenta is a later phase.
+// Every cell in the app-UI matrix must clear AA.
 test('text tokens clear AA on canvas, surface, hover, and selected in both ramps', () => {
   for (const [theme, tokens] of eachRamp()) {
     for (const fg of TEXT_ON_SURFACE) {

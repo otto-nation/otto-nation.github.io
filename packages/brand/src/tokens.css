@@ -22,6 +22,8 @@
  *   --ow-danger    6.06:1 on surface.
  *   --ow-info      5.59:1 on canvas. Working/running/info, text-safe.
  *   --ow-info      5.78:1 on surface.
+ *   --ow-magenta   5.75:1 on canvas. Text-safe magenta, ANSI 5/13 only.
+ *   --ow-magenta   5.94:1 on surface.
  *   --ow-anil      7.04:1 on canvas. Text-safe: links, and a fill that carries
  *                  --ow-canvas text. Restated in .dark so it holds on both ramps.
  *                  Focus ring: 2px outline, offset 2px, both themes (D7).
@@ -78,6 +80,7 @@
   --ow-info-soft: #e0ecee;
   --ow-hover: #f1ebdf;
   --ow-selected: #eee6d6;
+  --ow-magenta: #b8184d;
 
   /* The install block and the footer stay dark in both themes — a shell prompt
    * has to read as a terminal, and the footer closes the page on a solid band.
@@ -183,7 +186,10 @@
    *   --ow-danger           7.27:1 on the dark surface.
    *   --ow-info             9.19:1 on the dark canvas. Working/running/info,
    *                  text-safe.
-   *   --ow-info             8.13:1 on the dark surface. */
+   *   --ow-info             8.13:1 on the dark surface.
+ *   --ow-magenta          6.86:1 on the dark canvas. Text-safe magenta,
+ *                  ANSI 5/13 only.
+ *   --ow-magenta          6.07:1 on the dark surface. */
   --ow-block: #393328;
   --ow-block-ink: #e8e3d8;
   --ow-block-ink-muted: #a89e8f;
@@ -192,6 +198,7 @@
   --ow-warn: #d6aa51;
   --ow-danger: #f0907a;
   --ow-info: #6cc0cb;
+  --ow-magenta: #f0709a;
 
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded

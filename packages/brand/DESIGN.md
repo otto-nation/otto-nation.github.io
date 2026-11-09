@@ -28,6 +28,7 @@ colors:
   info-soft: "#e0ecee"
   hover: "#f1ebdf"
   selected: "#eee6d6"
+  magenta: "#b8184d"
   block: "#1a1712"
   block-ink: "#e8e3d8"
   block-ink-muted: "#8a8073"
@@ -55,6 +56,7 @@ colors:
   dark-info-soft: "#152427"
   dark-hover: "#28241b"
   dark-selected: "#2b271d"
+  dark-magenta: "#f0709a"
   dark-block: "#393328"
   dark-block-ink: "#e8e3d8"
   dark-block-ink-muted: "#a89e8f"
@@ -164,6 +166,7 @@ stale is `{colors.warn}`.
 | anil | Links; fill that carries canvas text |
 | done / warn | Success / warning, text-safe. CI pass / stale |
 | danger / info | Error/fail / working/running, text-safe |
+| magenta | Text-safe magenta, ANSI 5/13 only |
 | done-soft / warn-soft | Tinted panels behind those states |
 | danger-soft / info-soft | Tinted panels behind danger and info |
 | hover | Hover fill; never a border colour |
@@ -184,6 +187,8 @@ Documented contrast claims from `tokens.css`:
 | danger | 6.06:1 | surface | light |
 | info | 5.59:1 | canvas | light |
 | info | 5.78:1 | surface | light |
+| magenta | 5.75:1 | canvas | light |
+| magenta | 5.94:1 | surface | light |
 | anil | 7.04:1 | canvas | light |
 | ink-muted | 6.92:1 | surface | light |
 | on-amarillo | 9.73:1 | amarillo | light |
@@ -222,6 +227,8 @@ Documented contrast claims from `tokens.css`:
 | danger | 7.27:1 | surface | dark |
 | info | 9.19:1 | canvas | dark |
 | info | 8.13:1 | surface | dark |
+| magenta | 6.86:1 | canvas | dark |
+| magenta | 6.07:1 | surface | dark |
 <!-- /generated:contrast-rules -->
 
 ## Typography
@@ -470,6 +477,7 @@ components:
 - Don't change a border colour on hover; focus is the anil ring.
 - Don't show selected by fill alone; rows take the primary left rule, segmented takes ink fill with canvas text.
 - Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`.
+- Don't use `{colors.magenta}` outside the terminal map; it is ANSI 5/13 only.
 - Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
 - Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
@@ -506,6 +514,61 @@ always paired with a text or aria label.
 | running | … U+2026 | `{colors.info}` |
 | warn | ! | `{colors.warn}` |
 | none | · U+00B7 | `{colors.ink-muted}` |
+
+## Terminal
+
+The 16 ANSI colours plus foreground, background, cursor, and selection.
+Values are refs only; hexes live in `tokens.css`. Brights reuse the normal
+slot except dark bright-yellow, which is amarillo.
+
+Text slots (foreground, 1–6, 8–14) are ≥4.5:1 on that scheme's background.
+Slots 0, 7, and 15 in light and slot 0 in dark are background-class and exempt.
+
+```yaml
+terminal:
+  light:
+    background: "{colors.canvas}"
+    foreground: "{colors.ink}"
+    cursor: "{colors.rosa}"
+    selection: "{colors.selected}"
+    0: "{colors.ink}"
+    1: "{colors.danger}"
+    2: "{colors.done}"
+    3: "{colors.warn}"
+    4: "{colors.anil}"
+    5: "{colors.magenta}"
+    6: "{colors.info}"
+    7: "{colors.hairline}"
+    8: "{colors.ink-muted}"
+    9: "{colors.danger}"
+    10: "{colors.done}"
+    11: "{colors.warn}"
+    12: "{colors.anil}"
+    13: "{colors.magenta}"
+    14: "{colors.info}"
+    15: "{colors.surface}"
+  dark:
+    background: "{colors.dark-canvas}"
+    foreground: "{colors.dark-ink}"
+    cursor: "{colors.amarillo}"
+    selection: "{colors.dark-selected}"
+    0: "{colors.dark-hairline}"
+    1: "{colors.dark-danger}"
+    2: "{colors.dark-done}"
+    3: "{colors.dark-warn}"
+    4: "{colors.dark-anil}"
+    5: "{colors.dark-magenta}"
+    6: "{colors.dark-info}"
+    7: "{colors.dark-ink-muted}"
+    8: "{colors.dark-ink-muted}"
+    9: "{colors.dark-danger}"
+    10: "{colors.dark-done}"
+    11: "{colors.amarillo}"
+    12: "{colors.dark-anil}"
+    13: "{colors.dark-magenta}"
+    14: "{colors.dark-info}"
+    15: "{colors.dark-ink}"
+```
 
 ## Consuming
 
