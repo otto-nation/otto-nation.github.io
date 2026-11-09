@@ -519,7 +519,9 @@ always paired with a text or aria label.
 
 The 16 ANSI colours plus foreground, background, cursor, and selection.
 Values are refs only; hexes live in `tokens.css`. Brights reuse the normal
-slot except dark bright-yellow, which is amarillo.
+slot except dark bright-yellow, which is amarillo. Resolved hexes ship as
+`terminal/otto-light.json` and `terminal/otto-dark.json` (generated; do not
+edit).
 
 Text slots (foreground, 1–6, 8–14) are ≥4.5:1 on that scheme's background.
 Slots 0, 7, and 15 in light and slot 0 in dark are background-class and exempt.
@@ -573,5 +575,7 @@ terminal:
 ## Consuming
 
 This file ships with `@otto-nation/brand` from 1.3.0. Locate it with
-`node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
-and the no-build zip, see the package README.
+`node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. Terminal theme
+files ship from 1.4.0 (`terminal/otto-light.json`, `terminal/otto-dark.json`;
+generated; do not edit). For setup, tokens, and the no-build zip, see the
+package README.

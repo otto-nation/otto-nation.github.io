@@ -187,7 +187,8 @@ components need a JSX/Tailwind build to render, but `tokens.css` and
 
 Every `brand-v*` release attaches a second asset alongside the npm tarball —
 `otto-nation-brand-assets-<version>.zip` — containing `tokens.css`, `fonts.css`,
-the vendored woff2 files, their OFL licenses, and `DESIGN.md`, packed by
+the vendored woff2 files, their OFL licenses, `DESIGN.md`, and
+`terminal/otto-{light,dark}.json` (generated; do not edit), packed by
 `bin/pack-brand-assets` from the same source the npm tarball ships. Download
 and vendor it into the consumer's own repo:
 
@@ -267,6 +268,8 @@ breaking release.
 | `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces and their fallbacks; defines `--font-display`, `--font-mono` |
 | `@otto-nation/brand/DESIGN.md` | Generated design system. Colour tokens come from `tokens.css`; do not copy hexes from here |
+| `@otto-nation/brand/terminal/otto-light.json` | Generated herdr-app theme (no `colors`); do not edit |
+| `@otto-nation/brand/terminal/otto-dark.json` | Generated herdr-app theme (no `colors`); do not edit |
 | `@otto-nation/brand/verify` | `verifyExport({ out, control })` — see [Verifying a build](#verifying-a-build) |
 | `Greca` | `{ size?: number; onDark?: boolean, className? }` |
 | `GrecaDivider` | `{ className? }` |

@@ -2,7 +2,7 @@
 // `{colors.*}` refs to hexes. Lives in scripts/ (not src/internal/) because
 // that directory ships and runs in consumers via the bins; this does not.
 //
-// Used by the terminal contrast test and, later, the theme-file generator.
+// Used by the terminal contrast test and generate-terminal-themes.mjs.
 
 import { parse } from 'yaml';
 import {

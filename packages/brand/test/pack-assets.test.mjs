@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
@@ -93,7 +93,9 @@ test('refuses to pack when a declared file is missing from src', () => {
       const destDir = src.startsWith(brandSrc + '/') || src === brandSrc
         ? scratchBrandSrc
         : join(scratchRepo, 'packages/brand');
-      execFileSync('cp', [src, join(destDir, file)]);
+      const destPath = join(destDir, file);
+      execFileSync('mkdir', ['-p', dirname(destPath)]);
+      execFileSync('cp', [src, destPath]);
     }
 
     assert.throws(() => execFileSync(scratchScript, [scratchRepo], { stdio: 'pipe' }),
