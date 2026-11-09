@@ -6,11 +6,13 @@ import test from 'node:test';
 
 import { verifyExport } from '@otto-nation/brand/verify';
 
-// This is the render coverage for the landing page: the org site composes
-// every export @otto-nation/brand ships, so reading its built output is what
-// proves none of them turned out over-fitted to otto-workbench's copy. It
-// reads a build that already ran rather than invoking Next itself, so it
-// stays fast and does not duplicate `npm run build`'s job.
+// This is the render coverage for the landing page and the /ui/ specimen
+// page: the org site composes every export @otto-nation/brand ships, so
+// reading its built output is what proves none of them turned out over-fitted
+// to otto-workbench's copy. App primitives with branching the landing page
+// does not exercise live on /ui/. It reads a build that already ran rather
+// than invoking Next itself, so it stays fast and does not duplicate
+// `npm run build`'s job.
 const OUT_DIR = fileURLToPath(new URL('../out/', import.meta.url));
 
 if (!existsSync(OUT_DIR)) {
@@ -21,6 +23,25 @@ if (!existsSync(OUT_DIR)) {
 }
 
 const INDEX_HTML = readFileSync(join(OUT_DIR, 'index.html'), 'utf8');
+const UI_HTML_PATH = join(OUT_DIR, 'ui', 'index.html');
+
+// Slice one specimen block out of the /ui/ page by data-specimen="<id>".
+// Later phases assert each primitive variant from the matching block.
+function section(html, id) {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = html.match(
+    new RegExp(`<([a-zA-Z][\\w:-]*)([^>]*\\sdata-specimen="${escaped}"[^>]*)>([\\s\\S]*?)</\\1>`),
+  );
+  assert.ok(match, `specimen "${id}" missing`);
+  return match[0];
+}
+
+test('the /ui specimen page is built and noindexed', () => {
+  assert.ok(existsSync(UI_HTML_PATH), 'out/ui/index.html missing — the specimen page did not build');
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  assert.match(html, /<meta\b[^>]*\bnoindex\b/i);
+  assert.match(section(html, 'page'), /App UI specimens/);
+});
 
 test('index.html renders output from every component on the page', () => {
   assert.match(INDEX_HTML, /ONE TOOLCHAIN/, 'Eyebrow text missing — Hero/Eyebrow did not render');

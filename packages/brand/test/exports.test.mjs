@@ -4,11 +4,12 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-// This package has no render tests on purpose. The org landing site imports
-// and composes every export, so its build is the coverage: a component that
-// breaks fails that build rather than a snapshot here. Revisit this if a
-// component gains branching logic the landing site's usage does not exercise
-// — at that point a build passing no longer implies the branch was reached.
+// This package has no in-package render tests on purpose. Render coverage is
+// the landing page plus the `/ui/` specimen page: the org site composes every
+// export, so its build is the coverage. A component that breaks fails that
+// build rather than a snapshot here. App primitives with branching the
+// landing page does not exercise live on `/ui/` and are asserted from the
+// built HTML.
 
 const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
@@ -90,12 +91,20 @@ test('fumadocs-ui is an optional peer', () => {
 });
 
 test('every component in src is reachable from the barrel or a subpath export', () => {
+  const srcDir = fileURLToPath(new URL('src/', root));
   const barrel = read('src/index.ts');
   const subpaths = Object.values(manifest.exports).join(' ');
-  for (const file of ['marks/greca', 'marks/rings', 'primitives/eyebrow', 'primitives/button',
-    'primitives/card-grid', 'chrome/nav', 'chrome/footer', 'chrome/hero',
-    'chrome/install-block', 'chrome/search-button']) {
-    const referenced = barrel.includes(`./${file}'`) || subpaths.includes(`./src/${file}.tsx`);
-    assert.ok(referenced, `src/${file}.tsx is unreachable — dead code or a missing export`);
+  const files = [];
+  for (const entry of readdirSync(srcDir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.tsx')) continue;
+    const path = relative(srcDir, join(entry.parentPath, entry.name)).split(sep).join('/');
+    if (path.startsWith('internal/')) continue;
+    files.push(path);
+  }
+  files.sort();
+  for (const file of files) {
+    const id = file.replace(/\.tsx$/, '');
+    const referenced = barrel.includes(`./${id}'`) || subpaths.includes(`./src/${file}`);
+    assert.ok(referenced, `src/${file} is unreachable — dead code or a missing export`);
   }
 });
