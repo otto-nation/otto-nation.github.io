@@ -1,5 +1,7 @@
 /*
  * otto-nation palette — the single owner of these values across the org.
+ * Agents: read DESIGN.md at the package root (generated from this file).
+ * Do not copy hexes out of DESIGN.md — this file owns them.
  *
  * Origin: otto-stack's docs-site/assets/scss/common/_variables-custom.scss
  * ($theme-base-color and the $dark-* ramp). otto-stack still holds a drifted SCSS

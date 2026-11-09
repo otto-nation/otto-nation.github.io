@@ -4,6 +4,16 @@ otto-nation's design tokens, marks, and page chrome. Every org property consumes
 this package; nothing else in the org owns a hex, a font, or page chrome. Inside
 the package, `tokens.css` owns every hex with one exception, `src/marks/icon.svg`
 — see [The one hex outside tokens.css](#the-one-hex-outside-tokenscss).
+`DESIGN.md` is generated from `tokens.css` and is not a second owner.
+
+## For agents and designers
+
+Before UI or styling work, read the otto-nation design system:
+`node_modules/@otto-nation/brand/DESIGN.md` (locate with
+`node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`). Start at Do's and
+Don'ts and Components. Do not copy hexes out of that file, and do not hand-edit
+its front matter or `<!-- generated:* -->` regions — run
+`npm run design:generate -w packages/brand`.
 
 ## Fonts
 
@@ -80,8 +90,9 @@ reaches Google Fonts, move it to `next/font/google`"): neither face uses that lo
 Four lines of configuration, and `otto-brand-check` enforces every one of them:
 it fails your build if either `@import` is absent, if the `@source` is absent
 *or* points at a path that does not exist on disk, or if `transpilePackages`
-omits the package. The compiler settings in step 5 are the one requirement it
-cannot see — those surface as errors in your own build.
+omits the package. The compiler settings in step 6 are the one requirement it
+cannot see — those surface as errors in your own build. The AGENTS.md line in
+step 5 is for agents, not the build.
 
 The package declares an `engines` floor for Node in its `package.json`; that
 field is the authority, not this sentence. It is set by `fs.Dirent.parentPath`,
@@ -138,7 +149,16 @@ arrives later, in a build.
    [Verifying a build](#verifying-a-build). The two are not interchangeable:
    this one reads configuration, that one reads output.
 
-5. In your `tsconfig.json`:
+5. In your repo's `AGENTS.md` or `CLAUDE.md`, so agents working on UI find the
+   design system the same way every time:
+
+   ```
+   Before UI or styling work, read the otto-nation design system:
+   `node_modules/@otto-nation/brand/DESIGN.md` (locate with
+   `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`).
+   ```
+
+6. In your `tsconfig.json`:
 
    ```json
    "moduleResolution": "bundler",
@@ -166,8 +186,8 @@ components need a JSX/Tailwind build to render, but `tokens.css` and
 `fonts.css` are themselves plain CSS with no build step of their own.
 
 Every `brand-v*` release attaches a second asset alongside the npm tarball —
-`otto-nation-brand-assets-<version>.zip` — containing exactly `tokens.css`,
-`fonts.css`, the two vendored woff2 files, and their OFL licenses, packed by
+`otto-nation-brand-assets-<version>.zip` — containing `tokens.css`, `fonts.css`,
+the vendored woff2 files, their OFL licenses, and `DESIGN.md`, packed by
 `bin/pack-brand-assets` from the same source the npm tarball ships. Download
 and vendor it into the consumer's own repo:
 
@@ -184,6 +204,9 @@ consumer, so getting the reference paths right is on the consumer. Pin the
 version in whatever the consumer's own vendoring note is (a README next to
 the vendored files works) and re-run the two commands above to upgrade —
 there is no automatic sync, the same as the npm path has none.
+
+Point agents at the vendored `DESIGN.md` the same way the npm consumer does,
+with a line in AGENTS.md or CLAUDE.md naming that file.
 
 This is the same shape `homelab`'s `services/training-log` and
 `otto-nation/plans` were already hand-copying `tokens.css`/`fonts.css` out of
@@ -243,6 +266,7 @@ breaking release.
 |---|---|
 | `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces and their fallbacks; defines `--font-display`, `--font-mono` |
+| `@otto-nation/brand/DESIGN.md` | Generated design system. Colour tokens come from `tokens.css`; do not copy hexes from here |
 | `@otto-nation/brand/verify` | `verifyExport({ out, control })` — see [Verifying a build](#verifying-a-build) |
 | `Greca` | `{ size?: number; onDark?: boolean, className? }` |
 | `GrecaDivider` | `{ className? }` |

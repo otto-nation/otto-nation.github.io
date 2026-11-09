@@ -10,12 +10,14 @@
   "files": [
     "src",
     "bin",
+    "DESIGN.md",
     "LICENSE"
   ],
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./fonts.css": "./src/fonts.css",
+    "./DESIGN.md": "./DESIGN.md",
     "./search-button": "./src/chrome/search-button.tsx",
     "./verify": "./src/verify.mjs",
     "./package.json": "./package.json"
@@ -25,7 +27,8 @@
     "otto-brand-verify": "./bin/otto-brand-verify.mjs"
   },
   "scripts": {
-    "test": "tsc --noEmit && node --test"
+    "test": "tsc --noEmit && node --test",
+    "design:generate": "node scripts/generate-design-md.mjs"
   },
   "dependencies": {
     "tailwind-merge": "^3.0.0"
@@ -42,6 +45,7 @@
     }
   },
   "devDependencies": {
+    "@google/design.md": "0.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "fumadocs-ui": "^16.14.5",

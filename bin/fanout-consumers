@@ -177,7 +177,17 @@ Bumps \`@otto-nation/brand\` to ${VERSION}.
 ## Why
 
 Released as [\`${TAG}\`](https://github.com/${REPO}/releases/tag/${TAG}).
-Opened automatically by that release's fan-out job."; then
+Opened automatically by that release's fan-out job.
+
+## For agents
+
+Add this line to AGENTS.md or CLAUDE.md if it is not already there. This job
+does not edit those files.
+
+Before UI or styling work, read the otto-nation design system:
+\`node_modules/@otto-nation/brand/DESIGN.md\` (locate with
+\`node -p 'require.resolve(\"@otto-nation/brand/DESIGN.md\")'\`).
+"; then
     FAILED+=("$repo: could not open a pull request")
   fi
 done < "$CONSUMERS"
