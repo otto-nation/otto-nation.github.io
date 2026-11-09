@@ -71,7 +71,7 @@ YAML holds the light (`:root`) ramp. Roles below; values live in the tokens.
 | Token | Role |
 | --- | --- |
 | canvas | Page background |
-| surface | Cards, muted panels |
+| surface | fumadocs cards and popovers (`--color-fd-card`); CardGrid cards have no fill |
 | ink | Body copy, solid button fill |
 | ink-muted | Secondary copy, eyebrows, nav links |
 | hairline | Dividers, card edges, outline-button border |
@@ -201,11 +201,11 @@ components:
     textColor: "{colors.block}"
     rounded: "{rounded.md}"
   card:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
   card-accent:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
   card-linked:
@@ -230,7 +230,7 @@ components:
 - **button-solid** — default CTA. `font-semibold`, `px-4 py-2`, `text-sm` (or `xs`).
 - **button-outline** — same radius; hairline border, no fill.
 - **button-on-dark** — solid on the block band (`onDark`).
-- **card** — hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
+- **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a 3px left rule; colour is the caller's (`accent` prop).
 - **card-linked** — no border until hover/focus paints hairline; `-m-4` hit area.
 - **eyebrow** — mono, 10px, ink-muted.
