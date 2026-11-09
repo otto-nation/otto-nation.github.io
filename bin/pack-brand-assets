@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Packs the plain-CSS half of @otto-nation/brand — tokens.css, fonts.css, the
-# vendored font files, and their OFL licenses — into a standalone zip. This is
+# vendored font files, their OFL licenses, and DESIGN.md — into a standalone zip. This is
 # the release asset for a consumer with no npm and no Tailwind build at all: a
 # static HTML page, a Vite app with no @otto-nation/brand dependency, anything
 # that today would otherwise hand-copy these files out of packages/brand/src
@@ -11,8 +11,8 @@
 # release, alongside the npm tarball. Also runnable by hand:
 #   bin/pack-brand-assets [dest-dir]
 #
-# The file list below is the one place it's named. packages/brand/test/
-# pack-assets.test.mjs asserts the zip's contents against this same list by
+# The two arrays below are the one place the zip's contents are named.
+# packages/brand/test/pack-assets.test.mjs asserts the zip against both by
 # running this script and inspecting its output, so a file added or removed
 # here becomes a new expectation with no second edit to keep in step — the
 # same "derive from source, don't duplicate" rule otto-brand-check follows
@@ -20,7 +20,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BRAND_SRC="$REPO_ROOT/packages/brand/src"
+BRAND_ROOT="$REPO_ROOT/packages/brand"
+BRAND_SRC="$BRAND_ROOT/src"
 DEST="${1:-$REPO_ROOT}"
 
 VERSION="$(node -p "require('$REPO_ROOT/packages/brand/package.json').version")"
@@ -41,11 +42,27 @@ FILES=(
   "fonts/OFL-IBMPlex.txt"
 )
 
+# Relative to $BRAND_ROOT, staged at zip root. DESIGN.md is the agent-facing
+# design system; no-build consumers do not get the npm export map.
+ROOT_FILES=(
+  "DESIGN.md"
+)
+
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 for file in "${FILES[@]}"; do
   src="$BRAND_SRC/$file"
+  if [[ ! -f "$src" ]]; then
+    echo "pack-brand-assets: missing $src" >&2
+    exit 1
+  fi
+  mkdir -p "$STAGE/$(dirname "$file")"
+  cp "$src" "$STAGE/$file"
+done
+
+for file in "${ROOT_FILES[@]}"; do
+  src="$BRAND_ROOT/$file"
   if [[ ! -f "$src" ]]; then
     echo "pack-brand-assets: missing $src" >&2
     exit 1

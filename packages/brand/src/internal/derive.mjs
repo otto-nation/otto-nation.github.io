@@ -1,7 +1,7 @@
 // Internal to the package: not in the barrel, and the exports map carries no
 // wildcard, so a consumer importing this path gets ERR_PACKAGE_PATH_NOT_EXPORTED.
 // Only verifyExport is public — see src/verify.mjs and README § Verifying a
-// build. These four parses are how it reads this package's own source, and
+// build. These parses are how it reads this package's own source, and
 // keeping them unexported means their shapes stay changeable after the tag.
 //
 // bin/otto-brand-check.mjs shares declaredTokens from here rather than holding
@@ -95,4 +95,90 @@ export function fontStack(fontsCss, variable) {
   const value = fontsCss.match(new RegExp(`${variable}:\\s*([^;]+);`))?.[1];
   if (!value) return null;
   return [...value.matchAll(/'([^']+)'|([^,\s][^,]*)/g)].map(([, quoted, bare]) => (quoted ?? bare).trim());
+}
+
+function lightBlock(tokensCss) {
+  return tokensCss.slice(tokensCss.indexOf(':root {'), tokensCss.indexOf('.dark {'));
+}
+
+function darkBlock(tokensCss) {
+  const start = tokensCss.indexOf('.dark {');
+  return tokensCss.slice(start, tokensCss.indexOf('}', start));
+}
+
+function hexMap(block) {
+  const map = new Map();
+  for (const [, name, hex] of block.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
+    map.set(name, hex);
+  }
+  return map;
+}
+
+/**
+ * `--ow-*` hexes declared on `:root`. Later duplicates in the same block win.
+ * Empty when `:root` is missing or declares none — callers must treat that as
+ * a real answer, same as declaredTokens.
+ */
+export function lightTokenHexes(tokensCss) {
+  return hexMap(lightBlock(tokensCss));
+}
+
+/**
+ * The cascade under `.dark`: the light ramp with that block's hexes overlaid.
+ * Matches what a consumer actually gets, not the dark declarations alone.
+ */
+export function darkTokenHexes(tokensCss) {
+  const map = lightTokenHexes(tokensCss);
+  for (const [name, hex] of hexMap(darkBlock(tokensCss))) {
+    map.set(name, hex);
+  }
+  return map;
+}
+
+/**
+ * Contrast claims in the tokens.css header, plus amarillo's aside on the block.
+ * Shape: `{ token, ratio, background }` with `--ow-*` names.
+ */
+export function documentedClaims(tokensCss) {
+  const claims = [
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo|rosa|done-soft|warn-soft)\b/g),
+  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+  const [, aside] = tokensCss.match(/reaches ([\d.]+):1 on the dark terminal block/) ?? [];
+  if (aside) {
+    claims.push({ token: '--ow-amarillo', ratio: aside, background: '--ow-block' });
+  }
+  return claims;
+}
+
+/**
+ * Claims phrased as "on/against the dark …", which is what keeps them out of
+ * the light set above.
+ */
+export function documentedDarkClaims(tokensCss) {
+  return [
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface|done-soft|warn-soft)\b/g),
+  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+}
+
+function letterSpacingIn(block) {
+  return block?.match(/letter-spacing:\s*([^;]+)/)?.[1].trim() ?? null;
+}
+
+/** `letter-spacing` on the `body` rule, or null when the rule or property is absent. */
+export function bodyLetterSpacing(tokensCss) {
+  return letterSpacingIn(tokensCss.match(/(?:^|\n)body\s*\{([^}]+)\}/)?.[1]);
+}
+
+/** `letter-spacing` on the `h1, h2, h3, h4` rule, or null when absent. */
+export function headingLetterSpacing(tokensCss) {
+  return letterSpacingIn(tokensCss.match(/(?:^|\n)h1,\s*h2,\s*h3,\s*h4\s*\{([^}]+)\}/)?.[1]);
+}
+
+/**
+ * The `--ow-*` that `--color-fd-primary` references in `:root` or `.dark`.
+ * Null when the declaration is missing or is not a `var(--ow-*)`.
+ */
+export function fdPrimaryToken(tokensCss, theme = 'light') {
+  const block = theme === 'dark' ? darkBlock(tokensCss) : lightBlock(tokensCss);
+  return block.match(/--color-fd-primary:\s*var\((--ow-[a-z-]+)\)/)?.[1] ?? null;
 }

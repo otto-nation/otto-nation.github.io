@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import {
+  darkTokenHexes,
+  documentedClaims as claimsFrom,
+  documentedDarkClaims as darkClaimsFrom,
+  lightTokenHexes,
+} from '../src/internal/derive.mjs';
 
 const TOKENS = readFileSync(
   fileURLToPath(new URL('../src/tokens.css', import.meta.url)),
@@ -13,28 +19,12 @@ const ICON = readFileSync(
   'utf8',
 );
 
-// Only :root declarations. The claims in the header comment are all stated
-// against the light ramp; the .dark overrides carry their own claims and are
-// checked separately below.
 function lightTokens() {
-  const root = TOKENS.slice(TOKENS.indexOf(':root {'), TOKENS.indexOf('.dark {'));
-  const map = new Map();
-  for (const [, name, hex] of root.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
-    map.set(name, hex);
-  }
-  return map;
+  return lightTokenHexes(TOKENS);
 }
 
-// The cascade a consumer actually gets under .dark: the light ramp with the
-// dark block's overrides applied over it, not the dark declarations alone.
 function darkTokens() {
-  const start = TOKENS.indexOf('.dark {');
-  const dark = TOKENS.slice(start, TOKENS.indexOf('}', start));
-  const map = lightTokens();
-  for (const [, name, hex] of dark.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
-    map.set(name, hex);
-  }
-  return map;
+  return darkTokenHexes(TOKENS);
 }
 
 function channel(byte) {
@@ -52,27 +42,12 @@ function contrast(fg, bg) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-// The header comment is the source of truth for both the value and the claim.
-// "--ow-rosa      4.42:1 on canvas" and "--ow-block-ink  13.96:1 on the block".
 function documentedClaims() {
-  const claims = [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo|rosa|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
-  // "It reaches 9.73:1 on the dark terminal block." — amarillo's second claim,
-  // phrased as prose rather than as a table row, so it needs its own pattern.
-  const [, aside] = TOKENS.match(/reaches ([\d.]+):1 on the dark terminal block/) ?? [];
-  if (aside) {
-    claims.push({ token: '--ow-amarillo', ratio: aside, background: '--ow-block' });
-  }
-  return claims;
+  return claimsFrom(TOKENS);
 }
 
-// The .dark note states its ratios as "on the dark block" / "against the dark
-// canvas", which is what keeps them out of the light set above.
 function documentedDarkClaims() {
-  return [
-    ...TOKENS.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+  return darkClaimsFrom(TOKENS);
 }
 
 function assertClaimsHold(claims, tokens, theme) {
