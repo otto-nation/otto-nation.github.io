@@ -3,9 +3,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
+  contrast,
   darkTokenHexes,
   documentedClaims as claimsFrom,
   documentedDarkClaims as darkClaimsFrom,
+  fdPrimaryToken,
+  fdRoleToken,
+  focusRingToken,
   lightTokenHexes,
 } from '../src/internal/derive.mjs';
 
@@ -25,21 +29,6 @@ function lightTokens() {
 
 function darkTokens() {
   return darkTokenHexes(TOKENS);
-}
-
-function channel(byte) {
-  const v = byte / 255;
-  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-}
-
-function luminance(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => channel(parseInt(hex.slice(i, i + 2), 16)));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(fg, bg) {
-  const [hi, lo] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
-  return (hi + 0.05) / (lo + 0.05);
 }
 
 function documentedClaims() {
@@ -93,6 +82,12 @@ function assertAccentPairings(tokens, theme) {
     ['--ow-ink', '--ow-warn-soft'],
     ['--ow-ink-muted', '--ow-warn-soft'],
     ['--ow-warn', '--ow-warn-soft'],
+    ['--ow-danger', '--ow-danger-soft'],
+    ['--ow-ink', '--ow-danger-soft'],
+    ['--ow-ink-muted', '--ow-danger-soft'],
+    ['--ow-info', '--ow-info-soft'],
+    ['--ow-ink', '--ow-info-soft'],
+    ['--ow-ink-muted', '--ow-info-soft'],
   ];
   for (const [fg, bg] of pairs) {
     const ratio = contrast(tokens.get(fg), tokens.get(bg));
@@ -171,5 +166,100 @@ test('the block band separates from the canvas in both themes', () => {
   for (const [theme, tokens] of [['light', lightTokens()], ['dark', darkTokens()]]) {
     const ratio = contrast(tokens.get('--ow-block'), tokens.get('--ow-canvas'));
     assert.ok(ratio >= 1.2, `${theme}: --ow-block is ${ratio.toFixed(2)}:1 on --ow-canvas`);
+  }
+});
+
+const TEXT_ON_SURFACE = [
+  '--ow-ink',
+  '--ow-ink-muted',
+  '--ow-anil',
+  '--ow-done',
+  '--ow-warn',
+  '--ow-danger',
+  '--ow-info',
+];
+
+const APP_SURFACES = [
+  '--ow-canvas',
+  '--ow-surface',
+  '--ow-hover',
+  '--ow-selected',
+];
+
+function eachRamp() {
+  return [['light', lightTokens()], ['dark', darkTokens()]];
+}
+
+// Every cell in the app-UI matrix must clear AA. Magenta is a later phase.
+test('text tokens clear AA on canvas, surface, hover, and selected in both ramps', () => {
+  for (const [theme, tokens] of eachRamp()) {
+    for (const fg of TEXT_ON_SURFACE) {
+      for (const bg of APP_SURFACES) {
+        const fgHex = tokens.get(fg);
+        const bgHex = tokens.get(bg);
+        assert.ok(fgHex, `${theme}: ${fg} is not declared`);
+        assert.ok(bgHex, `${theme}: ${bg} is not declared`);
+        const ratio = contrast(fgHex, bgHex);
+        assert.ok(
+          ratio >= 4.5,
+          `${theme}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1, under AA`,
+        );
+      }
+    }
+  }
+});
+
+// Hover used to be the hairline hex, so hairline borders vanished on hover.
+// 1.1 is the regression floor (was 1.00); the fill is never a border colour.
+test('hover fill is distinct from hairline in both ramps', () => {
+  for (const [theme, tokens] of eachRamp()) {
+    const ratio = contrast(tokens.get('--ow-hover'), tokens.get('--ow-hairline'));
+    assert.ok(
+      ratio >= 1.1,
+      `${theme}: --ow-hover vs --ow-hairline is ${ratio.toFixed(2)}:1, under 1.1`,
+    );
+  }
+});
+
+test('selected indicator primary clears 3:1 on selected in both ramps', () => {
+  for (const theme of ['light', 'dark']) {
+    const tokens = theme === 'dark' ? darkTokens() : lightTokens();
+    const primary = fdPrimaryToken(TOKENS, theme);
+    assert.ok(primary, `${theme}: missing --color-fd-primary`);
+    const ratio = contrast(tokens.get(primary), tokens.get('--ow-selected'));
+    assert.ok(
+      ratio >= 3,
+      `${theme}: ${primary} on --ow-selected is ${ratio.toFixed(2)}:1, under 3:1`,
+    );
+  }
+});
+
+test('anil clears 3:1 on canvas, surface, hover, and selected in both ramps', () => {
+  for (const [theme, tokens] of eachRamp()) {
+    for (const bg of APP_SURFACES) {
+      const ratio = contrast(tokens.get('--ow-anil'), tokens.get(bg));
+      assert.ok(
+        ratio >= 3,
+        `${theme}: --ow-anil on ${bg} is ${ratio.toFixed(2)}:1, under 3:1`,
+      );
+    }
+  }
+});
+
+// One owner: the fumadocs ring token and the base :focus-visible rule name the
+// same --ow-*. That token must clear the non-text floor on every app surface.
+test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces', () => {
+  const ringToken = focusRingToken(TOKENS);
+  for (const [theme, tokens] of eachRamp()) {
+    const role = fdRoleToken(TOKENS, '--color-fd-ring', theme);
+    assert.equal(role, ringToken, `${theme}: --color-fd-ring is not the focus-rule token`);
+    assert.ok(role, `${theme}: missing --color-fd-ring`);
+    for (const bg of APP_SURFACES) {
+      const ratio = contrast(tokens.get(role), tokens.get(bg));
+      assert.ok(
+        ratio >= 3,
+        `${theme}: ${role} on ${bg} is ${ratio.toFixed(2)}:1, under 3:1`,
+      );
+    }
   }
 });

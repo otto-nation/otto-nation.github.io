@@ -3,9 +3,8 @@
 // tokens.css / fonts.css / eyebrow.tsx. The rest of the file is hand-written
 // and left alone. Idempotent: a second run is a no-op on a current file.
 //
-// ceiling: YAML colors are the :root ramp only, until design.md has light/dark
-// modes. A custom top-level key holding hexes is a token-like-ignored warning,
-// so the dark ramp is a generated markdown table instead.
+// ceiling: dark ramp as dark-* colour keys until design.md supports modes
+// (upstream issue #13); switch once modes land.
 
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,8 +15,10 @@ import {
   documentedClaims,
   documentedDarkClaims,
   fdPrimaryToken,
+  fontRoles,
   fontStack,
   headingLetterSpacing,
+  lengthTokens,
   lightTokenHexes,
   trackingValue,
 } from '../src/internal/derive.mjs';
@@ -27,7 +28,6 @@ const pkgRoot = fileURLToPath(new URL('..', import.meta.url));
 export function generate(designMd, { tokensCss, fontsCss, eyebrowSource }) {
   const yaml = frontMatter({ tokensCss, fontsCss, eyebrowSource });
   let out = replaceFrontMatter(designMd, yaml);
-  out = replaceMarkedRegion(out, 'dark-ramp', darkRampTable(tokensCss));
   out = replaceMarkedRegion(out, 'contrast-rules', contrastTable(tokensCss));
   return out;
 }
@@ -59,9 +59,33 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     throw new Error('could not derive typography families and tracking from fonts.css/tokens.css/eyebrow.tsx');
   }
 
+  const roles = fontRoles(tokensCss);
+  if (roles.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-font-* roles');
+  }
+  const lengths = lengthTokens(tokensCss);
+  if (lengths.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-* px lengths');
+  }
+
   const colors = { primary: quoteColor(primaryHex) };
   for (const [name, hex] of light) {
     colors[name.replace(/^--ow-/, '')] = quoteColor(hex);
+  }
+
+  const dark = darkTokenHexes(tokensCss);
+  const darkPrimaryToken = fdPrimaryToken(tokensCss, 'dark');
+  const darkPrimaryHex = darkPrimaryToken ? dark.get(darkPrimaryToken) : undefined;
+  if (!darkPrimaryToken || !darkPrimaryHex) {
+    throw new Error('tokens.css .dark has no --color-fd-primary: var(--ow-*)');
+  }
+  colors['dark-primary'] = quoteColor(darkPrimaryHex);
+  for (const [name] of light) {
+    const darkHex = dark.get(name);
+    if (!darkHex) {
+      throw new Error(`tokens.css .dark cascade is missing ${name}`);
+    }
+    colors[`dark-${name.replace(/^--ow-/, '')}`] = quoteColor(darkHex);
   }
 
   const lines = [
@@ -70,7 +94,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     ...GENERATED_HEADER,
     'version: alpha',
     'name: otto-nation',
-    'description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."',
+    'description: "Warm cream canvas, Mexican palette names, Greca fret. Unprefixed YAML colours are the light ramp; dark-* keys are the dark ramp."',
     'colors:',
     ...Object.entries(colors).map(([key, value]) => `  ${key}: ${value}`),
     'typography:',
@@ -85,6 +109,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     '  eyebrow:',
     `    fontFamily: ${mono}`,
     `    letterSpacing: ${quoteDimension(eyebrowTracking)}`,
+    ...typographyRoleLines(roles, fontsCss),
     'rounded:',
     // Tailwind v4 defaults, which is what the components actually use
     // (rounded-md on Button, rounded-lg on CardGrid / InstallBlock).
@@ -99,6 +124,7 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     '  4: 16px',
     '  5: 20px',
     '  6: 24px',
+    ...[...lengths].map(([name, value]) => `  ${name}: ${value}`),
     '',
   ];
   return lines.join('\n');
@@ -112,19 +138,22 @@ function quoteDimension(value) {
   return value.startsWith('-') ? `"${value}"` : value;
 }
 
-function darkRampTable(tokensCss) {
-  const light = lightTokenHexes(tokensCss);
-  const dark = darkTokenHexes(tokensCss);
-  const rows = [];
-  for (const [name, lightHex] of light) {
-    const darkHex = dark.get(name);
-    if (!darkHex || darkHex.toLowerCase() === lightHex.toLowerCase()) continue;
-    rows.push(`| ${name.replace(/^--ow-/, '')} | ${darkHex.toLowerCase()} |`);
+function typographyRoleLines(roles, fontsCss) {
+  const lines = [];
+  for (const [role, spec] of roles) {
+    const family = fontStack(fontsCss, spec.fontVariable)?.[0];
+    if (!family) {
+      throw new Error(`could not resolve ${spec.fontVariable} for --ow-font-${role}`);
+    }
+    lines.push(
+      `  ${role}:`,
+      `    fontFamily: ${family}`,
+      `    fontSize: ${spec.fontSize}`,
+      `    fontWeight: ${spec.fontWeight}`,
+      `    lineHeight: ${spec.lineHeight}`,
+    );
   }
-  if (rows.length === 0) {
-    throw new Error('tokens.css .dark restated no --ow-* hexes');
-  }
-  return ['| Token | Dark |', '| --- | --- |', ...rows, ''].join('\n');
+  return lines;
 }
 
 function contrastTable(tokensCss) {

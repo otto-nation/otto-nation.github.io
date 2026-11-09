@@ -3,7 +3,7 @@
 # `npm run design:generate -w packages/brand`. Do not edit; the prose below is hand-written.
 version: alpha
 name: otto-nation
-description: "Warm cream canvas, Mexican palette names, Greca fret. YAML tokens are the light ramp."
+description: "Warm cream canvas, Mexican palette names, Greca fret. Unprefixed YAML colours are the light ramp; dark-* keys are the dark ramp."
 colors:
   primary: "#d81e5b"
   canvas: "#f7f2e9"
@@ -22,10 +22,43 @@ colors:
   outline: "#8f8575"
   done-soft: "#e6ede7"
   warn-soft: "#f3e9d6"
+  danger: "#a8361f"
+  danger-soft: "#f5e3dc"
+  info: "#1d6a75"
+  info-soft: "#e0ecee"
+  hover: "#f1ebdf"
+  selected: "#eee6d6"
   block: "#1a1712"
   block-ink: "#e8e3d8"
   block-ink-muted: "#8a8073"
   block-hairline: "#3d3420"
+  dark-primary: "#e5ba41"
+  dark-canvas: "#0f0e13"
+  dark-surface: "#1f1c14"
+  dark-ink: "#e8e3d8"
+  dark-ink-muted: "#978d7f"
+  dark-hairline: "#3d3420"
+  dark-amarillo: "#e5ba41"
+  dark-rosa: "#d81e5b"
+  dark-barro: "#c4552f"
+  dark-anil: "#7f9cf0"
+  dark-done: "#93be74"
+  dark-warn: "#d6aa51"
+  dark-on-amarillo: "#1a1712"
+  dark-on-rosa: "#fbf6ea"
+  dark-outline: "#706756"
+  dark-done-soft: "#1e2719"
+  dark-warn-soft: "#2a2314"
+  dark-danger: "#f0907a"
+  dark-danger-soft: "#2e1d17"
+  dark-info: "#6cc0cb"
+  dark-info-soft: "#152427"
+  dark-hover: "#28241b"
+  dark-selected: "#2b271d"
+  dark-block: "#393328"
+  dark-block-ink: "#e8e3d8"
+  dark-block-ink-muted: "#a89e8f"
+  dark-block-hairline: "#544c3c"
 typography:
   display:
     fontFamily: League Spartan
@@ -38,6 +71,36 @@ typography:
   eyebrow:
     fontFamily: League Mono
     letterSpacing: 0.15em
+  meta:
+    fontFamily: League Spartan
+    fontSize: 11px
+    fontWeight: 400
+    lineHeight: 16px
+  section:
+    fontFamily: League Spartan
+    fontSize: 11px
+    fontWeight: 600
+    lineHeight: 16px
+  label:
+    fontFamily: League Spartan
+    fontSize: 12px
+    fontWeight: 500
+    lineHeight: 16px
+  body:
+    fontFamily: League Spartan
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 18px
+  title:
+    fontFamily: League Spartan
+    fontSize: 14px
+    fontWeight: 600
+    lineHeight: 20px
+  code:
+    fontFamily: League Mono
+    fontSize: 12px
+    fontWeight: 400
+    lineHeight: 16px
 rounded:
   sm: 4px
   md: 6px
@@ -49,6 +112,13 @@ spacing:
   4: 16px
   5: 20px
   6: 24px
+  control-height: 28px
+  control-height-dense: 24px
+  row-height: 32px
+  row-height-dense: 28px
+  control-padding: 10px
+  card-padding: 12px
+  column-min: 260px
 ---
 
 # otto-nation
@@ -64,11 +134,21 @@ The page is a warm cream canvas, not white. Palette names are Mexican Spanish
 
 `{colors.x}` in this file is `var(--ow-x)` in CSS. `{colors.primary}` equals
 `{colors.rosa}` and `--color-fd-primary`. Dark mode swaps that mapping to
-`{colors.amarillo}`; it does not add a second YAML ramp.
+`{colors.amarillo}` (`{colors.dark-primary}`). `{colors.dark-x}` is every
+light token's `.dark` value; a missing key never means inherit.
 
 ## Colors
 
-YAML holds the light (`:root`) ramp. Roles below; values live in the tokens.
+YAML holds both ramps: `{colors.x}` from `:root`, `{colors.dark-x}` from the
+`.dark` cascade. Roles below; values live in the tokens.
+
+Text is two tiers: `{colors.ink}` and `{colors.ink-muted}`. `{colors.outline}`
+is never text. A dim or faint slot maps to ink-muted.
+
+Hover is `{colors.hover}` (never a border colour). Pressed and selected fill
+is `{colors.selected}`; fill is never the only selected cue. CI pass is
+`{colors.done}`, fail is `{colors.danger}`, running/queued is `{colors.info}`,
+stale is `{colors.warn}`.
 
 | Token | Role |
 | --- | --- |
@@ -77,36 +157,19 @@ YAML holds the light (`:root`) ramp. Roles below; values live in the tokens.
 | ink | Body copy, solid button fill |
 | ink-muted | Secondary copy, eyebrows, nav links |
 | hairline | Dividers, card edges, outline-button border |
-| outline | Control boundary (inputs); non-text 3:1 |
+| outline | Control boundary (inputs); non-text 3:1. Never text |
 | amarillo | Rules, borders, prompts, SVG line-work. Never text on light |
 | rosa | UI and large text only; primary on light |
 | barro | Greca stroke on light |
 | anil | Links; fill that carries canvas text |
-| done / warn | Success / warning, text-safe |
+| done / warn | Success / warning, text-safe. CI pass / stale |
+| danger / info | Error/fail / working/running, text-safe |
 | done-soft / warn-soft | Tinted panels behind those states |
+| danger-soft / info-soft | Tinted panels behind danger and info |
+| hover | Hover fill; never a border colour |
+| selected | Selected/pressed fill; never the only selected cue |
 | on-amarillo / on-rosa | Text on those fills; invariant across themes |
 | block* | Install block and footer; dark band in both themes |
-
-`.dark` restatements (not a YAML key — the format has no modes):
-
-<!-- generated:dark-ramp -->
-| Token | Dark |
-| --- | --- |
-| canvas | #0f0e13 |
-| surface | #1f1c14 |
-| ink | #e8e3d8 |
-| ink-muted | #978d7f |
-| hairline | #3d3420 |
-| anil | #7f9cf0 |
-| done | #93be74 |
-| warn | #d6aa51 |
-| outline | #706756 |
-| done-soft | #1e2719 |
-| warn-soft | #2a2314 |
-| block | #393328 |
-| block-ink-muted | #a89e8f |
-| block-hairline | #544c3c |
-<!-- /generated:dark-ramp -->
 
 Documented contrast claims from `tokens.css`:
 
@@ -117,6 +180,10 @@ Documented contrast claims from `tokens.css`:
 | rosa | 4.42:1 | canvas | light |
 | done | 5.57:1 | canvas | light |
 | warn | 5.04:1 | canvas | light |
+| danger | 5.86:1 | canvas | light |
+| danger | 6.06:1 | surface | light |
+| info | 5.59:1 | canvas | light |
+| info | 5.78:1 | surface | light |
 | anil | 7.04:1 | canvas | light |
 | ink-muted | 6.92:1 | surface | light |
 | on-amarillo | 9.73:1 | amarillo | light |
@@ -127,6 +194,9 @@ Documented contrast claims from `tokens.css`:
 | done | 5.22:1 | done-soft | light |
 | ink-muted | 6.20:1 | warn-soft | light |
 | warn | 4.67:1 | warn-soft | light |
+| danger | 5.26:1 | danger-soft | light |
+| info | 5.16:1 | info-soft | light |
+| warn | 4.53:1 | selected | light |
 | block-ink | 13.96:1 | block | light |
 | block-ink-muted | 4.61:1 | block | light |
 | amarillo | 9.73:1 | block | light |
@@ -138,12 +208,20 @@ Documented contrast claims from `tokens.css`:
 | done | 7.25:1 | done-soft | dark |
 | ink-muted | 4.77:1 | warn-soft | dark |
 | warn | 7.21:1 | warn-soft | dark |
+| danger | 6.88:1 | danger-soft | dark |
+| info | 7.64:1 | info-soft | dark |
+| ink-muted | 4.74:1 | hover | dark |
+| ink-muted | 4.56:1 | selected | dark |
 | block | 1.54:1 | canvas | dark |
 | block-ink | 9.78:1 | block | dark |
 | block-ink-muted | 4.74:1 | block | dark |
 | block-hairline | 1.48:1 | block | dark |
 | done | 9.02:1 | canvas | dark |
 | warn | 8.90:1 | canvas | dark |
+| danger | 8.22:1 | canvas | dark |
+| danger | 7.27:1 | surface | dark |
+| info | 9.19:1 | canvas | dark |
+| info | 8.13:1 | surface | dark |
 <!-- /generated:contrast-rules -->
 
 ## Typography
@@ -158,12 +236,36 @@ Two faces, both variable, plus Otto Fallback for glyphs League does not draw.
 | Eyebrow / labels | League Mono (`--font-mono`) | `font-mono text-[10px]` plus `{typography.eyebrow}` |
 | Code / meta | League Mono | `font-mono text-xs`; install prompt `text-[9px]` |
 
-Sizes live as those Tailwind classes, not as a pixel type scale. Do not invent one.
+Pages use those Tailwind classes. App UI uses the roles below and nothing else.
+CSS consumers write `font: var(--ow-font-body)`. Weights are 400/500/600. App
+roles inherit `{typography.display}` tracking and emit no `letterSpacing` key.
+
+| Role | Token | Use |
+| --- | --- | --- |
+| meta | `{typography.meta}` | Counts, timestamps, glyph captions |
+| section | `{typography.section}` | Section labels |
+| label | `{typography.label}` | Buttons, segmented, tags |
+| body | `{typography.body}` | Rows, default app text |
+| title | `{typography.title}` | Card/pane titles |
+| code | `{typography.code}` | Branches, SHAs, paths |
 
 ## Layout
 
 Spacing follows Tailwind's 4px base (`{spacing.1}` is one step). Chrome uses
 `px-6`. Cards `p-4`. Hero `pt-11 pb-9` with content `sm:max-w-[62%]`.
+
+App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
+`var(--ow-control-height)`):
+
+| Token | Size | Use |
+| --- | --- | --- |
+| control-height | `{spacing.control-height}` | Buttons, inputs, segmented |
+| control-height-dense | `{spacing.control-height-dense}` | Dense controls (WCAG 2.5.8 24px) |
+| row-height | `{spacing.row-height}` | List rows |
+| row-height-dense | `{spacing.row-height-dense}` | Dense list rows |
+| control-padding | `{spacing.control-padding}` | Control inline padding |
+| card-padding | `{spacing.card-padding}` | App cards |
+| column-min | `{spacing.column-min}` | Board column min width |
 
 CardGrid: 2 columns at `gap-4`; 3 columns at `gap-6` because linked cards add a
 `-m-4` hit area.
@@ -174,19 +276,29 @@ Flat. No shadows. Hierarchy is three edges:
 
 | Treatment | Token | Use |
 | --- | --- | --- |
-| Hairline | `{colors.hairline}` | Card edges, nav border, dividers |
-| Outline | `{colors.outline}` | Control boundary — how you find an input |
+| Hairline | `{colors.hairline}` | Containers that carry their own text label: cards, tags, the segmented track, text buttons, list dividers, popovers over content, nav |
+| Outline | `{colors.outline}` | Controls you find by their edge: inputs, checkboxes, icon-only buttons, and a window/popover that floats over canvas |
 | Block band | `{colors.block}` | Footer and install; stays dark in both themes |
+
+Borders do not change on hover. Focus adds a 2px `{colors.anil}` outline,
+offset 2px, in both themes; it does not swap the border.
 
 ## Shapes
 
-Buttons: `rounded-md` → `{rounded.md}`. Cards and the install block:
-`rounded-lg` → `{rounded.lg}`. No pills.
+Controls (buttons, segmented, inputs): `rounded-md` → `{rounded.md}` (6px).
+Cards, popovers, and windows: `rounded-lg` → `{rounded.lg}` (8px). Tags:
+`rounded-sm` → `{rounded.sm}` (4px). No `full`.
+
+Do not use pills. Default status is coloured text plus a glyph. A label
+that needs a container is a `tag`: hairline border, `{rounded.sm}`,
+`{typography.label}`, `{colors.ink-muted}` text, no fill. Otherwise show
+nothing.
 
 ## Components
 
-Pairs below match the `.tsx` exports. Borders, hover, and hit-area are prose —
-the format's component keys do not include them.
+Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
+and hit-area are prose — `borderColor` is not a component key. App entries use
+refs to the colour, type, and length tokens.
 
 ```yaml
 components:
@@ -194,10 +306,31 @@ components:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.canvas}"
     rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-outline:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-outline-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-ghost:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-ghost-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-on-dark:
     backgroundColor: "{colors.block-ink}"
     textColor: "{colors.block}"
@@ -227,19 +360,84 @@ components:
   footer:
     backgroundColor: "{colors.block}"
     textColor: "{colors.block-ink}"
+  tag:
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.sm}"
+    typography: "{typography.label}"
+  app-card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  list-row:
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  list-row-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  list-row-selected:
+    backgroundColor: "{colors.selected}"
+    textColor: "{colors.ink}"
+    height: "{spacing.row-height}"
+    typography: "{typography.body}"
+  section-label:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  segmented:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  segmented-selected:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  popover:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  input:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.body}"
 ```
 
-- **button-solid** — default CTA. `font-semibold`, `px-4 py-2`, `text-sm` (or `xs`).
-- **button-outline** — same radius; hairline border, no fill.
+- **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
+- **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
+- **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a 3px left rule; colour is the caller's (`accent` prop).
-- **card-linked** — no border until hover/focus paints hairline; `-m-4` hit area.
-- **eyebrow** — mono, 10px, ink-muted.
+- **card-linked** — no border until hover paints hairline; focus shows the focus ring only; `-m-4` hit area.
+- **eyebrow** — page only: mono, 10px, ink-muted.
+- **section-label** — app section: `{typography.section}`, sentence case, ink-muted.
 - **hero** — Rings mark, then eyebrow, headline, lede, actions.
 - **nav** — hairline bottom border; Greca + product wordmark; mono links.
 - **install-block** — block fill; amarillo `$ ` prefix on each command.
 - **footer** — block fill; Greca onDark; property links.
+- **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill.
+- **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
+- **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a 2px left rule in `{colors.primary}` (dark: amarillo) and ink text.
+- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
+- **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
+- **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
+
+| State | Treatment |
+| --- | --- |
+| hover | `{colors.hover}` fill. Rest border stays. Hover fill is never a border colour. |
+| pressed | `{colors.selected}` fill. |
+| selected | Never fill alone. Rows: selected fill plus a 2px `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
+| focus | 2px `{colors.anil}` outline, offset 2px, both themes. Does not swap the border. |
+| disabled | `{colors.ink-muted}` text, no fill change, no hover. |
 
 ## Do's and Don'ts
 
@@ -248,6 +446,13 @@ components:
 - Do keep the block band dark in both themes.
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
+- Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
+- Don't use `{colors.hover}` as a border colour.
+- Don't change a border colour on hover; focus is the anil ring.
+- Don't show selected by fill alone; rows take the primary left rule, segmented takes ink fill with canvas text.
+- Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`.
+- Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
+- Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
 
@@ -265,6 +470,6 @@ loaded as a favicon and as an `<img>`, an isolated document that cannot resolve
 
 ## Consuming
 
-This file ships with `@otto-nation/brand`. Locate it with
+This file ships with `@otto-nation/brand` from 1.3.0. Locate it with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.

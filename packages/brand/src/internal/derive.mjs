@@ -136,13 +136,28 @@ export function darkTokenHexes(tokensCss) {
 }
 
 /**
+ * Declared `--ow-*` names without the prefix. Empty when tokens.css
+ * declares none.
+ */
+function claimSurfaceNames(tokensCss) {
+  return [...declaredTokens(tokensCss)].map((name) => name.replace(/^--ow-/, ''));
+}
+
+/**
  * Contrast claims in the tokens.css header, plus amarillo's aside on the block.
  * Shape: `{ token, ratio, background }` with `--ow-*` names.
+ *
+ * Surfaces come from `declaredTokens`, not a hard-coded list, so a new
+ * background cannot drift out of the matcher.
  */
 export function documentedClaims(tokensCss) {
+  const surfaces = new Set(claimSurfaceNames(tokensCss));
+  if (surfaces.size === 0) return [];
   const claims = [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?(canvas|block|surface|amarillo|rosa|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?([a-z-]+)\b/g),
+  ]
+    .filter((match) => surfaces.has(match[3]))
+    .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
   const [, aside] = tokensCss.match(/reaches ([\d.]+):1 on the dark terminal block/) ?? [];
   if (aside) {
     claims.push({ token: '--ow-amarillo', ratio: aside, background: '--ow-block' });
@@ -155,9 +170,53 @@ export function documentedClaims(tokensCss) {
  * the light set above.
  */
 export function documentedDarkClaims(tokensCss) {
+  const surfaces = new Set(claimSurfaceNames(tokensCss));
+  if (surfaces.size === 0) return [];
   return [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark (canvas|block|surface|done-soft|warn-soft)\b/g),
-  ].map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark ([a-z-]+)\b/g),
+  ]
+    .filter((match) => surfaces.has(match[3]))
+    .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
+}
+
+const FONT_SHORTHAND = /^(400|500|600) (\d+)px\/(\d+)px var\((--font-[a-z]+)\)$/;
+
+/**
+ * `--ow-font-<role>` shorthands on `:root`.
+ * Shape: `<400|500|600> <size>px/<leading>px var(--font-x)`.
+ * Throws on any declaration that does not match.
+ */
+export function fontRoles(tokensCss) {
+  const roles = new Map();
+  for (const [, name, role, value] of lightBlock(tokensCss).matchAll(
+    /^\s*(--ow-font-([a-z]+)):\s*([^;]+);/gm,
+  )) {
+    const match = FONT_SHORTHAND.exec(value.trim());
+    if (!match) {
+      throw new Error(`${name}: unmodelled font shorthand ${value.trim()}`);
+    }
+    const [, weight, size, leading, fontVariable] = match;
+    roles.set(role, {
+      fontWeight: Number(weight),
+      fontSize: `${size}px`,
+      lineHeight: `${leading}px`,
+      fontVariable,
+    });
+  }
+  return roles;
+}
+
+/**
+ * `--ow-<name>: <n>px` declarations on `:root`. Empty when none exist.
+ */
+export function lengthTokens(tokensCss) {
+  const lengths = new Map();
+  for (const [, name, value] of lightBlock(tokensCss).matchAll(
+    /^\s*(--ow-[a-z-]+):\s*(\d+px)\s*;/gm,
+  )) {
+    lengths.set(name.replace(/^--ow-/, ''), value);
+  }
+  return lengths;
 }
 
 function letterSpacingIn(block) {
@@ -174,11 +233,55 @@ export function headingLetterSpacing(tokensCss) {
   return letterSpacingIn(tokensCss.match(/(?:^|\n)h1,\s*h2,\s*h3,\s*h4\s*\{([^}]+)\}/)?.[1]);
 }
 
+function fdRoleIn(block, role) {
+  const escaped = role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return block.match(new RegExp(`${escaped}:\\s*var\\((--ow-[a-z-]+)\\)`))?.[1] ?? null;
+}
+
 /**
- * The `--ow-*` that `--color-fd-primary` references in `:root` or `.dark`.
- * Null when the declaration is missing or is not a `var(--ow-*)`.
+ * The `--ow-*` that a `--color-fd-*` role references. Dark falls back to
+ * `:root` when the role is not restated. Null when neither block declares a
+ * `var(--ow-*)`.
  */
+export function fdRoleToken(tokensCss, role, theme = 'light') {
+  const light = fdRoleIn(lightBlock(tokensCss), role);
+  if (theme !== 'dark') return light;
+  return fdRoleIn(darkBlock(tokensCss), role) ?? light;
+}
+
+/** The `--ow-*` that `--color-fd-primary` references. */
 export function fdPrimaryToken(tokensCss, theme = 'light') {
-  const block = theme === 'dark' ? darkBlock(tokensCss) : lightBlock(tokensCss);
-  return block.match(/--color-fd-primary:\s*var\((--ow-[a-z-]+)\)/)?.[1] ?? null;
+  return fdRoleToken(tokensCss, '--color-fd-primary', theme);
+}
+
+/**
+ * The `--ow-*` inside the `:focus-visible` rule's `outline`.
+ * Throws when the rule is missing or the outline is not a `var(--ow-*)`.
+ */
+export function focusRingToken(tokensCss) {
+  const body = tokensCss.replace(/\/\*[\s\S]*?\*\//g, '').match(/:focus-visible\s*\{([^}]+)\}/)?.[1];
+  if (body == null) {
+    throw new Error('tokens.css is missing a :focus-visible rule');
+  }
+  const token = body.match(/outline:\s*[^;]*var\((--ow-[a-z-]+)\)/)?.[1];
+  if (!token) {
+    throw new Error('tokens.css :focus-visible rule has no outline var(--ow-*)');
+  }
+  return token;
+}
+
+function channel(byte) {
+  const v = byte / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => channel(parseInt(hex.slice(i, i + 2), 16)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG 2.x contrast ratio between two `#rrggbb` hexes. */
+export function contrast(fg, bg) {
+  const [hi, lo] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+  return (hi + 0.05) / (lo + 0.05);
 }
