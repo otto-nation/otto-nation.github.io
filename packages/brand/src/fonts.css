@@ -1,4 +1,7 @@
 /*
+ * Agents: read DESIGN.md at the package root. Face stacks declared here feed
+ * that file's typography tokens; colour still lives in tokens.css.
+ *
  * Both faces are vendored as variable woff2 and loaded by plain @font-face,
  * not next/font. Three reasons: the build stops needing network access; the
  * package stays free of any next/font coupling that would have to interact
