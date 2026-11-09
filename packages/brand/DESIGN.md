@@ -325,8 +325,8 @@ nothing.
 Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
 and hit-area are prose — `borderColor` is not a component key. App entries use
 refs to the colour, type, and length tokens. React consumers: `ActionButton`,
-`SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard`, and `Input`
-implement these entries.
+`SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard` (including its popover variant), `Input`,
+`StatusGlyph`, and `StateMessage` implement these entries.
 
 ```yaml
 components:

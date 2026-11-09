@@ -280,12 +280,12 @@ breaking release.
 | `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
 | `Tag` | `{ children, className? }` |
 | `SectionLabel` | `{ children, count?: number, className? }` |
-| `ActionButton` | `{ children, variant?: 'solid' \| 'outline' \| 'ghost', dense?: boolean, disabled?: boolean, onClick?, className? }` |
+| `ActionButton` | `{ children, variant?: 'solid' \| 'outline' \| 'ghost', dense?: boolean, disabled?: boolean, onClick?, className?, ...native button attributes }` |
 | `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
-| `ListRow` | `{ children, selected?, dense?, onClick?, className? }` |
+| `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
-| `Input` | `{ dense?: boolean, className? }` |
-| `StateMessage` | `{ kind: 'empty' \| 'loading' \| 'stale' \| 'error', children, action?, className? }` |
+| `Input` | `{ dense?: boolean, className?, ...native input attributes }` |
+| `StateMessage` | `{ kind: 'empty' \| 'loading' \| 'stale' \| 'error', children?, action?, className? }` |
 | `Nav` | `{ product, links, slot?, className? }` |
 | `Footer` | `{ cta?, className? }` |
 | `Hero` | `{ eyebrow, headline, lede, actions?, className? }` |

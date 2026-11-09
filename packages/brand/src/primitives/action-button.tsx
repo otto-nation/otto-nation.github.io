@@ -40,7 +40,11 @@ export function ActionButton({
           ? 'h-[var(--ow-control-height-dense)]'
           : 'h-[var(--ow-control-height)]',
         VARIANT[variant],
-        disabled ? 'text-[var(--ow-ink-muted)]' : VARIANT_HOVER[variant],
+        disabled
+          ? variant === 'solid'
+            ? 'opacity-50'
+            : 'text-[var(--ow-ink-muted)]'
+          : VARIANT_HOVER[variant],
         className,
       )}
       {...rest}
