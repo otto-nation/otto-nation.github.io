@@ -14,6 +14,18 @@ const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
 const read = (target) => readFileSync(fileURLToPath(new URL(target, root)), 'utf8');
 
+// npm always packs package.json, even when files omits it. Every other export
+// must sit under a files entry: an export that exists on disk but is outside
+// files is a dangling resolve in every tarball consumer.
+function filesCoverExport(target, files) {
+  const rel = target.replace(/^\.\//, '');
+  if (rel === 'package.json') return true;
+  return files.some((entry) => {
+    const prefix = entry.replace(/^\.\//, '').replace(/\/+$/, '');
+    return rel === prefix || rel.startsWith(`${prefix}/`);
+  });
+}
+
 // Every target is a literal path: the exports map has no wildcard, so the
 // barrel and the named subpaths are the whole public API and each one of them
 // is disk-checked here. A pattern entry reintroduced later fails this test
@@ -22,6 +34,15 @@ test('every exports-map target exists on disk', () => {
   for (const target of Object.values(manifest.exports)) {
     assert.ok(!target.includes('*'), `${target} is a wildcard: the API is the barrel and the named subpaths`);
     assert.doesNotThrow(() => read(target), `${target} is exported but missing`);
+  }
+});
+
+test('every exports target is covered by a files entry', () => {
+  for (const [key, target] of Object.entries(manifest.exports)) {
+    assert.ok(
+      filesCoverExport(target, manifest.files),
+      `${key} → ${target} is exported but not in files; it would not ship`,
+    );
   }
 });
 

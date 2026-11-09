@@ -265,6 +265,6 @@ loaded as a favicon and as an `<img>`, an isolated document that cannot resolve
 
 ## Consuming
 
-This file ships with `@otto-nation/brand`. Locate it with
+This file ships with `@otto-nation/brand` from 1.3.0. Locate it with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.
