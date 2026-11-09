@@ -576,8 +576,8 @@ terminal:
 
 ## Consuming
 
-This file ships with `@otto-nation/brand` from 1.3.0. Locate it with
-`node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. Terminal theme
-files ship from 1.4.0 (`terminal/otto-light.json`, `terminal/otto-dark.json`;
-generated; do not edit). App-UI React primitives ship from 1.5.0. For setup,
-tokens, and the no-build zip, see the package README.
+This file, the terminal theme files (`terminal/otto-light.json`,
+`terminal/otto-dark.json`; generated; do not edit), and the app-UI React
+primitives ship with `@otto-nation/brand` from 1.3.0. Locate this file with
+`node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
+and the no-build zip, see the package README.
