@@ -13,6 +13,7 @@ import {
   lightTokenHexes,
 } from '../src/internal/derive.mjs';
 import { GENERATED_HEADER, generate } from '../scripts/generate-design-md.mjs';
+import { resolveTerminal, terminalMap } from '../scripts/terminal.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (rel) => readFileSync(fileURLToPath(new URL(rel, root)), 'utf8');
@@ -162,6 +163,47 @@ test('each component text/bg pair clears AA on the dark ramp', () => {
     pairs += 1;
   }
   assert.ok(pairs >= 12, `expected at least 12 text/bg pairs, got ${pairs}`);
+});
+
+// Text slots (foreground, 1–6, 8–14) must clear AA on that scheme's
+// background. Slots 0/7/15 in light and 0 in dark are background-class
+// and exempt — hairline and surface on the light canvas sit at 1.24 and
+// 1.03, and dark slot 0 is hairline at 1.57.
+const TERMINAL_EXEMPT = {
+  light: new Set([0, 7, 15]),
+  dark: new Set([0]),
+};
+
+test('terminal refs resolve and text slots clear AA on the scheme background', () => {
+  const designMd = read('DESIGN.md');
+  const tokensCss = read('src/tokens.css');
+  const resolved = resolveTerminal(terminalMap(designMd), tokensCss);
+  for (const scheme of ['light', 'dark']) {
+    const slots = resolved[scheme];
+    assert.ok(slots, `missing ${scheme} scheme`);
+    const bg = slots.background;
+    assert.match(bg, /^#[0-9a-f]{6}$/, `${scheme} background`);
+    assert.match(slots.foreground, /^#[0-9a-f]{6}$/, `${scheme} foreground`);
+    assert.match(slots.cursor, /^#[0-9a-f]{6}$/, `${scheme} cursor`);
+    assert.match(slots.selection, /^#[0-9a-f]{6}$/, `${scheme} selection`);
+    const exempt = TERMINAL_EXEMPT[scheme];
+    const fgRatio = contrast(slots.foreground, bg);
+    assert.ok(
+      fgRatio >= 4.5,
+      `${scheme} foreground on background is ${fgRatio.toFixed(2)}:1, under AA`,
+    );
+    for (let slot = 0; slot < 16; slot += 1) {
+      const hex = slots[slot];
+      assert.ok(hex, `${scheme} missing slot ${slot}`);
+      assert.match(hex, /^#[0-9a-f]{6}$/, `${scheme} slot ${slot}`);
+      if (exempt.has(slot)) continue;
+      const ratio = contrast(hex, bg);
+      assert.ok(
+        ratio >= 4.5,
+        `${scheme} slot ${slot} on background is ${ratio.toFixed(2)}:1, under AA`,
+      );
+    }
+  }
 });
 
 test('the package exports DESIGN.md', () => {

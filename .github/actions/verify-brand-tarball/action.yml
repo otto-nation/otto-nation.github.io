@@ -59,7 +59,7 @@ runs:
       working-directory: fixtures/tarball-consumer
       # The workspace symlink would resolve even if files omitted DESIGN.md.
       # This is the packed tarball, which is the path a consumer actually gets.
-      run: node -e "require.resolve('@otto-nation/brand/DESIGN.md')"
+      run: node -e "require.resolve('@otto-nation/brand/DESIGN.md'); require.resolve('@otto-nation/brand/terminal/otto-dark.json')"
 
     - name: Assert the tarball actually styled the fixture
       shell: bash

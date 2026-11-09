@@ -11,13 +11,16 @@
     "src",
     "bin",
     "DESIGN.md",
-    "LICENSE"
+    "LICENSE",
+    "terminal"
   ],
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./fonts.css": "./src/fonts.css",
     "./DESIGN.md": "./DESIGN.md",
+    "./terminal/otto-light.json": "./terminal/otto-light.json",
+    "./terminal/otto-dark.json": "./terminal/otto-dark.json",
     "./search-button": "./src/chrome/search-button.tsx",
     "./verify": "./src/verify.mjs",
     "./package.json": "./package.json"
@@ -28,7 +31,7 @@
   },
   "scripts": {
     "test": "tsc --noEmit && node --test",
-    "design:generate": "node scripts/generate-design-md.mjs"
+    "design:generate": "node scripts/generate-design-md.mjs && node scripts/generate-terminal-themes.mjs"
   },
   "dependencies": {
     "tailwind-merge": "^3.0.0"
@@ -49,6 +52,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "fumadocs-ui": "^16.14.5",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "yaml": "2.9.0"
   }
 }

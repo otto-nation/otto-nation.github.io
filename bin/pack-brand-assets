@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Packs the plain-CSS half of @otto-nation/brand — tokens.css, fonts.css, the
-# vendored font files, their OFL licenses, and DESIGN.md — into a standalone zip. This is
+# vendored font files, their OFL licenses, DESIGN.md, and the generated
+# terminal/otto-{light,dark}.json themes — into a standalone zip. This is
 # the release asset for a consumer with no npm and no Tailwind build at all: a
 # static HTML page, a Vite app with no @otto-nation/brand dependency, anything
 # that today would otherwise hand-copy these files out of packages/brand/src
@@ -46,6 +47,8 @@ FILES=(
 # design system; no-build consumers do not get the npm export map.
 ROOT_FILES=(
   "DESIGN.md"
+  "terminal/otto-light.json"
+  "terminal/otto-dark.json"
 )
 
 STAGE="$(mktemp -d)"
