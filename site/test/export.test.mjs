@@ -43,6 +43,30 @@ test('the /ui specimen page is built and noindexed', () => {
   assert.match(section(html, 'page'), /App UI specimens/);
 });
 
+const STATUS_SPECIMENS = {
+  pass: { char: '\u2713', label: 'Passed', token: '--ow-done' },
+  fail: { char: '\u00D7', label: 'Failed', token: '--ow-danger' },
+  running: { char: '\u2026', label: 'Running', token: '--ow-info' },
+  warn: { char: '!', label: 'Warning', token: '--ow-warn' },
+  none: { char: '\u00B7', label: 'None', token: '--ow-ink-muted' },
+};
+
+test('the /ui specimen renders StatusGlyph and Tag', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {
+    const block = section(html, `status-${status}`);
+    assert.ok(block.includes(char), `${status} glyph missing`);
+    assert.ok(block.includes(label), `${status} label missing`);
+    assert.ok(block.includes(token), `${status} colour token missing`);
+  }
+  const hidden = section(html, 'status-pass-sr');
+  assert.ok(hidden.includes('\u2713'), 'sr-only pass glyph missing');
+  assert.ok(hidden.includes('sr-only'), 'showLabel={false} did not emit sr-only');
+  const tag = section(html, 'tag');
+  assert.match(tag, /border-\[var\(--ow-hairline\)\]/);
+  assert.doesNotMatch(tag, /\bbg-/);
+});
+
 test('index.html renders output from every component on the page', () => {
   assert.match(INDEX_HTML, /ONE TOOLCHAIN/, 'Eyebrow text missing — Hero/Eyebrow did not render');
   assert.match(INDEX_HTML, /Your machine\./, 'headline fragment missing — Hero did not render');
