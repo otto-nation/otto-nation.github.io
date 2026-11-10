@@ -612,7 +612,7 @@ terminal:
 This file, the terminal theme files (`terminal/otto-light.json`,
 `terminal/otto-dark.json`; generated; do not edit), and the app-UI React
 primitives ship with `@otto-nation/brand` from 1.3.0. `tokens.json` and the
-length tokens ship from 1.4.0. From 1.4.0, `otto-brand-check` flags
+length tokens ship from 1.4.0. From 1.5.0, `otto-brand-check` flags
 `literal-color`, `palette-color`, `pill-radius`, `hover-border`,
 `outline-removed` and `token-redefined`, which map to the Don'ts above, as
 warnings unless the consumer runs `--strict`. Locate this file with
