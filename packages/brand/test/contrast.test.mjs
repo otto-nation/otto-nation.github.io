@@ -9,9 +9,13 @@ import {
   documentedDarkClaims as darkClaimsFrom,
   fdPrimaryToken,
   fdRoleToken,
+  focusRing,
   focusRingToken,
+  lengthGroups,
   lightTokenHexes,
+  luminance,
   OW_TOKEN,
+  scrimSpec,
 } from '../src/internal/derive.mjs';
 
 const TOKENS = readFileSync(
@@ -250,6 +254,28 @@ test('anil clears 3:1 on canvas, surface, hover, and selected in both ramps', ()
 
 // One owner: the fumadocs ring token and the base :focus-visible rule name the
 // same --ow-*. That token must clear the non-text floor on every app surface.
+test('focusRing width and offset are the focus tokens at 2px', () => {
+  const ring = focusRing(TOKENS);
+  assert.equal(ring.width, '--ow-focus-width');
+  assert.equal(ring.offset, '--ow-focus-offset');
+  const focus = lengthGroups(TOKENS).focus;
+  assert.equal(focus.get('width'), '2px');
+  assert.equal(focus.get('offset'), '2px');
+});
+
+test('the dark scrim colour is not lighter than the dark canvas', () => {
+  const spec = scrimSpec(TOKENS, 'dark');
+  const tokens = darkTokens();
+  const scrimHex = tokens.get(spec.token);
+  const canvasHex = tokens.get('--ow-canvas');
+  assert.ok(scrimHex, `dark scrim token ${spec.token} has no hex`);
+  assert.ok(canvasHex, 'dark --ow-canvas has no hex');
+  assert.ok(
+    luminance(scrimHex) <= luminance(canvasHex),
+    `dark scrim ${spec.token} ${scrimHex} is lighter than canvas ${canvasHex}`,
+  );
+});
+
 test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces', () => {
   const ringToken = focusRingToken(TOKENS);
   for (const [theme, tokens] of eachRamp()) {

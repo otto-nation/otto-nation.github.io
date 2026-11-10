@@ -224,17 +224,72 @@ export function fontRoles(tokensCss) {
   return roles;
 }
 
+const LENGTH_GROUPS = [
+  ['radii', /^radius-(.+)$/],
+  ['spacing', /^space-(\d+)$/],
+  ['focus', /^focus-(.+)$/],
+  ['rules', /^rule-(.+)$/],
+  ['panes', /^pane-(.+)$/],
+];
+
 /**
- * `--ow-<name>: <n>px` declarations on `:root`. Empty when none exist.
+ * `:root` `--ow-*: Npx` declarations grouped by prefix. `radii` keys drop
+ * `radius-`, `spacing` keys are the digit after `space-`, and `focus` /
+ * `rules` / `panes` drop their prefix the same way. Every other px length
+ * goes to `lengths`. Empty maps when none exist.
  */
-export function lengthTokens(tokensCss) {
-  const lengths = new Map();
+export function lengthGroups(tokensCss) {
+  const groups = {
+    radii: new Map(),
+    spacing: new Map(),
+    focus: new Map(),
+    rules: new Map(),
+    panes: new Map(),
+    lengths: new Map(),
+  };
   for (const [, name, value] of lightBlock(tokensCss).matchAll(
     new RegExp(`^\\s*(${OW_TOKEN}):\\s*(\\d+px)\\s*;`, 'gm'),
   )) {
-    lengths.set(name.replace(/^--ow-/, ''), value);
+    const rest = name.replace(/^--ow-/, '');
+    const grouped = LENGTH_GROUPS.find(([, pattern]) => pattern.test(rest));
+    if (grouped) {
+      groups[grouped[0]].set(rest.match(grouped[1])[1], value);
+      continue;
+    }
+    groups.lengths.set(rest, value);
   }
-  return lengths;
+  return groups;
+}
+
+/**
+ * `--ow-<name>: <n>px` declarations on `:root` that are not radii, spacing,
+ * focus, rules, or panes. Empty when none exist.
+ */
+export function lengthTokens(tokensCss) {
+  return lengthGroups(tokensCss).lengths;
+}
+
+const SCRIM_MIX = new RegExp(
+  `^color-mix\\(in srgb, var\\((${OW_TOKEN})\\) (\\d+(?:\\.\\d+)?)%, transparent\\)$`,
+);
+
+/**
+ * The colour token and 0–1 opacity `--ow-scrim` mixes, per theme.
+ * Parses exactly `color-mix(in srgb, var(--ow-x) N%, transparent)`.
+ * Dark must restate the declaration; a missing or other-shaped value throws.
+ */
+export function scrimSpec(tokensCss, theme = 'light') {
+  const block = theme === 'dark' ? darkBlock(tokensCss) : lightBlock(tokensCss);
+  const where = theme === 'dark' ? '.dark' : ':root';
+  const value = [...block.matchAll(/^\s*--ow-scrim:\s*([^;]+);/gm)].at(-1)?.[1]?.trim();
+  if (!value) {
+    throw new Error(`tokens.css ${where} is missing --ow-scrim`);
+  }
+  const match = SCRIM_MIX.exec(value);
+  if (!match) {
+    throw new Error(`--ow-scrim: unmodelled value ${value}`);
+  }
+  return { token: match[1], opacity: Number(match[2]) / 100 };
 }
 
 function letterSpacingIn(block) {
@@ -272,20 +327,50 @@ export function fdPrimaryToken(tokensCss, theme = 'light') {
   return fdRoleToken(tokensCss, '--color-fd-primary', theme);
 }
 
+function ruleVars(value) {
+  return [...value.matchAll(new RegExp(`var\\((${OW_TOKEN})\\)`, 'g'))].map(([, name]) => name);
+}
+
+function focusTokenIn(names, focus) {
+  return names.find((name) => {
+    if (!name.startsWith('--ow-focus-')) return false;
+    return focus.has(name.slice('--ow-focus-'.length));
+  }) ?? null;
+}
+
 /**
- * The `--ow-*` inside the `:focus-visible` rule's `outline`.
- * Throws when the rule is missing or the outline is not a `var(--ow-*)`.
+ * Colour, width, and offset tokens of the `:focus-visible` rule.
+ * Colour is the `outline` `var(--ow-*)` that has a hex; width and offset
+ * are the `var(--ow-*)` values that `lengthGroups().focus` holds.
+ * Throws when any piece is missing.
  */
-export function focusRingToken(tokensCss) {
+export function focusRing(tokensCss) {
   const body = tokensCss.replace(/\/\*[\s\S]*?\*\//g, '').match(/:focus-visible\s*\{([^}]+)\}/)?.[1];
   if (body == null) {
     throw new Error('tokens.css is missing a :focus-visible rule');
   }
-  const token = body.match(new RegExp(`outline:\\s*[^;]*var\\((${OW_TOKEN})\\)`))?.[1];
-  if (!token) {
-    throw new Error('tokens.css :focus-visible rule has no outline var(--ow-*)');
+  const outline = body.match(/outline:\s*([^;]+);/)?.[1]?.trim();
+  const offsetValue = body.match(/outline-offset:\s*([^;]+);/)?.[1]?.trim();
+  if (!outline) {
+    throw new Error('tokens.css :focus-visible rule has no outline');
   }
-  return token;
+  if (!offsetValue) {
+    throw new Error('tokens.css :focus-visible rule has no outline-offset');
+  }
+  const hexes = lightTokenHexes(tokensCss);
+  const focus = lengthGroups(tokensCss).focus;
+  const color = ruleVars(outline).find((name) => hexes.has(name));
+  const width = focusTokenIn(ruleVars(outline), focus);
+  const offset = focusTokenIn(ruleVars(offsetValue), focus);
+  if (!color || !width || !offset) {
+    throw new Error('tokens.css :focus-visible rule is missing a colour, width, or offset token');
+  }
+  return { color, width, offset };
+}
+
+/** The `--ow-*` colour inside the `:focus-visible` rule's `outline`. */
+export function focusRingToken(tokensCss) {
+  return focusRing(tokensCss).color;
 }
 
 function channel(byte) {
@@ -293,7 +378,8 @@ function channel(byte) {
   return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
 }
 
-function luminance(hex) {
+/** WCAG relative luminance of a `#rrggbb` hex. */
+export function luminance(hex) {
   const [r, g, b] = [1, 3, 5].map((i) => channel(parseInt(hex.slice(i, i + 2), 16)));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

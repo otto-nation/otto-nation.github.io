@@ -18,7 +18,7 @@ import {
   fontRoles,
   fontStack,
   headingLetterSpacing,
-  lengthTokens,
+  lengthGroups,
   lightTokenHexes,
   trackingValue,
 } from '../src/internal/derive.mjs';
@@ -63,7 +63,14 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
   if (roles.size === 0) {
     throw new Error('tokens.css :root declared no --ow-font-* roles');
   }
-  const lengths = lengthTokens(tokensCss);
+  const groups = lengthGroups(tokensCss);
+  if (groups.radii.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-radius-* lengths');
+  }
+  if (groups.spacing.size === 0) {
+    throw new Error('tokens.css :root declared no --ow-space-* lengths');
+  }
+  const lengths = groups.lengths;
   if (lengths.size === 0) {
     throw new Error('tokens.css :root declared no --ow-* px lengths');
   }
@@ -111,19 +118,9 @@ function frontMatter({ tokensCss, fontsCss, eyebrowSource }) {
     `    letterSpacing: ${quoteDimension(eyebrowTracking)}`,
     ...typographyRoleLines(roles, fontsCss),
     'rounded:',
-    // Tailwind v4 defaults, which is what the components actually use
-    // (rounded-md on Button, rounded-lg on CardGrid / InstallBlock).
-    '  sm: 4px',
-    '  md: 6px',
-    '  lg: 8px',
+    ...[...groups.radii].map(([name, value]) => `  ${name}: ${value}`),
     'spacing:',
-    // Tailwind's 4px base. Not in tokens.css; listed so agents share the scale.
-    '  1: 4px',
-    '  2: 8px',
-    '  3: 12px',
-    '  4: 16px',
-    '  5: 20px',
-    '  6: 24px',
+    ...[...groups.spacing].map(([name, value]) => `  ${name}: ${value}`),
     ...[...lengths].map(([name, value]) => `  ${name}: ${value}`),
     '',
   ];

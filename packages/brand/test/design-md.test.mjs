@@ -9,6 +9,7 @@ import {
   darkTokenHexes,
   fdPrimaryToken,
   fontRoles,
+  lengthGroups,
   lengthTokens,
   lightTokenHexes,
 } from '../src/internal/derive.mjs';
@@ -129,6 +130,43 @@ test('YAML spacing includes app length tokens after the Tailwind 1–6 steps', (
   for (const [name, expected] of Object.entries(APP_LENGTHS)) {
     assert.equal(lengths.get(name), expected, `tokens.css --ow-${name}`);
     assert.equal(spacing[name], expected, `yaml spacing.${name}`);
+  }
+});
+
+test('YAML rounded and spacing 1–6 equal lengthGroups values', () => {
+  const tokensCss = read('src/tokens.css');
+  const generated = generate(read('DESIGN.md'), sources(tokensCss));
+  const groups = lengthGroups(tokensCss);
+  const rounded = yamlRounded(generated);
+  const spacing = yamlSpacing(generated);
+  assert.ok(groups.radii.size > 0, 'tokens.css declared no --ow-radius-*');
+  assert.ok(groups.spacing.size > 0, 'tokens.css declared no --ow-space-*');
+  for (const [name, value] of groups.radii) {
+    assert.equal(rounded[name], value, `rounded.${name}`);
+  }
+  for (const [name, value] of groups.spacing) {
+    assert.equal(spacing[name], value, `spacing.${name}`);
+  }
+});
+
+test('mutating --ow-radius-md changes YAML rounded.md', () => {
+  const committed = read('DESIGN.md');
+  const original = read('src/tokens.css');
+  const mutated = original.replace('--ow-radius-md: 6px', '--ow-radius-md: 7px');
+  assert.notEqual(mutated, original, 'the subject declaration was not in tokens.css');
+  const generated = generate(committed, sources(mutated));
+  assert.notEqual(generated, committed);
+  assert.equal(yamlRounded(generated).md, '7px');
+});
+
+test('grouped length tokens do not leak into YAML spacing keys', () => {
+  const spacing = yamlSpacing(generate(read('DESIGN.md'), sources()));
+  for (const key of Object.keys(spacing)) {
+    assert.equal(
+      /^(radius|focus|rule|pane)-/.test(key),
+      false,
+      `spacing.${key} leaked from a grouped length token`,
+    );
   }
 });
 
@@ -284,6 +322,23 @@ function yamlComponents(designMd) {
     components[current][prop[1]] = prop[2];
   }
   return components;
+}
+
+function yamlRounded(designMd) {
+  const rounded = {};
+  let inRounded = false;
+  for (const line of frontMatterBody(designMd).split('\n')) {
+    if (line === 'rounded:') {
+      inRounded = true;
+      continue;
+    }
+    if (!inRounded) continue;
+    if (!line.startsWith('  ')) break;
+    const match = line.match(/^  ([a-z0-9-]+): (\S+)$/);
+    assert.ok(match, `unparseable rounded entry: ${line}`);
+    rounded[match[1]] = match[2];
+  }
+  return rounded;
 }
 
 function yamlSpacing(designMd) {
