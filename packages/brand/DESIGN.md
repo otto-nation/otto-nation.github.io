@@ -489,7 +489,7 @@ components:
     height: "{spacing.control-height}"
     typography: "{typography.label}"
   segmented-on-dark:
-    backgroundColor: "{colors.block}" # track is transparent; this is the block band showing through
+    backgroundColor: "{colors.block}"
     textColor: "{colors.block-ink-muted}"
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
@@ -587,7 +587,7 @@ components:
 - **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill, 4px (`px-1`) inline padding.
 - **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
 - **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a `--ow-rule-selected` left rule in `{colors.primary}` (dark: amarillo) and ink text.
-- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text. Takes `onDark` on the block band: transparent track, block-hairline, unselected `{colors.block-ink-muted}` with no hover fill; selected is `{colors.block-ink}` fill with `{colors.block}` text.
+- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text. Takes `onDark` on the block band: transparent track (the YAML lists `{colors.block}`, the band it shows), block-hairline, unselected `{colors.block-ink-muted}` with no hover fill; selected is `{colors.block-ink}` fill with `{colors.block}` text.
 - **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
 - **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
