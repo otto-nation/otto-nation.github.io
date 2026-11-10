@@ -704,6 +704,7 @@ test('the /ui specimen renders Dialog and Toast', () => {
   const info = section(html, 'toast-info');
   assert.match(info, /role="status"/);
   assert.doesNotMatch(info, /role="alert"/);
+  assert.match(info, /rounded-\[var\(--ow-radius-lg\)\]/);
 
   const fail = section(html, 'toast-fail');
   assert.match(fail, /role="alert"/);
