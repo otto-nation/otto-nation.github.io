@@ -24,7 +24,7 @@ export function SegmentedControl({
       role="group"
       aria-label={label}
       className={twMerge(
-        'inline-flex overflow-hidden rounded-md border border-[var(--ow-hairline)] bg-[var(--ow-canvas)] [font:var(--ow-font-label)]',
+        'inline-flex overflow-hidden rounded-[var(--ow-radius-md)] border border-[var(--ow-hairline)] bg-[var(--ow-canvas)] [font:var(--ow-font-label)]',
         dense
           ? 'h-[var(--ow-control-height-dense)]'
           : 'h-[var(--ow-control-height)]',

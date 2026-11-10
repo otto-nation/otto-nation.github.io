@@ -14,7 +14,7 @@ export function SectionLabel({
   return (
     <span
       className={twMerge(
-        'inline-flex items-center gap-1 [font:var(--ow-font-section)] text-[var(--ow-ink-muted)]',
+        'inline-flex items-center gap-[var(--ow-space-1)] [font:var(--ow-font-section)] text-[var(--ow-ink-muted)]',
         className,
       )}
     >

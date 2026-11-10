@@ -15,7 +15,7 @@ export function Input({
     <input
       disabled={disabled}
       className={twMerge(
-        'rounded-md border border-[var(--ow-outline)] bg-[var(--ow-canvas)] px-[var(--ow-control-padding)] [font:var(--ow-font-body)] text-[var(--ow-ink)]',
+        'rounded-[var(--ow-radius-md)] border border-[var(--ow-outline)] bg-[var(--ow-canvas)] px-[var(--ow-control-padding)] [font:var(--ow-font-body)] text-[var(--ow-ink)]',
         dense
           ? 'h-[var(--ow-control-height-dense)]'
           : 'h-[var(--ow-control-height)]',

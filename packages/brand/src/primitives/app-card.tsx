@@ -24,7 +24,7 @@ export function AppCard({
   return (
     <div
       className={twMerge(
-        'rounded-lg bg-[var(--ow-surface)] p-[var(--ow-card-padding)] [font:var(--ow-font-body)] text-[var(--ow-ink)]',
+        'rounded-[var(--ow-radius-lg)] bg-[var(--ow-surface)] p-[var(--ow-card-padding)] [font:var(--ow-font-body)] text-[var(--ow-ink)]',
         EDGE[variant],
         className,
       )}
