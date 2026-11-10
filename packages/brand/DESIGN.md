@@ -185,6 +185,7 @@ Documented contrast claims from `tokens.css`:
 | warn | 5.04:1 | canvas | light |
 | danger | 5.86:1 | canvas | light |
 | danger | 6.06:1 | surface | light |
+| canvas | 5.86:1 | danger | light |
 | info | 5.59:1 | canvas | light |
 | info | 5.78:1 | surface | light |
 | magenta | 5.75:1 | canvas | light |
@@ -225,6 +226,7 @@ Documented contrast claims from `tokens.css`:
 | warn | 8.90:1 | canvas | dark |
 | danger | 8.22:1 | canvas | dark |
 | danger | 7.27:1 | surface | dark |
+| canvas | 8.22:1 | danger | dark |
 | info | 9.19:1 | canvas | dark |
 | info | 8.13:1 | surface | dark |
 | magenta | 6.86:1 | canvas | dark |
@@ -387,6 +389,12 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
+  button-danger:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-on-dark:
     backgroundColor: "{colors.block-ink}"
     textColor: "{colors.block}"
@@ -473,6 +481,7 @@ components:
   Page size (`sm`/`xs`): `font-semibold`, `text-sm`/`text-xs`, `--ow-space-4` / `--ow-space-2` padding; same variants.
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
+- **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
@@ -502,9 +511,11 @@ components:
 
 - Do put body copy in `{colors.ink}` or `{colors.ink-muted}` on `{colors.canvas}` / `{colors.surface}`.
 - Do put text on amarillo/rosa fills in `{colors.on-amarillo}` / `{colors.on-rosa}`.
+- Do put text on a danger fill in `{colors.canvas}`; it inverts with the theme and holds both ramps.
 - Do keep the block band dark in both themes.
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
+- Don't build a destructive button from rosa; use `button-danger`.
 - Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
 - Don't use `{colors.hover}` as a border colour.
 - Don't change a border colour on hover; focus is the anil ring.

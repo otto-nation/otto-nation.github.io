@@ -206,6 +206,56 @@ test('the /ui specimen renders page-size Button and Button size=app', () => {
       }
     }
   }
+
+  const pageDanger = section(html, 'button-page-danger');
+  const pageDangerControl = pageDanger.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageDangerControl, 'page danger control missing');
+  assert.match(pageDangerControl, /<button\b/, 'page danger is not a button');
+  assert.ok(pageDanger.includes('Delete'), 'page danger label missing');
+  assert.ok(
+    pageDangerControl.includes('bg-[var(--ow-danger)]') &&
+      pageDangerControl.includes('text-[var(--ow-canvas)]'),
+    'page danger fill missing',
+  );
+  assert.doesNotMatch(
+    pageDangerControl,
+    /hover:bg-/,
+    'page danger should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageDangerControl,
+    /active:bg-/,
+    'page danger should not paint pressed fill',
+  );
+
+  for (const state of ['rest', 'disabled']) {
+    const block = section(html, `button-app-danger-${state}`);
+    const button = block.match(/<button\b[^>]*>/)?.[0];
+    assert.ok(button, `app danger ${state} is not a button`);
+    assert.ok(block.includes('Delete'), `app danger ${state} label missing`);
+    assert.ok(
+      button.includes('bg-[var(--ow-danger)]') &&
+        button.includes('text-[var(--ow-canvas)]'),
+      `app danger ${state} fill missing`,
+    );
+    assert.doesNotMatch(
+      button,
+      /hover:bg-/,
+      `app danger ${state} should not hover-fill`,
+    );
+    assert.doesNotMatch(
+      button,
+      /active:bg-/,
+      `app danger ${state} should not paint pressed fill`,
+    );
+    if (state === 'disabled') {
+      assert.match(button, /\bdisabled\b/, 'app danger disabled is not disabled');
+      assert.ok(
+        button.includes('opacity-50'),
+        'app danger disabled missing opacity-50',
+      );
+    }
+  }
 });
 
 test('the /ui specimen renders SegmentedControl and ListRow', () => {

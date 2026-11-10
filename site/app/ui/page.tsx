@@ -114,6 +114,9 @@ export default function UiPage() {
       <section data-specimen="button-page-ondark">
         <Button onDark>Page onDark</Button>
       </section>
+      <section data-specimen="button-page-danger">
+        <Button variant="danger">Delete</Button>
+      </section>
       {ACTION_VARIANTS.map((variant) =>
         ACTION_STATES.map(({ state, dense, disabled }) => (
           <section
@@ -126,6 +129,16 @@ export default function UiPage() {
           </section>
         )),
       )}
+      <section data-specimen="button-app-danger-rest">
+        <Button size="app" variant="danger">
+          Delete
+        </Button>
+      </section>
+      <section data-specimen="button-app-danger-disabled">
+        <Button size="app" variant="danger" disabled>
+          Delete
+        </Button>
+      </section>
       <section data-specimen="segmented">
         <SegmentedControl
           options={SEGMENTED_OPTIONS}
