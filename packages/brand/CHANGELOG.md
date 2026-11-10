@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.3.0...brand-v1.4.0) (2026-11-10)
+
+
+### Features
+
+* **brand:** every DESIGN.md value in tokens.css and tokens.json ([#35](https://github.com/otto-nation/otto-nation.github.io/issues/35)) ([74b7b2c](https://github.com/otto-nation/otto-nation.github.io/commit/74b7b2cee41d73231f621c82f54c00814f73c15f))
+
 ## [1.3.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.2.0...brand-v1.3.0) (2026-11-09)
 
 
