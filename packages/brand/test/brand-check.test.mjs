@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -359,4 +359,52 @@ test('a violating tree invoked without new flags still exits 0', () => {
   assert.equal(code, 0);
   assert.match(output, /warning pill-radius:/);
   assert.match(output, /warning hover-border:/);
+});
+
+test('a violation three directories deep is reported', () => {
+  const dir = fixture();
+  const deep = join(dir, 'app', 'a', 'b', 'c');
+  mkdirSync(deep, { recursive: true });
+  writeFileSync(
+    join(deep, 'deep.tsx'),
+    'export default () => <p className="rounded-full" />;\n',
+  );
+  const { code, output } = run(dir);
+  assert.equal(code, 0);
+  assert.match(output, /deep\.tsx:\d+:\d+: warning pill-radius:/);
+});
+
+test('a gitignored file is not reported', () => {
+  const dir = fixture();
+  execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+  writeFileSync(join(dir, '.gitignore'), 'dist/\n');
+  mkdirSync(join(dir, 'app', 'dist'));
+  writeFileSync(
+    join(dir, 'app', 'dist', 'x.js'),
+    'export const x = "rounded-full";\n',
+  );
+  const { code, output } = run(dir);
+  assert.equal(code, 0);
+  assert.doesNotMatch(output, /pill-radius/);
+  assert.doesNotMatch(output, /dist\/x\.js/);
+});
+
+test('a violation after a block comment reports the original line', () => {
+  const { code, output } = run(fixture({
+    page: '/*\n \n */\n\nexport default () => <p className="rounded-full" />;\n',
+  }));
+  assert.equal(code, 0);
+  assert.match(output, /page\.tsx:5:\d+: warning pill-radius:/);
+});
+
+test('src-empty warns by default and errors under --strict', () => {
+  const dir = fixture();
+  const empty = join(dir, 'empty');
+  mkdirSync(empty);
+  const warned = run(dir, { src: empty });
+  assert.equal(warned.code, 0);
+  assert.match(warned.output, /warning src-empty:/);
+  const strict = run(dir, { src: empty, extra: ['--strict'] });
+  assert.equal(strict.code, 1);
+  assert.match(strict.output, /error src-empty:/);
 });
