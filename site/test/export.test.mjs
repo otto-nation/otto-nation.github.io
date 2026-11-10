@@ -469,6 +469,42 @@ test('the /ui specimen renders Textarea and Select', () => {
   }
 });
 
+test('the /ui specimen renders Field and Input invalid', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const hint = section(html, 'field-hint');
+  assert.match(hint, /<label\b[^>]*\bfor="spec-title"/);
+  assert.ok(hint.includes('--ow-font-label'), 'field-hint label font missing');
+  assert.ok(hint.includes('--ow-font-meta'), 'field-hint meta font missing');
+  const hintControl = hint.match(/<input\b[^>]*>/)?.[0];
+  assert.ok(hintControl, 'field-hint control is not an input');
+  assert.match(hintControl, /\bid="spec-title"/);
+  assert.match(hintControl, /aria-describedby="spec-title-hint"/);
+  assert.match(hint, /\bid="spec-title-hint"/);
+
+  const error = section(html, 'field-error');
+  assert.match(error, /<label\b[^>]*\bfor="spec-title"/);
+  assert.ok(error.includes('--ow-font-label'), 'field-error label font missing');
+  assert.ok(error.includes('--ow-font-meta'), 'field-error meta font missing');
+  assert.ok(error.includes('--ow-danger'), 'field-error danger token missing');
+  assert.ok(!error.includes('spec-title-hint'), 'field-error still rendered a hint');
+  const errorControl = error.match(/<textarea\b[^>]*>/)?.[0];
+  assert.ok(errorControl, 'field-error control is not a textarea');
+  assert.match(errorControl, /\bid="spec-title"/);
+  assert.match(errorControl, /aria-describedby="spec-title-error"/);
+  assert.match(errorControl, /aria-invalid="true"/);
+  assert.match(error, /\bid="spec-title-error"/);
+
+  const invalid = section(html, 'input-invalid');
+  const invalidControl = invalid.match(/<input\b[^>]*>/)?.[0];
+  assert.ok(invalidControl, 'input-invalid is not an input');
+  assert.match(invalidControl, /aria-invalid="true"/);
+  assert.ok(
+    invalidControl.includes('aria-[invalid=true]:border-[var(--ow-danger)]'),
+    'input-invalid missing danger edge class',
+  );
+});
+
 test('the /ui specimen renders StateMessage', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
 

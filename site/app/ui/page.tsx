@@ -2,6 +2,7 @@ import {
   ActionButton,
   AppCard,
   Button,
+  Field,
   Input,
   Select,
   Textarea,
@@ -176,6 +177,19 @@ export default function UiPage() {
           <Input dense={dense} disabled={disabled} defaultValue="branch" />
         </section>
       ))}
+      <section data-specimen="input-invalid">
+        <Input aria-invalid="true" defaultValue="branch" />
+      </section>
+      <section data-specimen="field-hint">
+        <Field id="spec-title" label="Title" hint="A short name">
+          {(p) => <Input {...p} />}
+        </Field>
+      </section>
+      <section data-specimen="field-error">
+        <Field id="spec-title" label="Title" hint="A short name" error="Required">
+          {(p) => <Textarea {...p} />}
+        </Field>
+      </section>
       <section data-specimen="textarea-rest">
         <Textarea defaultValue="notes" />
       </section>

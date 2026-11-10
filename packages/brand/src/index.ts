@@ -11,6 +11,7 @@ export { SegmentedControl, type SegmentedOption } from './primitives/segmented-c
 export { ListRow } from './primitives/list-row';
 export { AppCard, type AppCardVariant } from './primitives/app-card';
 export { Input } from './primitives/input';
+export { Field, type FieldControlProps } from './primitives/field';
 export { Textarea } from './primitives/textarea';
 export { Select } from './primitives/select';
 export { StateMessage, type StateMessageKind } from './primitives/state-message';
