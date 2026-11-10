@@ -440,7 +440,7 @@ breaking release.
 | `GrecaDivider` | `{ className? }` |
 | `Rings` | `{ className? }` |
 | `Eyebrow` | `{ children, className? }` |
-| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className? }` |
+| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost' \| 'danger', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
 | `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
 | `Tag` | `{ children, className? }` |
@@ -450,6 +450,14 @@ breaking release.
 | `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
 | `Input` | `{ dense?: boolean, className?, ...native input attributes }` |
+| `Field` | `{ id, label, hint?, error?, children: (control: FieldControlProps) => ReactNode, className? }` |
+| `Textarea` | `{ className?, ...native textarea attributes }` |
+| `Select` | `{ dense?, className?, ...native select attributes }` |
+| `Checkbox` | `{ label?, className?, ...native input attributes minus type }` |
+| `IconButton` | `{ label, children, dense?, tone?: 'default' \| 'danger', pressed?, className?, ...native button attributes }` (`IconButtonProps`) |
+| `Dialog` | `{ id, title, children?, actions?, className?, ...native dialog attributes }` |
+| `Toast` | `{ children, status?: StatusGlyphStatus, className? }` |
+| `Table` | `{ caption?, className?, ...native table attributes }` with `Table.Head` / `.Body` / `.Row` / `.Cell` / `.HeaderCell`; `TableAlign` is `'start' \| 'center' \| 'end'` |
 | `StateMessage` | `{ kind: 'empty' \| 'loading' \| 'stale' \| 'error', children?, action?, className? }` |
 | `Nav` | `{ product, links, slot?, className? }` |
 | `Footer` | `{ cta?, className? }` |

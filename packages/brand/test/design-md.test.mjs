@@ -233,7 +233,7 @@ test('each component text pair clears AA on both ramps, missing fill on canvas',
       pairs += 1;
     }
   }
-  assert.ok(pairs >= 50, `expected at least 50 text/bg pairs, got ${pairs}`);
+  assert.ok(pairs >= 90, `expected at least 90 text/bg pairs, got ${pairs}`);
 });
 
 // Text slots (foreground, 1–6, 8–14) must clear AA on that scheme's

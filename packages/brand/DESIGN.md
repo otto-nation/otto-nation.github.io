@@ -185,6 +185,7 @@ Documented contrast claims from `tokens.css`:
 | warn | 5.04:1 | canvas | light |
 | danger | 5.86:1 | canvas | light |
 | danger | 6.06:1 | surface | light |
+| canvas | 5.86:1 | danger | light |
 | info | 5.59:1 | canvas | light |
 | info | 5.78:1 | surface | light |
 | magenta | 5.75:1 | canvas | light |
@@ -225,6 +226,8 @@ Documented contrast claims from `tokens.css`:
 | warn | 8.90:1 | canvas | dark |
 | danger | 8.22:1 | canvas | dark |
 | danger | 7.27:1 | surface | dark |
+| canvas | 8.22:1 | danger | dark |
+| canvas | 7.25:1 | anil | dark |
 | info | 9.19:1 | canvas | dark |
 | info | 8.13:1 | surface | dark |
 | magenta | 6.86:1 | canvas | dark |
@@ -322,13 +325,16 @@ Overlays stay flat. Depth is an edge, never a darker fill.
 | --- | --- |
 | Popover / menu | `{colors.surface}` fill, `{colors.outline}` edge, `{rounded.lg}`. Surface vs canvas is 1.03 light / 1.13 dark, so the edge does the separating. |
 | Window | Same as a popover. |
+| Dialog | Window treatment plus `var(--ow-scrim)`; modal only via `showModal()`. |
+| Toast | Same as a popover; no shadow. |
 | Scrim | Modal only: `var(--ow-scrim)`. |
 
 ## Shapes
 
 Controls (buttons, segmented, inputs): `rounded-md` → `{rounded.md}` (6px).
 Cards, popovers, and windows: `rounded-lg` → `{rounded.lg}` (8px). Tags:
-`rounded-sm` → `{rounded.sm}` (4px). No `full`.
+`rounded-sm` → `{rounded.sm}` (4px). No `full`. Checkbox box: `{rounded.sm}`.
+At 16px, `{rounded.md}` reads as a circle.
 
 Do not use pills. Default status is coloured text plus a glyph. A label
 that needs a container is a `tag`: hairline border, `{rounded.sm}`,
@@ -340,9 +346,9 @@ nothing.
 Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
 and hit-area are prose — `borderColor` is not a component key. App entries use
 refs to the colour, type, and length tokens. React consumers: `Button` (`size="app"`
-for app controls; `sm`/`xs` for page CTAs), the deprecated `ActionButton` alias,
+for app controls; `sm`/`xs` for page CTAs; `variant="danger"` for destructive confirm), the deprecated `ActionButton` alias,
 `SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard` (including its popover variant), `Input`,
-`StatusGlyph`, and `StateMessage` implement these entries.
+`Textarea`, `Select`, `Field`, `Checkbox`, `IconButton`, `Dialog`, `Toast`, `Table`, `StatusGlyph`, and `StateMessage` implement these entries.
 
 ```yaml
 components:
@@ -387,6 +393,32 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
+  button-danger:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  icon-button:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-selected:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-danger:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.danger}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
   button-on-dark:
     backgroundColor: "{colors.block-ink}"
     textColor: "{colors.block}"
@@ -467,12 +499,69 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.body}"
+  textarea:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.control-padding}"
+    typography: "{typography.body}"
+  select:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.body}"
+  field-label:
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+  field-hint:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.meta}"
+  field-error:
+    textColor: "{colors.danger}"
+    typography: "{typography.meta}"
+  checkbox:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sm}"
+    size: "{spacing.4}"
+    typography: "{typography.label}"
+  checkbox-checked:
+    backgroundColor: "{colors.anil}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.sm}"
+    size: "{spacing.4}"
+  dialog:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  toast:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  table:
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+  table-header:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  table-section:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  table-row-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
   Page size (`sm`/`xs`): `font-semibold`, `text-sm`/`text-xs`, `--ow-space-4` / `--ow-space-2` padding; same variants.
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
+- **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
+- **icon-button** — square at control height; outline edge; required `label`; hover, pressed and toggle-selected as above. The dark edge-on-hover reading is 2.77:1 against the hover fill; the edge still reads 3.44:1 against the canvas outside it, which locates the control.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
@@ -489,6 +578,12 @@ components:
 - **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
 - **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
+- **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
+- **field** — label role above, meta-role hint or danger error below; `id` wires `htmlFor` and `aria-describedby`.
+- **checkbox** — outline edge, `{rounded.sm}`; checked is an anil fill with a canvas check.
+- **dialog** — window treatment plus scrim; `showModal()` for modal; actions in `form method="dialog"`. The `open` attribute alone is non-modal with no scrim.
+- **toast** — popover treatment, glyph plus text, no timer, consumer positions it. Keep it mounted and swap children; `status="fail"` is `role="alert"`.
+- **table** — body role, section-role header with a 1px ink rule, hover fill, `section` and `total` rows.
 
 | State | Treatment |
 | --- | --- |
@@ -497,14 +592,18 @@ components:
 | selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
+| invalid | `{colors.danger}` edge via `aria-invalid` on Input/Textarea/Select/Checkbox; message in field-error. Not a hover change. |
 
 ## Do's and Don'ts
 
 - Do put body copy in `{colors.ink}` or `{colors.ink-muted}` on `{colors.canvas}` / `{colors.surface}`.
 - Do put text on amarillo/rosa fills in `{colors.on-amarillo}` / `{colors.on-rosa}`.
+- Do put text on a danger fill in `{colors.canvas}`; it inverts with the theme and holds both ramps.
 - Do keep the block band dark in both themes.
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
+- Don't build a destructive button from rosa; use `button-danger`.
+- Don't add a shadow to a dialog or toast; the outline edge separates it.
 - Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
 - Don't use `{colors.hover}` as a border colour.
 - Don't change a border colour on hover; focus is the anil ring.
@@ -615,6 +714,8 @@ primitives ship with `@otto-nation/brand` from 1.3.0. `tokens.json` and the
 length tokens ship from 1.4.0. From 1.5.0, `otto-brand-check` flags
 `literal-color`, `palette-color`, `pill-radius`, `hover-border`,
 `outline-removed` and `token-redefined`, which map to the Don'ts above, as
-warnings unless the consumer runs `--strict`. Locate this file with
+warnings unless the consumer runs `--strict`. Textarea, Select, Field, Checkbox,
+IconButton, Dialog, Toast, Table and Button's `danger` variant ship from 1.5.0.
+Locate this file with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.

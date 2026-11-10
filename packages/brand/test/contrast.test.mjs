@@ -310,6 +310,16 @@ test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces',
   }
 });
 
+test(':root and .dark declare color-scheme', () => {
+  const root = TOKENS.slice(TOKENS.indexOf(':root {'), TOKENS.indexOf('.dark {'));
+  const darkStart = TOKENS.indexOf('.dark {');
+  const dark = TOKENS.slice(darkStart, TOKENS.indexOf('}', darkStart));
+  assert.ok(root.includes(':root {'), ':root block missing');
+  assert.ok(dark.includes('.dark {'), '.dark block missing');
+  assert.match(root, /color-scheme:\s*light\s*;/);
+  assert.match(dark, /color-scheme:\s*dark\s*;/);
+});
+
 // A layered ring loses to any utility that removes the outline. The restore rule has to sit
 // outside every @layer, skip controls that draw their own ring, and use the same focus tokens.
 test('an unlayered rule restores the ring where outline-none leaves none', () => {

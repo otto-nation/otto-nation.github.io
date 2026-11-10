@@ -206,6 +206,56 @@ test('the /ui specimen renders page-size Button and Button size=app', () => {
       }
     }
   }
+
+  const pageDanger = section(html, 'button-page-danger');
+  const pageDangerControl = pageDanger.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageDangerControl, 'page danger control missing');
+  assert.match(pageDangerControl, /<button\b/, 'page danger is not a button');
+  assert.ok(pageDanger.includes('Delete'), 'page danger label missing');
+  assert.ok(
+    pageDangerControl.includes('bg-[var(--ow-danger)]') &&
+      pageDangerControl.includes('text-[var(--ow-canvas)]'),
+    'page danger fill missing',
+  );
+  assert.doesNotMatch(
+    pageDangerControl,
+    /hover:bg-/,
+    'page danger should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageDangerControl,
+    /active:bg-/,
+    'page danger should not paint pressed fill',
+  );
+
+  for (const state of ['rest', 'disabled']) {
+    const block = section(html, `button-app-danger-${state}`);
+    const button = block.match(/<button\b[^>]*>/)?.[0];
+    assert.ok(button, `app danger ${state} is not a button`);
+    assert.ok(block.includes('Delete'), `app danger ${state} label missing`);
+    assert.ok(
+      button.includes('bg-[var(--ow-danger)]') &&
+        button.includes('text-[var(--ow-canvas)]'),
+      `app danger ${state} fill missing`,
+    );
+    assert.doesNotMatch(
+      button,
+      /hover:bg-/,
+      `app danger ${state} should not hover-fill`,
+    );
+    assert.doesNotMatch(
+      button,
+      /active:bg-/,
+      `app danger ${state} should not paint pressed fill`,
+    );
+    if (state === 'disabled') {
+      assert.match(button, /\bdisabled\b/, 'app danger disabled is not disabled');
+      assert.ok(
+        button.includes('opacity-50'),
+        'app danger disabled missing opacity-50',
+      );
+    }
+  }
 });
 
 test('the /ui specimen renders SegmentedControl and ListRow', () => {
@@ -329,6 +379,240 @@ test('the /ui specimen renders AppCard and Input', () => {
   }
 });
 
+test('the /ui specimen renders Textarea and Select', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const state of ['rest', 'disabled', 'invalid']) {
+    const block = section(html, `textarea-${state}`);
+    const control = block.match(/<textarea\b[^>]*>/)?.[0];
+    assert.ok(control, `${state} is not a textarea`);
+    assert.match(control, /border-\[var\(--ow-outline\)\]/);
+    assert.ok(control.includes('--ow-font-body'), `${state} textarea body font missing`);
+    assert.ok(control.includes('--ow-space-1'), `${state} textarea space-1 missing`);
+    assert.doesNotMatch(
+      control,
+      /focus-visible/,
+      `${state} textarea has a focus class`,
+    );
+    assert.doesNotMatch(
+      control,
+      /hover:border/,
+      `${state} textarea changes the border on hover`,
+    );
+    if (state === 'disabled') {
+      assert.match(control, /\bdisabled\b/, 'disabled textarea is not disabled');
+      assert.ok(
+        control.includes('--ow-ink-muted'),
+        'disabled textarea ink-muted missing',
+      );
+    } else {
+      assert.doesNotMatch(
+        control,
+        /\bdisabled\b/,
+        `${state} textarea should not be disabled`,
+      );
+    }
+    if (state === 'invalid') {
+      assert.match(
+        control,
+        /aria-invalid="true"/,
+        'invalid textarea missing aria-invalid',
+      );
+      assert.ok(
+        control.includes('aria-[invalid=true]:border-[var(--ow-danger)]'),
+        'invalid textarea missing danger edge class',
+      );
+    }
+  }
+
+  for (const state of ['rest', 'dense', 'disabled']) {
+    const block = section(html, `select-${state}`);
+    assert.match(block, /<select\b/, `${state} is not a select`);
+    const control = block.match(/<select\b[^>]*>/)?.[0];
+    assert.ok(control, `${state} select tag missing`);
+    assert.ok(
+      control.includes('appearance-none'),
+      `${state} select missing appearance-none`,
+    );
+    assert.match(
+      block,
+      /<svg\b[^>]*aria-hidden="true"/,
+      `${state} select chevron missing aria-hidden`,
+    );
+    assert.ok(
+      block.includes('--ow-ink-muted'),
+      `${state} select chevron ink-muted missing`,
+    );
+    const options = [...block.matchAll(/<option\b/g)];
+    assert.equal(options.length, 3, `${state} select should have three options`);
+    if (state === 'disabled') {
+      assert.match(control, /\bdisabled\b/, 'disabled select is not disabled');
+    } else {
+      assert.doesNotMatch(
+        control,
+        /\bdisabled\b/,
+        `${state} select should not be disabled`,
+      );
+    }
+    if (state === 'dense') {
+      assert.ok(
+        control.includes('--ow-control-height-dense'),
+        'select dense height token missing',
+      );
+    } else {
+      assert.ok(
+        control.includes('--ow-control-height') &&
+          !control.includes('--ow-control-height-dense'),
+        `${state} select should use control-height`,
+      );
+    }
+  }
+});
+
+test('the /ui specimen renders Field and Input invalid', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const hint = section(html, 'field-hint');
+  assert.match(hint, /<label\b[^>]*\bfor="spec-title"/);
+  assert.ok(hint.includes('--ow-font-label'), 'field-hint label font missing');
+  assert.ok(hint.includes('--ow-font-meta'), 'field-hint meta font missing');
+  const hintControl = hint.match(/<input\b[^>]*>/)?.[0];
+  assert.ok(hintControl, 'field-hint control is not an input');
+  assert.match(hintControl, /\bid="spec-title"/);
+  assert.match(hintControl, /aria-describedby="spec-title-hint"/);
+  assert.match(hint, /\bid="spec-title-hint"/);
+
+  const error = section(html, 'field-error');
+  assert.match(error, /<label\b[^>]*\bfor="spec-notes"/);
+  assert.ok(error.includes('--ow-font-label'), 'field-error label font missing');
+  assert.ok(error.includes('--ow-font-meta'), 'field-error meta font missing');
+  assert.ok(error.includes('--ow-danger'), 'field-error danger token missing');
+  assert.ok(!error.includes('spec-notes-hint'), 'field-error still rendered a hint');
+  const errorControl = error.match(/<textarea\b[^>]*>/)?.[0];
+  assert.ok(errorControl, 'field-error control is not a textarea');
+  assert.match(errorControl, /\bid="spec-notes"/);
+  assert.match(errorControl, /aria-describedby="spec-notes-error"/);
+  assert.match(errorControl, /aria-invalid="true"/);
+  assert.match(error, /\bid="spec-notes-error"/);
+
+  const invalid = section(html, 'input-invalid');
+  const invalidControl = invalid.match(/<input\b[^>]*>/)?.[0];
+  assert.ok(invalidControl, 'input-invalid is not an input');
+  assert.match(invalidControl, /aria-invalid="true"/);
+  assert.ok(
+    invalidControl.includes('aria-[invalid=true]:border-[var(--ow-danger)]'),
+    'input-invalid missing danger edge class',
+  );
+});
+
+test('the /ui specimen renders IconButton and Checkbox', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const state of ['rest', 'dense', 'pressed', 'danger', 'disabled']) {
+    const block = section(html, `icon-button-${state}`);
+    const button = block.match(/<button\b[^>]*>/)?.[0];
+    assert.ok(button, `icon-button ${state} is not a button`);
+    assert.match(button, /aria-label="Close"/);
+    assert.match(block, /<span\b[^>]*aria-hidden="true"/);
+    assert.match(button, /border-\[var\(--ow-outline\)\]/);
+    if (state === 'dense') {
+      assert.ok(
+        button.includes('size-[var(--ow-control-height-dense)]'),
+        'icon-button dense missing size-[control-height-dense]',
+      );
+    } else {
+      assert.ok(
+        button.includes('size-[var(--ow-control-height)]') &&
+          !button.includes('--ow-control-height-dense'),
+        `icon-button ${state} should use size-[control-height]`,
+      );
+    }
+    if (state === 'rest') {
+      assert.ok(
+        button.includes('hover:bg-[var(--ow-hover)]'),
+        'icon-button rest missing hover fill',
+      );
+      assert.ok(
+        button.includes('active:bg-[var(--ow-selected)]'),
+        'icon-button rest missing pressed fill',
+      );
+    }
+    if (state === 'pressed') {
+      assert.match(button, /aria-pressed="true"/);
+      assert.ok(
+        button.includes('bg-[var(--ow-ink)]') &&
+          button.includes('text-[var(--ow-canvas)]'),
+        'icon-button pressed fill missing',
+      );
+      assert.doesNotMatch(
+        button,
+        /hover:bg-/,
+        'icon-button pressed should not hover-fill',
+      );
+    }
+    if (state === 'danger') {
+      assert.ok(button.includes('--ow-danger'), 'icon-button danger token missing');
+    }
+    if (state === 'disabled') {
+      assert.match(button, /\bdisabled\b/, 'icon-button disabled is not disabled');
+    }
+  }
+
+  for (const state of ['rest', 'checked', 'disabled', 'bare']) {
+    const block = section(html, `checkbox-${state}`);
+    const input = block.match(/<input\b[^>]*>/)?.[0];
+    assert.ok(input, `checkbox ${state} is not an input`);
+    assert.match(input, /type="checkbox"/);
+    assert.ok(input.includes('appearance-none'), `${state} missing appearance-none`);
+    assert.ok(input.includes('--ow-radius-sm'), `${state} missing radius-sm`);
+    assert.match(input, /border-\[var\(--ow-outline\)\]/);
+    assert.ok(
+      input.includes('checked:bg-[var(--ow-anil)]'),
+      `${state} missing checked anil fill`,
+    );
+    assert.match(
+      input,
+      /(?:^|[\s"'`])peer(?:[\s"'`]|$)/,
+      `${state} input missing peer`,
+    );
+    assert.match(
+      block,
+      /<svg\b[^>]*aria-hidden="true"/,
+      `${state} check svg missing aria-hidden`,
+    );
+    assert.ok(
+      block.includes('peer-checked:visible'),
+      `${state} check svg missing peer-checked:visible`,
+    );
+    if (state === 'bare') {
+      assert.doesNotMatch(block, /<label\b/, 'bare checkbox wrapped in a label');
+    } else {
+      assert.match(block, /<label\b/, `${state} checkbox is not wrapped in a label`);
+    }
+    if (state === 'checked') {
+      assert.match(input, /\bchecked\b/, 'checked checkbox did not render checked');
+    }
+    if (state === 'disabled') {
+      assert.match(input, /\bdisabled\b/, 'disabled checkbox is not disabled');
+    }
+  }
+});
+
+test('the /ui page has unique ids', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  const counts = new Map();
+  for (const id of ids) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  const dupes = [...counts.entries()].filter(([, n]) => n > 1);
+  assert.equal(
+    dupes.length,
+    0,
+    `duplicate ids: ${dupes.map(([id, n]) => `${id}×${n}`).join(', ')}`,
+  );
+});
+
 test('the /ui specimen renders StateMessage', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
 
@@ -357,6 +641,73 @@ test('the /ui specimen renders StateMessage', () => {
   assert.ok(error.includes('Could not load pull requests'), 'error copy missing');
   assert.ok(error.includes('Retry'), 'error retry action missing');
   assert.match(error, /border-\[var\(--ow-hairline\)\]/);
+});
+
+test('the /ui specimen renders Table', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const block = section(html, 'table');
+  assert.match(block, /<table\b/);
+  assert.match(block, /<caption\b/);
+  assert.match(block, /<th\b/);
+  assert.ok(block.includes('Buy list'), 'caption copy missing');
+  const header = block.match(/<th\b[^>]*>/)?.[0];
+  assert.ok(header, 'table missing a header cell');
+  assert.ok(header.includes('--ow-font-section'), 'header missing section role');
+  assert.ok(
+    header.includes('border-b-[var(--ow-ink)]'),
+    'header missing 1px ink rule',
+  );
+  const row = block.match(/<tr\b[^>]*>/)?.[0];
+  assert.ok(row, 'table missing a row');
+  assert.ok(
+    row.includes('hover:' + 'bg-[var(--ow-hover)]'),
+    'row missing hover fill',
+  );
+  assert.ok(block.includes('--ow-surface'), 'section row missing surface fill');
+  assert.ok(block.includes('--ow-font-code'), 'numeric cell missing code role');
+  assert.ok(block.includes('text-right'), 'numeric header missing end align');
+  const tableTag = block.match(/<table\b[^>]*>/)?.[0];
+  assert.ok(tableTag, 'table opening tag missing');
+  assert.doesNotMatch(
+    tableTag,
+    /input\[type=checkbox\]/,
+    'table still styles descendant checkboxes',
+  );
+  assert.match(block, /<input\b[^>]*type="checkbox"/);
+  assert.ok(
+    block.includes('text-center'),
+    'checkbox cell missing align=center',
+  );
+});
+
+test('the /ui specimen renders Dialog and Toast', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const dialogBlock = section(html, 'dialog-specimen');
+  const labelledby = dialogBlock.match(/aria-labelledby="([^"]+)"/)?.[1];
+  assert.ok(labelledby, 'dialog missing aria-labelledby');
+  assert.match(
+    dialogBlock,
+    new RegExp(`<h2\\b[^>]*id="${labelledby}"`),
+    'aria-labelledby does not match the h2 id',
+  );
+  assert.match(dialogBlock, /<form\b[^>]*method="dialog"/);
+  assert.match(dialogBlock, /\bopen\b/);
+  assert.ok(dialogBlock.includes('m-auto'), 'dialog missing m-auto');
+  assert.ok(
+    // Split so Tailwind's source scan of this file does not generate the class itself, which
+    // would let the built-CSS ::backdrop test below pass with the class gone from dialog.tsx.
+    dialogBlock.includes('backdrop:' + 'bg-[var(--ow-scrim)]'),
+    'dialog missing backdrop scrim class',
+  );
+  assert.doesNotMatch(dialogBlock, /shadow/);
+
+  const info = section(html, 'toast-info');
+  assert.match(info, /role="status"/);
+  assert.doesNotMatch(info, /role="alert"/);
+  assert.match(info, /rounded-\[var\(--ow-radius-lg\)\]/);
+
+  const fail = section(html, 'toast-fail');
+  assert.match(fail, /role="alert"/);
 });
 
 test('the /ui specimen renders StatusGlyph and Tag', () => {
@@ -427,6 +778,15 @@ test('the built CSS carries the anil :focus-visible ring', () => {
     .map((entry) => join(entry.parentPath, entry.name));
   const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
   assert.match(css, /:focus-visible\s*\{[^}]*--ow-anil/);
+});
+
+test('the built CSS carries a dialog ::backdrop rule naming --ow-scrim', () => {
+  const staticDir = join(OUT_DIR, '_next', 'static');
+  const cssFiles = readdirSync(staticDir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+    .map((entry) => join(entry.parentPath, entry.name));
+  const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
+  assert.match(css, /::backdrop\s*\{[^}]*--ow-scrim/);
 });
 
 test('site/app/icon.svg byte-equals the brand icon.svg export', () => {

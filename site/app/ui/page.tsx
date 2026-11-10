@@ -2,13 +2,21 @@ import {
   ActionButton,
   AppCard,
   Button,
+  Checkbox,
+  Dialog,
+  Field,
+  IconButton,
   Input,
+  Select,
+  Textarea,
   ListRow,
   SectionLabel,
   SegmentedControl,
   StateMessage,
   StatusGlyph,
+  Table,
   Tag,
+  Toast,
   type ActionButtonVariant,
   type AppCardVariant,
   type SegmentedOption,
@@ -114,6 +122,9 @@ export default function UiPage() {
       <section data-specimen="button-page-ondark">
         <Button onDark>Page onDark</Button>
       </section>
+      <section data-specimen="button-page-danger">
+        <Button variant="danger">Delete</Button>
+      </section>
       {ACTION_VARIANTS.map((variant) =>
         ACTION_STATES.map(({ state, dense, disabled }) => (
           <section
@@ -126,6 +137,16 @@ export default function UiPage() {
           </section>
         )),
       )}
+      <section data-specimen="button-app-danger-rest">
+        <Button size="app" variant="danger">
+          Delete
+        </Button>
+      </section>
+      <section data-specimen="button-app-danger-disabled">
+        <Button size="app" variant="danger" disabled>
+          Delete
+        </Button>
+      </section>
       <section data-specimen="segmented">
         <SegmentedControl
           options={SEGMENTED_OPTIONS}
@@ -161,6 +182,137 @@ export default function UiPage() {
           <Input dense={dense} disabled={disabled} defaultValue="branch" />
         </section>
       ))}
+      <section data-specimen="input-invalid">
+        <Input aria-invalid="true" defaultValue="branch" />
+      </section>
+      <section data-specimen="field-hint">
+        <Field id="spec-title" label="Title" hint="A short name">
+          {(p) => <Input {...p} />}
+        </Field>
+      </section>
+      <section data-specimen="field-error">
+        <Field id="spec-notes" label="Title" hint="A short name" error="Required">
+          {(p) => <Textarea {...p} />}
+        </Field>
+      </section>
+      <section data-specimen="textarea-rest">
+        <Textarea defaultValue="notes" />
+      </section>
+      <section data-specimen="textarea-disabled">
+        <Textarea disabled defaultValue="notes" />
+      </section>
+      <section data-specimen="textarea-invalid">
+        <Textarea aria-invalid="true" defaultValue="notes" />
+      </section>
+      <section data-specimen="select-rest">
+        <Select defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
+      <section data-specimen="select-dense">
+        <Select dense defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
+      <section data-specimen="select-disabled">
+        <Select disabled defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
+      <section data-specimen="icon-button-rest">
+        <IconButton label="Close">×</IconButton>
+      </section>
+      <section data-specimen="icon-button-dense">
+        <IconButton label="Close" dense>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-pressed">
+        <IconButton label="Close" pressed>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-danger">
+        <IconButton label="Close" tone="danger">
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-disabled">
+        <IconButton label="Close" disabled>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="checkbox-rest">
+        <Checkbox label="Bench" />
+      </section>
+      <section data-specimen="checkbox-checked">
+        <Checkbox label="Bench" defaultChecked />
+      </section>
+      <section data-specimen="checkbox-disabled">
+        <Checkbox label="Bench" disabled />
+      </section>
+      <section data-specimen="checkbox-bare">
+        <Checkbox aria-label="Bench" />
+      </section>
+      <section data-specimen="dialog-specimen">
+        <Dialog
+          id="dialog-specimen"
+          open
+          title="Delete routine"
+          actions={
+            <>
+              <Button variant="outline">Cancel</Button>
+              <Button variant="danger">Delete</Button>
+            </>
+          }
+        >
+          This cannot be undone.
+        </Dialog>
+      </section>
+      <section data-specimen="toast-info">
+        <Toast>Saved</Toast>
+      </section>
+      <section data-specimen="toast-fail">
+        <Toast status="fail">Could not save</Toast>
+      </section>
+      <section data-specimen="table">
+        <Table caption="Buy list">
+          <Table.Head>
+            <Table.Row>
+              <Table.HeaderCell>Item</Table.HeaderCell>
+              <Table.HeaderCell align="end" numeric>
+                Amount
+              </Table.HeaderCell>
+            </Table.Row>
+          </Table.Head>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell align="center">
+                <Checkbox label="Flour" />
+              </Table.Cell>
+              <Table.Cell numeric>2</Table.Cell>
+            </Table.Row>
+            <Table.Row variant="section">
+              <Table.Cell>Produce</Table.Cell>
+              <Table.Cell />
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell muted>Note: organic</Table.Cell>
+              <Table.Cell numeric>0</Table.Cell>
+            </Table.Row>
+            <Table.Row variant="total">
+              <Table.Cell>Total</Table.Cell>
+              <Table.Cell numeric>2</Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
+      </section>
       {STATE_MESSAGES.map(({ kind, children, action }) => (
         <section key={kind} data-specimen={`state-${kind}`}>
           <StateMessage
