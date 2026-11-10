@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, ReactNode, Ref } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { leavesThisDeployment } from '../internal/href';
 
@@ -50,10 +50,13 @@ type ButtonCommon = {
   className?: string;
 };
 
-type ButtonAsLink = ButtonCommon & { href: string };
+type ButtonAsLink = ButtonCommon & {
+  href: string;
+  ref?: Ref<HTMLAnchorElement>;
+};
 
 type ButtonAsButton = ButtonCommon &
-  Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof ButtonCommon> & {
+  Omit<ComponentPropsWithRef<'button'>, keyof ButtonCommon | 'href'> & {
     href?: never;
   };
 
@@ -129,13 +132,13 @@ export function Button(props: ButtonProps) {
       onDark,
       className: props.className,
     });
-    const { href, children } = props;
+    const { href, children, ref } = props;
     return leavesThisDeployment(href) ? (
-      <a href={href} className={className}>
+      <a href={href} className={className} ref={ref}>
         {children}
       </a>
     ) : (
-      <Link href={href} className={className}>
+      <Link href={href} className={className} ref={ref}>
         {children}
       </Link>
     );
@@ -151,6 +154,7 @@ export function Button(props: ButtonProps) {
     href: _href,
     type = 'button',
     disabled,
+    ref,
     ...rest
   } = props;
 
@@ -167,6 +171,7 @@ export function Button(props: ButtonProps) {
         className: classNameProp,
       })}
       {...rest}
+      ref={ref}
     >
       {children}
     </button>

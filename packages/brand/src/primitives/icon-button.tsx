@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 type IconButtonBase = {
@@ -7,7 +7,7 @@ type IconButtonBase = {
   dense?: boolean;
   className?: string;
 } & Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
+  ComponentPropsWithRef<'button'>,
   'aria-label' | 'aria-labelledby' | 'aria-pressed' | 'children'
 >;
 
@@ -28,6 +28,7 @@ export function IconButton({
   pressed,
   type = 'button',
   disabled,
+  ref,
   ...rest
 }: IconButtonProps) {
   const selected = pressed === true;
@@ -41,6 +42,7 @@ export function IconButton({
       type={type}
       disabled={disabled}
       {...rest}
+      ref={ref}
       aria-label={label}
       aria-pressed={pressed}
       className={twMerge(

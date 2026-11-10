@@ -1,20 +1,23 @@
-import type { SelectHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // DESIGN.md `select` — Input chrome, body role, control heights. The chevron
-// is inline SVG so it can resolve --ow-ink-muted; a data URL cannot.
+// is inline SVG so it can resolve --ow-ink-muted; a data URL cannot. `ref`
+// targets the <select>, not the chevron wrapper.
 export function Select({
   dense = false,
   className,
   disabled,
   children,
+  ref,
   ...rest
 }: {
   dense?: boolean;
-} & SelectHTMLAttributes<HTMLSelectElement>) {
+} & ComponentPropsWithRef<'select'>) {
   return (
     <span className={twMerge('relative inline-flex', className)}>
       <select
+        ref={ref}
         disabled={disabled}
         className={twMerge(
           'appearance-none w-full rounded-[var(--ow-radius-md)] border border-[var(--ow-outline)] bg-[var(--ow-canvas)] pl-[var(--ow-control-padding)] pr-[calc(var(--ow-control-padding)+var(--ow-space-4))] [font:var(--ow-font-body)] text-[var(--ow-ink)] aria-[invalid=true]:border-[var(--ow-danger)]',

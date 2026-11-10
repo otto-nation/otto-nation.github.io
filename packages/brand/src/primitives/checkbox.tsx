@@ -1,21 +1,23 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // DESIGN.md `checkbox` / `checkbox-checked` — outline edge, radius-sm;
 // checked is an anil fill with a canvas check. Indeterminate is not
-// supported.
+// supported. `ref` targets the <input>, not the wrapper or label.
 export function Checkbox({
   label,
   className,
   disabled,
+  ref,
   ...rest
 }: {
   label?: ReactNode;
   className?: string;
-} & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+} & Omit<ComponentPropsWithRef<'input'>, 'type'>) {
   const box = (
     <span className="relative inline-grid place-items-center">
       <input
+        ref={ref}
         type="checkbox"
         disabled={disabled}
         className="peer appearance-none size-[var(--ow-space-4)] rounded-[var(--ow-radius-sm)] border border-[var(--ow-outline)] bg-[var(--ow-canvas)] checked:border-[var(--ow-anil)] checked:bg-[var(--ow-anil)] aria-[invalid=true]:border-[var(--ow-danger)] disabled:opacity-50"
