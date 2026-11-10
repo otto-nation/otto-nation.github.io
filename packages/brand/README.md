@@ -117,6 +117,9 @@ arrives later, in a build.
    ```
    <!-- x-release-please-end -->
 
+   The package is side-effect-free except its CSS, so unused components (and
+   `next/link`) are tree-shaken by Vite and esbuild consumers.
+
 2. In your Tailwind entrypoint:
 
    ```css
