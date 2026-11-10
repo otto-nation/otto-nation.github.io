@@ -489,7 +489,7 @@ components:
     height: "{spacing.control-height}"
     typography: "{typography.label}"
   segmented-on-dark:
-    backgroundColor: "{colors.block}"
+    backgroundColor: "{colors.block}" # track is transparent; this is the block band showing through
     textColor: "{colors.block-ink-muted}"
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
