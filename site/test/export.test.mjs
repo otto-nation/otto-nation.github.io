@@ -789,6 +789,16 @@ test('the built CSS carries a dialog ::backdrop rule naming --ow-scrim', () => {
   assert.match(css, /::backdrop\s*\{[^}]*--ow-scrim/);
 });
 
+test('the built CSS has no package-doc placeholder rules', () => {
+  const staticDir = join(OUT_DIR, '_next', 'static');
+  const cssFiles = readdirSync(staticDir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+    .map((entry) => join(entry.parentPath, entry.name));
+  const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
+  assert.ok(!css.includes('--ow-radius-*'), 'built CSS compiled --ow-radius-*');
+  assert.ok(!css.includes('9999px|50%'), 'built CSS compiled 9999px|50%');
+});
+
 test('site/app/icon.svg byte-equals the brand icon.svg export', () => {
   const require = createRequire(import.meta.url);
   const exported = readFileSync(require.resolve('@otto-nation/brand/icon.svg'));

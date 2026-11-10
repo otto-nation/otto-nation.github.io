@@ -6,14 +6,15 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { OW_TOKEN } from '../src/internal/derive.mjs';
+import { OW_TOKEN, SOURCE_GLOB } from '../src/internal/derive.mjs';
 
 const CHECK = fileURLToPath(new URL('../bin/otto-brand-check.mjs', import.meta.url));
 
+const GOOD_SOURCE = `'../${SOURCE_GLOB}'`;
 const GOOD_CSS = `@import 'tailwindcss';
 @import '@otto-nation/brand/tokens.css';
 @import '@otto-nation/brand/fonts.css';
-@source '../node_modules/@otto-nation/brand/**/*.tsx';
+@source ${GOOD_SOURCE};
 `;
 const GOOD_CONFIG = `export default { transpilePackages: ['@otto-nation/brand'] };\n`;
 const UNDECLARED_TOKEN = '--ow-nonesuch';
@@ -98,7 +99,7 @@ test('a missing @source fails', () => {
 
 test('an @source pointing somewhere else fails', () => {
   const { code, output } = run(fixture({
-    css: GOOD_CSS.replace('@otto-nation/brand/**/*.tsx', 'other-package/**/*.tsx'),
+    css: GOOD_CSS.replace('@otto-nation/brand/src/**/*.tsx', 'other-package/src/**/*.tsx'),
   }));
   assert.equal(code, 1);
   assert.match(output, /@source/);
@@ -107,8 +108,8 @@ test('an @source pointing somewhere else fails', () => {
 test('an @source whose depth does not resolve fails', () => {
   const { code, output } = run(fixture({
     css: GOOD_CSS.replace(
-      "'../node_modules/@otto-nation/brand/**/*.tsx'",
-      "'../../../../nowhere/node_modules/@otto-nation/brand/**/*.tsx'",
+      GOOD_SOURCE,
+      `'../../../../nowhere/${SOURCE_GLOB}'`,
     ),
   }));
   assert.equal(code, 1);
@@ -122,8 +123,8 @@ test('an @source whose depth does not resolve fails', () => {
 test('an @source with a ** segment mid-path still resolves', () => {
   const dir = fixture({
     css: GOOD_CSS.replace(
-      "'../node_modules/@otto-nation/brand/**/*.tsx'",
-      "'../node_modules/@otto-nation/brand/**/deep/*.tsx'",
+      GOOD_SOURCE,
+      `'../node_modules/@otto-nation/brand/src/**/deep/*.tsx'`,
     ),
   });
   mkdirSync(join(dir, 'node_modules', '@otto-nation', 'brand', 'src', 'deep'), { recursive: true });
@@ -133,7 +134,7 @@ test('an @source with a ** segment mid-path still resolves', () => {
 test('a bare-directory @source that does resolve is accepted', () => {
   const { code } = run(fixture({
     css: GOOD_CSS.replace(
-      "'../node_modules/@otto-nation/brand/**/*.tsx'",
+      GOOD_SOURCE,
       "'../node_modules/@otto-nation/brand/src'",
     ),
   }));
@@ -414,7 +415,7 @@ const VITE_CSS = `@import 'tailwindcss';
 @import '@otto-nation/brand/tokens.css';
 @import '@otto-nation/brand/fonts.css';
 `;
-const VITE_CSS_WITH_SOURCE = `${VITE_CSS}@source '../../node_modules/@otto-nation/brand/**/*.tsx';
+const VITE_CSS_WITH_SOURCE = `${VITE_CSS}@source '../../${SOURCE_GLOB}';
 `;
 const VITE_CONFIG = `import tailwindcss from '@tailwindcss/vite';
 export default { plugins: [tailwindcss()] };
