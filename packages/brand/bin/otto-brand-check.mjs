@@ -5,8 +5,10 @@
 // mode this converts into a build error. It enforces:
 //
 //   - @import of tokens.css and of fonts.css
-//   - an @source pointing at the package, whose path actually resolves
-//   - transpilePackages listing the package
+//   - (Next) an @source pointing at the package, whose path actually resolves
+//   - (Next) transpilePackages listing the package
+//   - (Vite, only when source imports a brand component) that same @source,
+//     and the config importing @tailwindcss/vite under a binding it then calls
 //   - no --ow-* reference in consumer source that tokens.css does not declare,
 //     and a tokens.css this package can still parse those names out of at all
 //
@@ -15,7 +17,8 @@
 // and leave the exit code 0 unless --strict or --error <id> escalates them.
 //
 // Usage:
-//   otto-brand-check --css <entrypoint.css> --next-config <next.config.mjs> \
+//   otto-brand-check --css <entrypoint.css> \
+//                    (--next-config <next.config.mjs> | --vite-config <vite.config.ts>) \
 //                    --src <dir> [<dir>...] [--strict] [--error <id>]
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -45,6 +48,7 @@ const CONFIG_RULE_IDS = Object.freeze([
   'transpile-packages',
   'undeclared-token',
   'tokens-unparsed',
+  'vite-tailwind-plugin',
 ]);
 
 const ERRORABLE = new Set([
@@ -83,7 +87,14 @@ function escapeRegExp(literal) {
 }
 
 function parseArgs(argv) {
-  const args = { css: null, nextConfig: null, src: [], strict: false, error: [] };
+  const args = {
+    css: null,
+    nextConfig: null,
+    viteConfig: null,
+    src: [],
+    strict: false,
+    error: [],
+  };
   let current = null;
   for (const token of argv) {
     if (token === '--strict') {
@@ -91,7 +102,13 @@ function parseArgs(argv) {
       current = null;
       continue;
     }
-    if (token === '--error' || token === '--css' || token === '--next-config' || token === '--src') {
+    if (
+      token === '--error' ||
+      token === '--css' ||
+      token === '--next-config' ||
+      token === '--vite-config' ||
+      token === '--src'
+    ) {
       current = token;
       continue;
     }
@@ -100,6 +117,9 @@ function parseArgs(argv) {
       current = null;
     } else if (current === '--next-config') {
       args.nextConfig = token;
+      current = null;
+    } else if (current === '--vite-config') {
+      args.viteConfig = token;
       current = null;
     } else if (current === '--src') {
       args.src.push(token);
@@ -113,8 +133,11 @@ function parseArgs(argv) {
     }
   }
   if (current === '--error') usage('--error requires a rule id');
-  if (!args.css || !args.nextConfig || args.src.length === 0) {
-    usage('--css, --next-config, and at least one --src are all required');
+  if (!args.css || args.src.length === 0) {
+    usage('--css and at least one --src are required');
+  }
+  if (Boolean(args.nextConfig) === Boolean(args.viteConfig)) {
+    usage('exactly one of --next-config or --vite-config is required');
   }
   for (const id of args.error) {
     if (!ERRORABLE.has(id)) usage(`unknown --error id: ${id}`);
@@ -125,7 +148,7 @@ function parseArgs(argv) {
 function usage(message) {
   console.error(`otto-brand-check: ${message}`);
   console.error(
-    'usage: otto-brand-check --css <file> --next-config <file> --src <dir> [<dir>...] [--strict] [--error <id>]',
+    'usage: otto-brand-check --css <file> (--next-config <file> | --vite-config <file>) --src <dir> [<dir>...] [--strict] [--error <id>]',
   );
   process.exit(2);
 }
@@ -157,17 +180,52 @@ function kindOf(path) {
   return extname(path) === '.css' ? 'css' : 'script';
 }
 
+// A component entry is the package root or a subpath that is not a stylesheet,
+// data file, mark, markdown, the verify script, or package.json. CSS-only Vite
+// consumers import tokens.css / fonts.css and must not be asked for @source.
+function isBrandComponentSpecifier(specifier) {
+  if (specifier === PACKAGE) return true;
+  if (!specifier.startsWith(`${PACKAGE}/`)) return false;
+  const subpath = specifier.slice(PACKAGE.length + 1);
+  if (subpath === 'verify' || subpath === 'package.json') return false;
+  return !/\.(?:css|json|svg|md)$/.test(subpath);
+}
+
+function sourceImportsBrandComponent(text) {
+  const pattern = new RegExp(
+    String.raw`(?:(?<![\w$])from\s+|(?<![\w$])import\s*\(?\s*|(?<![\w$])require\s*\(\s*)['"](${escapeRegExp(PACKAGE)}(?:/[^'"]*)?)['"]`,
+    'g',
+  );
+  for (const match of text.matchAll(pattern)) {
+    if (isBrandComponentSpecifier(match[1])) return true;
+  }
+  return false;
+}
+
+function viteTailwindPluginCalled(config) {
+  const imported = config.match(
+    /(?:import\s+(\w+)\s+from\s+['"]@tailwindcss\/vite['"]|(?:const|let|var)\s+(\w+)\s*=\s*require\s*\(\s*['"]@tailwindcss\/vite['"]\s*\)|import\s*\{\s*default\s+as\s+(\w+)\s*\}\s*from\s*['"]@tailwindcss\/vite['"])/,
+  );
+  if (!imported) return false;
+  const binding = imported[1] || imported[2] || imported[3];
+  return new RegExp(String.raw`(?<![\w$.])${escapeRegExp(binding)}\s*\(`).test(config);
+}
+
 function scanSource(dirs, declared) {
   const undeclared = new Map();
   const style = [];
   const empty = [];
+  let importsComponent = false;
   for (const dir of dirs) {
     const files = sourceFiles(dir, SOURCE_EXTS);
     if (files.length === 0) empty.push(dir);
     for (const file of files) {
       const raw = readFileSync(file, 'utf8');
+      const masked = maskComments(raw);
+      if (!importsComponent && kindOf(file) !== 'css' && sourceImportsBrandComponent(masked)) {
+        importsComponent = true;
+      }
       if (declared && declared.size > 0) {
-        const masked = maskComments(raw);
         for (const [, token] of masked.matchAll(new RegExp(`(${OW_TOKEN})`, 'g'))) {
           if (declared.has(token)) continue;
           if (!undeclared.has(token)) undeclared.set(token, new Set());
@@ -179,7 +237,7 @@ function scanSource(dirs, declared) {
       }
     }
   }
-  return { undeclared, style, empty };
+  return { undeclared, style, empty, importsComponent };
 }
 
 const args = parseArgs(process.argv.slice(2));
@@ -215,10 +273,39 @@ for (const { file, consequence } of STYLESHEETS) {
   }
 }
 
+// tokens.css is read from this package's own src, so the check always measures
+// against the version actually installed rather than a copy in the consumer.
+// The parse itself lives in src/internal/derive.mjs because otto-brand-verify
+// needs the same list, and two copies of the regex would drift the moment
+// tokens.css changed shape — the file is read here rather than there so the
+// reindented copy the tests build still resolves beside this script.
+const tokens = readFileSync(new URL('../src/tokens.css', import.meta.url), 'utf8');
+const declared = declaredTokens(tokens);
+
+let undeclared = new Map();
+let style = [];
+let empty = [];
+let importsComponent = false;
+try {
+  const scanned = scanSource(args.src, declared.size === 0 ? null : declared);
+  undeclared = scanned.undeclared;
+  style = scanned.style;
+  empty = scanned.empty;
+  importsComponent = scanned.importsComponent;
+} catch (error) {
+  if (!(error instanceof SourceScanError)) throw error;
+  console.error(`otto-brand-check: ${error.message}`);
+  process.exit(1);
+}
+
+// Next always needs @source. Vite needs it only when source imports a component
+// entry; a CSS-only Vite app (tokens and fonts, no brand TSX) has nothing for
+// Tailwind to scan in node_modules.
+const checkSource = Boolean(args.nextConfig) || importsComponent;
 const sourceDirective = css.match(
   new RegExp(String.raw`@source\s+['"]([^'"]*${escapeRegExp(PACKAGE)}[^'"]*)['"]`),
 );
-if (!sourceDirective) {
+if (checkSource && !sourceDirective) {
   report(
     args.css,
     'source-missing',
@@ -232,7 +319,7 @@ if (!sourceDirective) {
         `  instead if npm hoisted them to a workspace root.`,
     },
   );
-} else {
+} else if (checkSource) {
   // Tailwind resolves an @source glob relative to the stylesheet that declares
   // it, so the wrong number of ../ segments is the mistake the depth warning in
   // the README predicts. Only the literal head of the glob — everything before
@@ -258,29 +345,37 @@ if (!sourceDirective) {
   }
 }
 
-const config = maskComments(read(args.nextConfig, 'next config'));
-const transpile = config.match(/transpilePackages\s*:\s*\[([^\]]*)\]/);
-if (!transpile || !transpile[1].includes(PACKAGE)) {
-  report(
-    args.nextConfig,
-    'transpile-packages',
-    `transpilePackages does not list ${PACKAGE}.`,
-    {
-      detail:
-        `  The package ships raw .tsx; without this Next will not compile it.\n` +
-        `  Add: transpilePackages: ['${PACKAGE}'],`,
-    },
-  );
+if (args.nextConfig) {
+  const config = maskComments(read(args.nextConfig, 'next config'));
+  const transpile = config.match(/transpilePackages\s*:\s*\[([^\]]*)\]/);
+  if (!transpile || !transpile[1].includes(PACKAGE)) {
+    report(
+      args.nextConfig,
+      'transpile-packages',
+      `transpilePackages does not list ${PACKAGE}.`,
+      {
+        detail:
+          `  The package ships raw .tsx; without this Next will not compile it.\n` +
+          `  Add: transpilePackages: ['${PACKAGE}'],`,
+      },
+    );
+  }
+} else {
+  const config = maskComments(read(args.viteConfig, 'vite config'));
+  if (importsComponent && !viteTailwindPluginCalled(config)) {
+    report(
+      args.viteConfig,
+      'vite-tailwind-plugin',
+      `does not import @tailwindcss/vite under a binding that is then called.`,
+      {
+        detail:
+          `  Without the plugin no utility class compiles, so brand components render\n` +
+          `  unstyled on a build that otherwise passes.\n` +
+          `  Import @tailwindcss/vite and add its return value to plugins.`,
+      },
+    );
+  }
 }
-
-// tokens.css is read from this package's own src, so the check always measures
-// against the version actually installed rather than a copy in the consumer.
-// The parse itself lives in src/internal/derive.mjs because otto-brand-verify
-// needs the same list, and two copies of the regex would drift the moment
-// tokens.css changed shape — the file is read here rather than there so the
-// reindented copy the tests build still resolves beside this script.
-const tokens = readFileSync(new URL('../src/tokens.css', import.meta.url), 'utf8');
-const declared = declaredTokens(tokens);
 
 // An empty parse is a broken package, not a clean consumer. With nothing
 // declared every --ow-* name a consumer writes would be accepted, so a source
@@ -290,9 +385,6 @@ const declared = declaredTokens(tokens);
 // would go green on every build from here on. The source scan is skipped
 // rather than run against the empty set: every reference in the tree would be
 // reported undeclared, naming a fault that is not the consumer's.
-let undeclared = new Map();
-let style = [];
-let empty = [];
 if (declared.size === 0) {
   report(
     `${PACKAGE}/tokens.css`,
@@ -309,16 +401,6 @@ if (declared.size === 0) {
         `  fix declaredTokens in src/internal/derive.mjs to match the new shape.`,
     },
   );
-}
-try {
-  const scanned = scanSource(args.src, declared.size === 0 ? null : declared);
-  undeclared = scanned.undeclared;
-  style = scanned.style;
-  empty = scanned.empty;
-} catch (error) {
-  if (!(error instanceof SourceScanError)) throw error;
-  console.error(`otto-brand-check: ${error.message}`);
-  process.exit(1);
 }
 
 for (const [token, files] of undeclared) {
@@ -347,9 +429,11 @@ for (const finding of style) {
   });
 }
 
+const configPath = args.nextConfig ?? args.viteConfig;
+
 if (reports.length === 0) {
   console.log(
-    `otto-brand-check: ${args.css}, ${args.nextConfig}, and ${args.src.length} source tree(s) OK`,
+    `otto-brand-check: ${args.css}, ${configPath}, and ${args.src.length} source tree(s) OK`,
   );
   process.exit(0);
 }
@@ -364,5 +448,5 @@ for (const { severity, text } of reports) {
 console.error(`otto-brand-check: ${errors} error(s), ${warnings} warning(s)`);
 if (errors > 0) process.exit(1);
 console.log(
-  `otto-brand-check: ${args.css}, ${args.nextConfig}, and ${args.src.length} source tree(s) OK (${warnings} warning(s))`,
+  `otto-brand-check: ${args.css}, ${configPath}, and ${args.src.length} source tree(s) OK (${warnings} warning(s))`,
 );

@@ -408,3 +408,95 @@ test('src-empty warns by default and errors under --strict', () => {
   assert.equal(strict.code, 1);
   assert.match(strict.output, /error src-empty:/);
 });
+
+const VITE_CSS = `@import 'tailwindcss';
+@import '@otto-nation/brand/tokens.css';
+@import '@otto-nation/brand/fonts.css';
+`;
+const VITE_CSS_WITH_SOURCE = `${VITE_CSS}@source '../../node_modules/@otto-nation/brand/**/*.tsx';
+`;
+const VITE_CONFIG = `import tailwindcss from '@tailwindcss/vite';
+export default { plugins: [tailwindcss()] };
+`;
+const VITE_PAGE = `export default () => <p className="text-[var(--ow-ink)]" />;
+`;
+const VITE_PAGE_COMPONENT =
+  "import { Button } from '@otto-nation/brand';\nexport default () => <Button />;\n";
+
+function viteFixture(overrides = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'brand-check-vite-'));
+  tempDirs.push(dir);
+  mkdirSync(join(dir, 'src', 'styles'), { recursive: true });
+  mkdirSync(join(dir, 'node_modules', '@otto-nation', 'brand', 'src'), { recursive: true });
+  writeFileSync(join(dir, 'src', 'styles', 'index.css'), overrides.css ?? VITE_CSS);
+  writeFileSync(join(dir, 'vite.config.ts'), overrides.config ?? VITE_CONFIG);
+  writeFileSync(join(dir, 'src', 'main.tsx'), overrides.page ?? VITE_PAGE);
+  return dir;
+}
+
+function runVite(dir, { src = join(dir, 'src'), extra = [], check = CHECK } = {}) {
+  const result = spawnSync(
+    process.execPath,
+    [
+      check,
+      '--css', join(dir, 'src', 'styles', 'index.css'),
+      '--vite-config', join(dir, 'vite.config.ts'),
+      '--src', src,
+      ...extra,
+    ],
+    { encoding: 'utf8' },
+  );
+  return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+}
+
+test('a CSS-only Vite consumer with no @source passes', () => {
+  assert.equal(runVite(viteFixture()).code, 0);
+});
+
+test('a Vite consumer that imports a brand component without @source fails', () => {
+  const { code, output } = runVite(viteFixture({ page: VITE_PAGE_COMPONENT }));
+  assert.equal(code, 1);
+  assert.match(output, /error source-missing:/);
+});
+
+test('a Vite consumer that imports a brand component without @tailwindcss/vite fails', () => {
+  const { code, output } = runVite(viteFixture({
+    css: VITE_CSS_WITH_SOURCE,
+    page: VITE_PAGE_COMPONENT,
+    config: 'export default { plugins: [] };\n',
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /error vite-tailwind-plugin:/);
+  assert.doesNotMatch(output, /source-missing/);
+  assert.doesNotMatch(output, /transpilePackages/);
+});
+
+test('passing both --next-config and --vite-config exits 2', () => {
+  const dir = fixture();
+  const result = spawnSync(
+    process.execPath,
+    [
+      CHECK,
+      '--css', join(dir, 'app', 'global.css'),
+      '--next-config', join(dir, 'next.config.mjs'),
+      '--vite-config', join(dir, 'vite.config.ts'),
+      '--src', join(dir, 'app'),
+    ],
+    { encoding: 'utf8' },
+  );
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  assert.equal(result.status, 2);
+  assert.match(output, /exactly one of --next-config or --vite-config is required/);
+});
+
+test('passing neither --next-config nor --vite-config exits 2', () => {
+  const dir = fixture();
+  const result = spawnSync(
+    process.execPath,
+    [CHECK, '--css', join(dir, 'app', 'global.css'), '--src', join(dir, 'app')],
+    { encoding: 'utf8' },
+  );
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  assert.equal(result.status, 2);
+  assert.match(output, /exactly one of --next-config or --vite-config is required/);
+});
