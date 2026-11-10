@@ -29,6 +29,9 @@ import { SourceScanError, sourceFiles } from '../src/internal/source-files.mjs';
 import {
   CONSUMER_RULES,
   findViolations,
+  IGNORE_REASON,
+  IGNORE_UNKNOWN_RULE,
+  IGNORE_UNUSED,
   maskComments,
 } from '../src/internal/style-rules.mjs';
 
@@ -55,15 +58,15 @@ const ERRORABLE = new Set([
   ...CONSUMER_RULES.map((rule) => rule.id),
   ...CONFIG_RULE_IDS,
   'src-empty',
-  'ignore-reason',
-  'ignore-unknown-rule',
-  'ignore-unused',
+  IGNORE_REASON.id,
+  IGNORE_UNKNOWN_RULE.id,
+  IGNORE_UNUSED.id,
 ]);
 
 const ALWAYS_ERROR = new Set([
   ...CONFIG_RULE_IDS,
-  'ignore-reason',
-  'ignore-unknown-rule',
+  IGNORE_REASON.id,
+  IGNORE_UNKNOWN_RULE.id,
 ]);
 
 // The stylesheets a consumer must pull in, and what breaks when they do not.
@@ -204,7 +207,7 @@ function sourceImportsBrandComponent(text) {
 
 function viteTailwindPluginCalled(config) {
   const imported = config.match(
-    /(?:import\s+(\w+)\s+from\s+['"]@tailwindcss\/vite['"]|(?:const|let|var)\s+(\w+)\s*=\s*require\s*\(\s*['"]@tailwindcss\/vite['"]\s*\)|import\s*\{\s*default\s+as\s+(\w+)\s*\}\s*from\s*['"]@tailwindcss\/vite['"])/,
+    /(?:import\s+([\w$]+)\s+from\s+['"]@tailwindcss\/vite['"]|(?:const|let|var)\s+([\w$]+)\s*=\s*require\s*\(\s*['"]@tailwindcss\/vite['"]\s*\)|import\s*\{\s*default\s+as\s+([\w$]+)\s*\}\s*from\s*['"]@tailwindcss\/vite['"])/,
   );
   if (!imported) return false;
   const binding = imported[1] || imported[2] || imported[3];
@@ -221,7 +224,7 @@ function scanSource(dirs, declared) {
     if (files.length === 0) empty.push(dir);
     for (const file of files) {
       const raw = readFileSync(file, 'utf8');
-      const masked = maskComments(raw);
+      const masked = maskComments(raw, kindOf(file));
       if (!importsComponent && kindOf(file) !== 'css' && sourceImportsBrandComponent(masked)) {
         importsComponent = true;
       }
@@ -252,7 +255,7 @@ function report(path, id, message, { line, column, detail } = {}) {
   reports.push({ severity: sev, text: detail ? `${where}\n${detail}` : where });
 }
 
-const css = maskComments(read(args.css, 'CSS entrypoint'));
+const css = maskComments(read(args.css, 'CSS entrypoint'), 'css');
 
 for (const { file, consequence } of STYLESHEETS) {
   const specifier = escapeRegExp(`${PACKAGE}/${file}`);
@@ -294,6 +297,7 @@ try {
   importsComponent = scanned.importsComponent;
 } catch (error) {
   if (!(error instanceof SourceScanError)) throw error;
+  for (const { text } of reports) console.error(text);
   console.error(`otto-brand-check: ${error.message}`);
   process.exit(1);
 }

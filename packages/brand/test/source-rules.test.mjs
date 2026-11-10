@@ -22,7 +22,7 @@ function walk(files, check) {
 
 function brandRule(id) {
   const rule = BRAND_RULES.find((entry) => entry.id === id);
-  assert.ok(rule, id);
+  assert.ok(rule, `unknown brand rule: ${id}`);
   return rule;
 }
 

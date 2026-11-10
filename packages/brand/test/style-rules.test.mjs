@@ -170,3 +170,22 @@ test('an unused ignore reports ignore-unused', () => {
   const source = '// otto-brand-ignore: pill-radius — leftover\nconst x = "text-sm";\n';
   assert.ok(idsOf(source, 'script').includes('ignore-unused'));
 });
+
+test('a trailing line comment is masked', () => {
+  const ids = (src) => idsOf(src, 'script');
+  assert.ok(!ids('const x = 1; // bg-red-500 was here\n').includes('palette-color'));
+  assert.ok(!ids("const x = 1; // don't use #fff\n").includes('literal-color'));
+  assert.ok(ids("const u = 'http://x'; const c = '#fff';\n").includes('literal-color'));
+});
+
+test('css declarations without a trailing semicolon are checked', () => {
+  assert.ok(idsOf('a { color: #fff }\n', 'css').includes('literal-color'));
+  assert.ok(idsOf('a:hover { border-color: red }\n', 'css').includes('hover-border'));
+});
+
+test('an unknown id does not hide ignore-unused for a known id beside it', () => {
+  const source = '// otto-brand-ignore: pill-radius, nonesuch \u2014 r\nconst x = 1;\n';
+  const ids = idsOf(source, 'script');
+  assert.ok(ids.includes('ignore-unknown-rule'));
+  assert.ok(ids.includes('ignore-unused'));
+});

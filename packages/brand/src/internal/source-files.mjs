@@ -28,6 +28,7 @@ function gitLines(root) {
     );
     return listing.split('\0').filter(Boolean);
   } catch {
+    // Deliberate: any git failure (no repo, no git binary) falls back to the directory walk.
     return null;
   }
 }

@@ -92,7 +92,7 @@ function skipBalanced(text, start, open, close) {
   return text.length;
 }
 
-export function maskComments(source) {
+export function maskComments(source, kind) {
   const out = source.split('');
   const blank = (from, to) => {
     for (let i = from; i < to; i++) {
@@ -104,6 +104,17 @@ export function maskComments(source) {
     const char = source[i];
     if (char === "'" || char === '"') {
       i = skipQuoted(source, i);
+      continue;
+    }
+    if (char === '`' && kind !== 'css') {
+      i = skipTemplate(source, i);
+      continue;
+    }
+    if (char === '/' && source[i + 1] === '/' && kind !== 'css' && source[i - 1] !== ':') {
+      const eol = source.indexOf('\n', i);
+      const end = eol === -1 ? source.length : eol;
+      blank(i, end);
+      i = end;
       continue;
     }
     if (char === '/' && source[i + 1] === '*') {
@@ -248,7 +259,7 @@ function eachCssDeclarationValue(text, visit) {
         } else if (text[k] === ';' && nested === 0) break;
         k++;
       }
-      if (nested === 0 && text[k] === ';') {
+      if (nested === 0 && (text[k] === ';' || text[k] === '}' || k >= text.length)) {
         visit(valueStart, k);
         i = k + 1;
         continue;
@@ -319,7 +330,7 @@ function topLevelDeclarations(body) {
       const valueStart = j + 1;
       let k = valueStart;
       while (k < body.length && body[k] !== ';' && body[k] !== '{' && body[k] !== '}') k++;
-      if (body[k] === ';') {
+      if (body[k] === ';' || k >= body.length) {
         decls.push({ name, value: body.slice(valueStart, k), index: nameStart });
         i = k + 1;
         continue;
@@ -741,7 +752,6 @@ function applySuppressions(source, findings) {
     for (const id of directive.ids) {
       if (!SUPPRESSIBLE.has(id)) {
         kept.push({ rule: IGNORE_UNKNOWN_RULE, line: directive.line, column: directive.column });
-        used.add(index);
         continue;
       }
       knownIds.push(id);
@@ -786,7 +796,7 @@ function applySuppressions(source, findings) {
 }
 
 export function findViolations(source, { kind, rules = CONSUMER_RULES, known: _known } = {}) {
-  const masked = maskComments(source);
+  const masked = maskComments(source, kind);
   const findings = [];
   for (const rule of rules) {
     for (const index of rule.find(masked, kind)) {

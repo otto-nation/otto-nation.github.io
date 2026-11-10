@@ -56,6 +56,7 @@ function run(dir, { src = join(dir, 'app'), check = CHECK, extra = [] } = {}) {
       join(dir, 'next.config.mjs'), '--src', src, ...extra],
     { encoding: 'utf8' },
   );
+  assert.ifError(result.error);
   return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
 
@@ -446,6 +447,7 @@ function runVite(dir, { src = join(dir, 'src'), extra = [], check = CHECK } = {}
     ],
     { encoding: 'utf8' },
   );
+  assert.ifError(result.error);
   return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
 
