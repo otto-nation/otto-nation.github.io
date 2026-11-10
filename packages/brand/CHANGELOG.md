@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.0...brand-v1.6.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **brand:** no shipped doc compiles to invalid Tailwind CSS ([#44](https://github.com/otto-nation/otto-nation.github.io/issues/44)) ([3469b4a](https://github.com/otto-nation/otto-nation.github.io/commit/3469b4a07032d45d9fc1eab61bfeb179d3f91c6e))
+
 ## [1.6.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.5.0...brand-v1.6.0) (2026-11-10)
 
 
