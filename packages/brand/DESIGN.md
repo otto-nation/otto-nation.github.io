@@ -488,6 +488,18 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
+  segmented-on-dark:
+    backgroundColor: "{colors.block}"
+    textColor: "{colors.block-ink-muted}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  segmented-on-dark-selected:
+    backgroundColor: "{colors.block-ink}"
+    textColor: "{colors.block}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   popover:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -562,7 +574,7 @@ components:
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
 - **icon-button** — square at control height; outline edge; required `label`; hover, pressed and toggle-selected as above. The dark edge-on-hover reading is 2.77:1 against the hover fill; the edge still reads 3.44:1 against the canvas outside it, which locates the control.
-- **button-on-dark** — solid on the block band (`onDark`).
+- **button-on-dark** — solid on the block band (`onDark`). SegmentedControl takes the same `onDark` there.
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
 - **card-linked** — no border; hover `{colors.hover}` fill; focus ring only; `-m-4` hit area.
@@ -575,7 +587,7 @@ components:
 - **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill, 4px (`px-1`) inline padding.
 - **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
 - **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a `--ow-rule-selected` left rule in `{colors.primary}` (dark: amarillo) and ink text.
-- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
+- **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text. Takes `onDark` on the block band: transparent track (the YAML lists `{colors.block}`, the band it shows), block-hairline, unselected `{colors.block-ink-muted}` with no hover fill; selected is `{colors.block-ink}` fill with `{colors.block}` text.
 - **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
 - **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.

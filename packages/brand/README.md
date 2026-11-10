@@ -447,7 +447,7 @@ breaking release.
 | `Tag` | `{ children, className? }` |
 | `SectionLabel` | `{ children, count?: number, className? }` |
 | `ActionButton` | Deprecated alias for `<Button size="app">`. Kept until the next major |
-| `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
+| `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, onDark?, className? }` |
 | `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
 | `Input` | `{ dense?: boolean, className?, ...native input attributes }` |
