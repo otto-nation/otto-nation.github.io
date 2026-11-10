@@ -1,6 +1,7 @@
 import {
   ActionButton,
   AppCard,
+  Button,
   Input,
   ListRow,
   SectionLabel,
@@ -98,6 +99,30 @@ export default function UiPage() {
             <ActionButton variant={variant} dense={dense} disabled={disabled}>
               Action
             </ActionButton>
+          </section>
+        )),
+      )}
+      <section data-specimen="button-page-solid">
+        <Button>Page solid</Button>
+      </section>
+      <section data-specimen="button-page-outline">
+        <Button variant="outline">Page outline</Button>
+      </section>
+      <section data-specimen="button-page-link">
+        <Button href="/ui">Page link</Button>
+      </section>
+      <section data-specimen="button-page-ondark">
+        <Button onDark>Page onDark</Button>
+      </section>
+      {ACTION_VARIANTS.map((variant) =>
+        ACTION_STATES.map(({ state, dense, disabled }) => (
+          <section
+            key={`app-${variant}-${state}`}
+            data-specimen={`button-app-${variant}-${state}`}
+          >
+            <Button size="app" variant={variant} dense={dense} disabled={disabled}>
+              App
+            </Button>
           </section>
         )),
       )}

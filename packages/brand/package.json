@@ -12,13 +12,16 @@
     "bin",
     "DESIGN.md",
     "LICENSE",
-    "terminal"
+    "terminal",
+    "tokens.json"
   ],
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./fonts.css": "./src/fonts.css",
     "./DESIGN.md": "./DESIGN.md",
+    "./tokens.json": "./tokens.json",
+    "./icon.svg": "./src/marks/icon.svg",
     "./terminal/otto-light.json": "./terminal/otto-light.json",
     "./terminal/otto-dark.json": "./terminal/otto-dark.json",
     "./search-button": "./src/chrome/search-button.tsx",
@@ -31,7 +34,7 @@
   },
   "scripts": {
     "test": "tsc --noEmit && node --test",
-    "design:generate": "node scripts/generate-design-md.mjs && node scripts/generate-terminal-themes.mjs"
+    "design:generate": "node scripts/generate-design-md.mjs && node scripts/generate-terminal-themes.mjs && node scripts/generate-tokens-json.mjs"
   },
   "dependencies": {
     "tailwind-merge": "^3.0.0"

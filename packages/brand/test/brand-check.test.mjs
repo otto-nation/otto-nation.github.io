@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { OW_TOKEN } from '../src/internal/derive.mjs';
+
 const CHECK = fileURLToPath(new URL('../bin/otto-brand-check.mjs', import.meta.url));
 
 const GOOD_CSS = `@import 'tailwindcss';
@@ -83,7 +85,7 @@ function checkWithTokens(tokensCss) {
 function checkWithReindentedTokens(indent) {
   const tokensPath = fileURLToPath(new URL('../src/tokens.css', import.meta.url));
   return checkWithTokens(
-    readFileSync(tokensPath, 'utf8').replace(/^ {2}(--ow-[a-z-]+):/gm, `${indent}$1:`),
+    readFileSync(tokensPath, 'utf8').replace(new RegExp(`^ {2}(${OW_TOKEN}):`, 'gm'), `${indent}$1:`),
   );
 }
 
@@ -185,6 +187,19 @@ test('an undeclared --ow-* token fails', () => {
   }));
   assert.equal(code, 1);
   assert.match(output, new RegExp(UNDECLARED_TOKEN));
+});
+
+// Digit names have to be scanned whole. A [a-z-]+ class truncates
+// --ow-space-1 to --ow-space- and reports that truncated name undeclared.
+test('a consumer referencing --ow-space-1 is accepted when it is declared', () => {
+  const check = checkWithTokens(':root {\n  --ow-space-1: 4px;\n}\n');
+  const { code } = run(
+    fixture({
+      page: 'export default () => <p className="p-[var(--ow-space-1)]" />;\n',
+    }),
+    { check },
+  );
+  assert.equal(code, 0);
 });
 
 // One pass has to name every offender. Reporting only the last file scanned

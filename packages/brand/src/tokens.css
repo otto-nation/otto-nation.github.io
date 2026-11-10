@@ -26,7 +26,8 @@
  *   --ow-magenta   5.94:1 on surface.
  *   --ow-anil      7.04:1 on canvas. Text-safe: links, and a fill that carries
  *                  --ow-canvas text. Restated in .dark so it holds on both ramps.
- *                  Focus ring: 2px outline, offset 2px, both themes (D7).
+ *                  Focus ring: --ow-focus-width outline, offset
+ *                  --ow-focus-offset, colour --ow-anil, both themes (D7).
  *                  --color-fd-ring follows this token so the docs ring matches.
  *   --ow-ink-muted 6.92:1 on surface. Cards sit on --ow-surface, not canvas, so
  *                  muted copy inside one is measured there too.
@@ -105,7 +106,7 @@
   --color-fd-card-foreground: var(--ow-ink);
   --color-fd-border: var(--ow-hairline);
   --color-fd-primary: var(--ow-rosa);
-  --color-fd-primary-foreground: var(--ow-canvas);
+  --color-fd-primary-foreground: var(--ow-on-rosa);
   --color-fd-secondary: var(--ow-surface);
   --color-fd-secondary-foreground: var(--ow-ink);
   --color-fd-accent: var(--ow-surface);
@@ -129,6 +130,33 @@
   --ow-control-padding: 10px;
   --ow-card-padding: 12px;
   --ow-column-min: 260px;
+
+  --ow-radius-sm: 4px;
+  --ow-radius-md: 6px;
+  --ow-radius-lg: 8px;
+  --ow-space-1: 4px;
+  --ow-space-2: 8px;
+  --ow-space-3: 12px;
+  --ow-space-4: 16px;
+  --ow-space-5: 20px;
+  --ow-space-6: 24px;
+  --ow-focus-width: 2px;
+  --ow-focus-offset: 2px;
+  --ow-rule-selected: 2px;
+  --ow-rule-accent: 3px;
+  /* Pane tokens are the minimum container width of the pane they name:
+   * rail is below compact, compact covers compact up to board, board starts
+   * at board, wide starts at wide. They cannot be used in @container
+   * conditions (var() is not allowed there). They exist for non-web
+   * consumers and documentation. */
+  --ow-pane-compact: 160px;
+  --ow-pane-board: 560px;
+  --ow-pane-wide: 1100px;
+  /* --ow-scrim resolves var(--ow-block) on the element that declares it.
+   * Like every derived --color-fd-* role, it follows .dark only when
+   * .dark sits on the root element. .dark restates it with canvas at 70%
+   * so the overlay never lightens the page. */
+  --ow-scrim: color-mix(in srgb, var(--ow-block) 50%, transparent);
 }
 
 .dark {
@@ -203,10 +231,17 @@
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded
    * value of that token, so the :root declaration already picks up the dark
-   * ramp once .dark is active. --color-fd-primary is the one exception — it
-   * swaps to a different token (amarillo instead of rosa) rather than
-   * following a redefined one, so it must be restated here. */
+   * ramp once .dark is active. --color-fd-primary and
+   * --color-fd-primary-foreground are the exceptions — they swap to different
+   * tokens (amarillo/on-amarillo instead of rosa/on-rosa) rather than
+   * following a redefined one, so they must be restated here. */
   --color-fd-primary: var(--ow-amarillo);
+  --color-fd-primary-foreground: var(--ow-on-amarillo);
+
+  /* --ow-scrim swaps the mixed token (canvas instead of block) rather than
+   * following a redefined one, so it must be restated here. A 50% block mix
+   * would lighten the dark page. */
+  --ow-scrim: color-mix(in srgb, var(--ow-canvas) 70%, transparent);
 }
 
 body {
@@ -231,7 +266,16 @@ h4 {
  * still wins. */
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--ow-anil);
-    outline-offset: 2px;
+    outline: var(--ow-focus-width) solid var(--ow-anil);
+    outline-offset: var(--ow-focus-offset);
   }
+}
+
+/* Unlayered on purpose: a docs framework's `focus-visible:outline-none` utility beats the
+ * @layer base ring above, and where it adds no `focus-visible:ring-*` of its own (search input,
+ * accordion and table-of-contents triggers) keyboard focus would show nothing. This restores the
+ * brand ring there only, so a control that draws its own ring is never doubled. */
+.focus-visible\:outline-none:focus-visible:not([class*="focus-visible:ring"]) {
+  outline: var(--ow-focus-width) solid var(--ow-anil);
+  outline-offset: var(--ow-focus-offset);
 }

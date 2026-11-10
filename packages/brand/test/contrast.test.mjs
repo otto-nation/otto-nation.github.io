@@ -9,8 +9,13 @@ import {
   documentedDarkClaims as darkClaimsFrom,
   fdPrimaryToken,
   fdRoleToken,
+  focusRing,
   focusRingToken,
+  lengthGroups,
   lightTokenHexes,
+  luminance,
+  OW_TOKEN,
+  scrimSpec,
 } from '../src/internal/derive.mjs';
 
 const TOKENS = readFileSync(
@@ -141,7 +146,7 @@ test('icon.svg paints the tokens it says it mirrors', () => {
   const [comment] = ICON.match(/<!--[\s\S]*?-->/) ?? [];
   assert.ok(comment, 'icon.svg lost the comment mapping its hexes to tokens');
 
-  const documented = [...comment.matchAll(/(#[0-9a-f]{6})\s+(--ow-[a-z-]+)/gi)]
+  const documented = [...comment.matchAll(new RegExp(`(#[0-9a-f]{6})\\s+(${OW_TOKEN})`, 'gi'))]
     .map(([, hex, token]) => ({ hex: hex.toLowerCase(), token }));
   assert.equal(documented.length, 3, 'icon.svg should document exactly three hex/token pairs');
 
@@ -249,6 +254,46 @@ test('anil clears 3:1 on canvas, surface, hover, and selected in both ramps', ()
 
 // One owner: the fumadocs ring token and the base :focus-visible rule name the
 // same --ow-*. That token must clear the non-text floor on every app surface.
+test('focusRing width and offset are the focus tokens at 2px', () => {
+  const ring = focusRing(TOKENS);
+  assert.equal(ring.width, '--ow-focus-width');
+  assert.equal(ring.offset, '--ow-focus-offset');
+  const focus = lengthGroups(TOKENS).focus;
+  assert.equal(focus.get('width'), '2px');
+  assert.equal(focus.get('offset'), '2px');
+});
+
+test('the dark scrim colour is not lighter than the dark canvas', () => {
+  const spec = scrimSpec(TOKENS, 'dark');
+  const tokens = darkTokens();
+  const scrimHex = tokens.get(spec.token);
+  const canvasHex = tokens.get('--ow-canvas');
+  assert.ok(scrimHex, `dark scrim token ${spec.token} has no hex`);
+  assert.ok(canvasHex, 'dark --ow-canvas has no hex');
+  assert.ok(
+    luminance(scrimHex) <= luminance(canvasHex),
+    `dark scrim ${spec.token} ${scrimHex} is lighter than canvas ${canvasHex}`,
+  );
+});
+
+test('fumadocs primary foreground on primary clears AA in both themes', () => {
+  for (const [theme, tokens] of eachRamp()) {
+    const fgRole = fdRoleToken(TOKENS, '--color-fd-primary-foreground', theme);
+    const bgRole = fdRoleToken(TOKENS, '--color-fd-primary', theme);
+    assert.ok(fgRole, `${theme}: missing --color-fd-primary-foreground`);
+    assert.ok(bgRole, `${theme}: missing --color-fd-primary`);
+    const fg = tokens.get(fgRole);
+    const bg = tokens.get(bgRole);
+    assert.ok(fg, `${theme}: ${fgRole} is not declared`);
+    assert.ok(bg, `${theme}: ${bgRole} is not declared`);
+    const ratio = contrast(fg, bg);
+    assert.ok(
+      ratio >= 4.5,
+      `${theme}: ${fgRole} on ${bgRole} is ${ratio.toFixed(2)}:1, under AA`,
+    );
+  }
+});
+
 test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces', () => {
   const ringToken = focusRingToken(TOKENS);
   for (const [theme, tokens] of eachRamp()) {
@@ -263,4 +308,19 @@ test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces',
       );
     }
   }
+});
+
+// A layered ring loses to any utility that removes the outline. The restore rule has to sit
+// outside every @layer, skip controls that draw their own ring, and use the same focus tokens.
+test('an unlayered rule restores the ring where outline-none leaves none', () => {
+  const css = TOKENS.replace(/\/\*[\s\S]*?\*\//g, '');
+  const selector = '.focus-visible\\:outline-none:focus-visible:not([class*="focus-visible:ring"])';
+  const at = css.indexOf(selector);
+  assert.ok(at >= 0, 'tokens.css has no outline-none restore rule');
+  const before = css.slice(0, at);
+  const depth = [...before].reduce((d, c) => d + (c === '{') - (c === '}'), 0);
+  assert.equal(depth, 0, 'the restore rule is nested inside a block (an @layer wins against it)');
+  const body = css.slice(at).match(/\{([^}]*)\}/)[1];
+  assert.match(body, /outline:\s*var\(--ow-focus-width\)\s+solid\s+var\(--ow-anil\)/);
+  assert.match(body, /outline-offset:\s*var\(--ow-focus-offset\)/);
 });

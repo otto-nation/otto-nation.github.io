@@ -26,7 +26,7 @@ export function StatusGlyph({
   return (
     <span
       className={twMerge(
-        'inline-flex items-center gap-1 [font:var(--ow-font-meta)]',
+        'inline-flex items-center gap-[var(--ow-space-1)] [font:var(--ow-font-meta)]',
         color,
         className,
       )}

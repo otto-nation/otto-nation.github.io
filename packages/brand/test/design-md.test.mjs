@@ -9,8 +9,10 @@ import {
   darkTokenHexes,
   fdPrimaryToken,
   fontRoles,
+  lengthGroups,
   lengthTokens,
   lightTokenHexes,
+  scrimSpec,
 } from '../src/internal/derive.mjs';
 import { GENERATED_HEADER, generate } from '../scripts/generate-design-md.mjs';
 import { resolveTerminal, terminalMap } from '../scripts/terminal.mjs';
@@ -132,37 +134,106 @@ test('YAML spacing includes app length tokens after the Tailwind 1–6 steps', (
   }
 });
 
-function darkColor(ref, colors) {
+test('YAML rounded and spacing 1–6 equal lengthGroups values', () => {
+  const tokensCss = read('src/tokens.css');
+  const generated = generate(read('DESIGN.md'), sources(tokensCss));
+  const groups = lengthGroups(tokensCss);
+  const rounded = yamlRounded(generated);
+  const spacing = yamlSpacing(generated);
+  assert.ok(groups.radii.size > 0, 'tokens.css declared no --ow-radius-*');
+  assert.ok(groups.spacing.size > 0, 'tokens.css declared no --ow-space-*');
+  for (const [name, value] of groups.radii) {
+    assert.equal(rounded[name], value, `rounded.${name}`);
+  }
+  for (const [name, value] of groups.spacing) {
+    assert.equal(spacing[name], value, `spacing.${name}`);
+  }
+});
+
+test('mutating --ow-radius-md changes YAML rounded.md', () => {
+  const committed = read('DESIGN.md');
+  const original = read('src/tokens.css');
+  const mutated = original.replace('--ow-radius-md: 6px', '--ow-radius-md: 7px');
+  assert.notEqual(mutated, original, 'the subject declaration was not in tokens.css');
+  const generated = generate(committed, sources(mutated));
+  assert.notEqual(generated, committed);
+  assert.equal(yamlRounded(generated).md, '7px');
+});
+
+test('grouped length tokens do not leak into YAML spacing keys', () => {
+  const spacing = yamlSpacing(generate(read('DESIGN.md'), sources()));
+  for (const key of Object.keys(spacing)) {
+    assert.equal(
+      /^(radius|focus|rule|pane)-/.test(key),
+      false,
+      `spacing.${key} leaked from a grouped length token`,
+    );
+  }
+});
+
+test('the lengths region lists every focus/rule/pane/scrim token with its value', () => {
+  const tokensCss = read('src/tokens.css');
+  const generated = generate(read('DESIGN.md'), sources(tokensCss));
+  const region = generatedRegion(generated, 'lengths');
+  const groups = lengthGroups(tokensCss);
+  const prefixes = { focus: 'focus', rules: 'rule', panes: 'pane' };
+  for (const [group, prefix] of Object.entries(prefixes)) {
+    const map = groups[group];
+    assert.ok(map.size > 0, `tokens.css declared no --ow-${prefix}-*`);
+    for (const [name, value] of map) {
+      const token = `--ow-${prefix}-${name}`;
+      assert.ok(
+        region.includes(`| ${token} | ${value} |`),
+        `${token} ${value} missing from lengths region`,
+      );
+    }
+  }
+  for (const theme of ['light', 'dark']) {
+    const spec = scrimSpec(tokensCss, theme);
+    const mix = `color-mix(in srgb, var(${spec.token}) ${Math.round(spec.opacity * 100)}%, transparent)`;
+    assert.ok(
+      region.includes(`| --ow-scrim | ${mix} |`),
+      `--ow-scrim ${theme} missing from lengths region`,
+    );
+  }
+});
+
+function resolveColor(ref, colors, theme) {
   const match = ref.match(/^\{colors\.([a-z0-9-]+)\}$/);
   if (!match) return null;
   const name = match[1];
-  const key = name.startsWith('dark-') ? name : `dark-${name}`;
-  return colors[key];
+  if (theme === 'dark') {
+    const key = name.startsWith('dark-') ? name : `dark-${name}`;
+    return colors[key];
+  }
+  return colors[name];
 }
 
-// The pinned linter checks light text/bg pairs. This walks the same YAML and
-// resolves each {colors.x} against the dark-* ramp so a dark-only miss fails.
-test('each component text/bg pair clears AA on the dark ramp', () => {
+// The pinned linter checks light pairs that already name both colours, and
+// skips every text-only entry. Measure those on {colors.canvas} in both ramps.
+test('each component text pair clears AA on both ramps, missing fill on canvas', () => {
   const designMd = read('DESIGN.md');
   const colors = yamlColors(designMd);
   const components = yamlComponents(designMd);
   let pairs = 0;
-  for (const [name, props] of Object.entries(components)) {
-    const fgRef = props.textColor;
-    const bgRef = props.backgroundColor;
-    if (!fgRef || !bgRef) continue;
-    const fg = darkColor(fgRef, colors);
-    const bg = darkColor(bgRef, colors);
-    assert.ok(fg, `${name}: ${fgRef} has no dark-* colour`);
-    assert.ok(bg, `${name}: ${bgRef} has no dark-* colour`);
-    const ratio = contrast(fg, bg);
-    assert.ok(
-      ratio >= 4.5,
-      `dark ${name}: ${fgRef} on ${bgRef} is ${ratio.toFixed(2)}:1, under AA`,
-    );
-    pairs += 1;
+  for (const theme of ['light', 'dark']) {
+    for (const [name, props] of Object.entries(components)) {
+      const fgRef = props.textColor;
+      if (!fgRef) continue;
+      const bgRef = props.backgroundColor ?? '{colors.canvas}';
+      const fg = resolveColor(fgRef, colors, theme);
+      const bg = resolveColor(bgRef, colors, theme);
+      assert.ok(fg, `${theme} ${name}: ${fgRef} has no colour`);
+      assert.ok(bg, `${theme} ${name}: ${bgRef} has no colour`);
+      const ratio = contrast(fg, bg);
+      assert.ok(
+        ratio >= 4.5,
+        `${theme} ${name}: ${fgRef} on ${bgRef} is ${ratio.toFixed(2)}:1, under AA`,
+      );
+      pairs += 1;
+    }
   }
-  assert.ok(pairs >= 12, `expected at least 12 text/bg pairs, got ${pairs}`);
+  assert.ok(pairs >= 50, `expected at least 50 text/bg pairs, got ${pairs}`);
 });
 
 // Text slots (foreground, 1–6, 8–14) must clear AA on that scheme's
@@ -213,6 +284,15 @@ test('the package exports DESIGN.md', () => {
     fileURLToPath(new URL('DESIGN.md', root)),
   );
 });
+
+function generatedRegion(designMd, name) {
+  const start = `<!-- generated:${name} -->`;
+  const end = `<!-- /generated:${name} -->`;
+  const startIdx = designMd.indexOf(start);
+  const endIdx = designMd.indexOf(end);
+  assert.ok(startIdx !== -1 && endIdx > startIdx, `missing ${start} … ${end}`);
+  return designMd.slice(startIdx + start.length, endIdx);
+}
 
 function frontMatterBody(designMd) {
   if (!designMd.startsWith('---\n')) {
@@ -284,6 +364,23 @@ function yamlComponents(designMd) {
     components[current][prop[1]] = prop[2];
   }
   return components;
+}
+
+function yamlRounded(designMd) {
+  const rounded = {};
+  let inRounded = false;
+  for (const line of frontMatterBody(designMd).split('\n')) {
+    if (line === 'rounded:') {
+      inRounded = true;
+      continue;
+    }
+    if (!inRounded) continue;
+    if (!line.startsWith('  ')) break;
+    const match = line.match(/^  ([a-z0-9-]+): (\S+)$/);
+    assert.ok(match, `unparseable rounded entry: ${line}`);
+    rounded[match[1]] = match[2];
+  }
+  return rounded;
 }
 
 function yamlSpacing(designMd) {

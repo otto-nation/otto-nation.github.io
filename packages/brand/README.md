@@ -107,9 +107,12 @@ arrives later, in a build.
 1. Depend on a release tarball — public releases need no authentication, so no
    consumer, contributor, or CI job needs a token to install:
 
-   ```json
-   "@otto-nation/brand": "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.2/otto-nation-brand-1.0.2.tgz"
+   <!-- x-release-please-start-version -->
+   ```bash
+   VERSION=1.3.0
+   npm install "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-$VERSION.tgz"
    ```
+   <!-- x-release-please-end -->
 
 2. In your Tailwind entrypoint:
 
@@ -187,15 +190,18 @@ components need a JSX/Tailwind build to render, but `tokens.css` and
 
 Every `brand-v*` release attaches a second asset alongside the npm tarball —
 `otto-nation-brand-assets-<version>.zip` — containing `tokens.css`, `fonts.css`,
-the vendored woff2 files, their OFL licenses, `DESIGN.md`, and
+the vendored woff2 files, their OFL licenses, `DESIGN.md`, `tokens.json`, and
 `terminal/otto-{light,dark}.json` (generated; do not edit), packed by
 `bin/pack-brand-assets` from the same source the npm tarball ships. Download
 and vendor it into the consumer's own repo:
 
+<!-- x-release-please-start-version -->
 ```bash
-curl -LO https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v1.0.2/otto-nation-brand-assets-1.0.2.zip
-unzip otto-nation-brand-assets-1.0.2.zip -d path/to/vendored/theme
+VERSION=1.3.0
+curl -LO https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-assets-$VERSION.zip
+unzip otto-nation-brand-assets-$VERSION.zip -d path/to/vendored/theme
 ```
+<!-- x-release-please-end -->
 
 Then reference the two stylesheets however the consumer loads CSS — a plain
 `<link>` for a static page, an `@import` for anything with its own build.
@@ -268,6 +274,8 @@ breaking release.
 | `@otto-nation/brand/tokens.css` | Owner of every hex in the org bar the three in `src/marks/icon.svg`, including the `--color-fd-*` fumadocs remap |
 | `@otto-nation/brand/fonts.css` | `@font-face` for both faces and their fallbacks; defines `--font-display`, `--font-mono` |
 | `@otto-nation/brand/DESIGN.md` | Generated design system. Colour tokens come from `tokens.css`; do not copy hexes from here |
+| `@otto-nation/brand/tokens.json` | Generated token dump for non-web consumers (`schemaVersion`); do not edit |
+| `@otto-nation/brand/icon.svg` | Favicon mark (`src/marks/icon.svg`); the one hex outside tokens.css |
 | `@otto-nation/brand/terminal/otto-light.json` | Generated herdr-app theme (no `colors`); do not edit |
 | `@otto-nation/brand/terminal/otto-dark.json` | Generated herdr-app theme (no `colors`); do not edit |
 | `@otto-nation/brand/verify` | `verifyExport({ out, control })` — see [Verifying a build](#verifying-a-build) |
@@ -275,12 +283,12 @@ breaking release.
 | `GrecaDivider` | `{ className? }` |
 | `Rings` | `{ className? }` |
 | `Eyebrow` | `{ children, className? }` |
-| `Button` | `{ href, children, variant?: 'solid' \| 'outline', size?: 'sm' \| 'xs', onDark?, className? }` |
+| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
 | `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
 | `Tag` | `{ children, className? }` |
 | `SectionLabel` | `{ children, count?: number, className? }` |
-| `ActionButton` | `{ children, variant?: 'solid' \| 'outline' \| 'ghost', dense?: boolean, disabled?: boolean, onClick?, className?, ...native button attributes }` |
+| `ActionButton` | Deprecated alias for `<Button size="app">`. Kept until the next major |
 | `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
 | `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |

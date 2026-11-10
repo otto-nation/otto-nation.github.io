@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -95,6 +96,114 @@ test('the /ui specimen renders SectionLabel and ActionButton', () => {
           `${variant} ${state} should use control-height`,
         );
       }
+      const pressed =
+        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      if (pressed) {
+        assert.ok(
+          button.includes('hover:bg-[var(--ow-hover)]'),
+          `${variant} ${state} missing hover fill`,
+        );
+        assert.ok(
+          button.includes('active:bg-[var(--ow-selected)]'),
+          `${variant} ${state} missing pressed fill`,
+        );
+      } else {
+        assert.doesNotMatch(
+          button,
+          /active:bg-\[var\(--ow-selected\)\]/,
+          `${variant} ${state} should not paint pressed fill`,
+        );
+      }
+    }
+  }
+});
+
+test('the /ui specimen renders page-size Button and Button size=app', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const pageSolid = section(html, 'button-page-solid');
+  const pageSolidControl = pageSolid.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageSolidControl, 'page solid control missing');
+  assert.ok(pageSolid.includes('Page solid'), 'page solid label missing');
+  assert.ok(pageSolid.includes('--ow-space-4'), 'page solid space-4 missing');
+  assert.ok(pageSolid.includes('--ow-space-2'), 'page solid space-2 missing');
+  assert.ok(pageSolid.includes('--ow-radius-md'), 'page solid radius-md missing');
+  assert.ok(
+    pageSolid.includes('--ow-ink') && pageSolid.includes('--ow-canvas'),
+    'page solid fill missing',
+  );
+  assert.ok(!pageSolid.includes('--ow-control-height'), 'page solid used app height');
+  assert.doesNotMatch(
+    pageSolidControl,
+    /hover:bg-\[var\(--ow-hover\)\]/,
+    'page solid should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageSolidControl,
+    /active:bg-\[var\(--ow-selected\)\]/,
+    'page solid should not paint pressed fill',
+  );
+
+  const pageOutline = section(html, 'button-page-outline');
+  const pageOutlineControl = pageOutline.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageOutlineControl, 'page outline control missing');
+  assert.ok(pageOutline.includes('Page outline'), 'page outline label missing');
+  assert.ok(
+    pageOutlineControl.includes('hover:bg-[var(--ow-hover)]'),
+    'page outline missing hover fill',
+  );
+  assert.ok(
+    pageOutlineControl.includes('active:bg-[var(--ow-selected)]'),
+    'page outline missing pressed fill',
+  );
+  assert.ok(!pageOutline.includes('--ow-control-height'), 'page outline used app height');
+
+  const pageLink = section(html, 'button-page-link');
+  assert.match(pageLink, /<a\b/, 'page link is not an anchor');
+  assert.doesNotMatch(pageLink, /<button\b/, 'page link rendered a button');
+  assert.ok(pageLink.includes('Page link'), 'page link label missing');
+  assert.match(pageLink, /href="\/ui\/?"/, 'page link href missing');
+
+  const pageOnDark = section(html, 'button-page-ondark');
+  const pageOnDarkControl = pageOnDark.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageOnDarkControl, 'page onDark control missing');
+  assert.ok(pageOnDark.includes('Page onDark'), 'page onDark label missing');
+  assert.ok(pageOnDark.includes('--ow-block-ink'), 'page onDark fill missing');
+  assert.doesNotMatch(
+    pageOnDarkControl,
+    /hover:bg-\[var\(--ow-hover\)\]/,
+    'page onDark should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageOnDarkControl,
+    /active:bg-\[var\(--ow-selected\)\]/,
+    'page onDark should not paint pressed fill',
+  );
+
+  for (const variant of ['solid', 'outline', 'ghost']) {
+    for (const state of ['rest', 'dense', 'disabled']) {
+      const block = section(html, `button-app-${variant}-${state}`);
+      const button = block.match(/<button\b[^>]*>/)?.[0];
+      assert.ok(button, `app ${variant} ${state} is not a button`);
+      assert.ok(block.includes('App'), `app ${variant} ${state} label missing`);
+      assert.ok(
+        block.includes('--ow-font-label'),
+        `app ${variant} ${state} label font missing`,
+      );
+      const pressed =
+        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      if (pressed) {
+        assert.ok(
+          button.includes('active:bg-[var(--ow-selected)]'),
+          `app ${variant} ${state} missing pressed fill`,
+        );
+      } else {
+        assert.doesNotMatch(
+          button,
+          /active:bg-\[var\(--ow-selected\)\]/,
+          `app ${variant} ${state} should not paint pressed fill`,
+        );
+      }
     }
   }
 });
@@ -160,7 +269,7 @@ test('the /ui specimen renders SegmentedControl and ListRow', () => {
   assert.match(selectedRow, /aria-current="true"/);
   assert.ok(selectedRow.includes('--ow-selected'), 'selected row fill missing');
   assert.ok(
-    selectedRow.includes('border-l-[2px]') &&
+    selectedRow.includes('border-l-[length:var(--ow-rule-selected)]') &&
       selectedRow.includes('border-l-[var(--color-fd-primary)]'),
     'selected row left rule missing',
   );
@@ -276,6 +385,24 @@ test('index.html renders output from every component on the page', () => {
   assert.ok(INDEX_HTML.includes('MIT · otto-nation'), 'footer copy missing — Footer did not render');
 });
 
+test('landing-page linked cards hover with a fill, never a border', () => {
+  assert.doesNotMatch(INDEX_HTML, /hover:border/, 'index.html changes a border on hover');
+  const cards = [...INDEX_HTML.matchAll(/<a\b[^>]*>/g)]
+    .map((match) => match[0])
+    .filter(
+      (tag) =>
+        tag.includes('-m-[var(--ow-space-4)]') &&
+        tag.includes('rounded-[var(--ow-radius-lg)]'),
+    );
+  assert.ok(cards.length >= 3, `expected linked property cards, got ${cards.length}`);
+  for (const tag of cards) {
+    assert.ok(
+      tag.includes('hover:bg-[var(--ow-hover)]'),
+      'linked card missing hover fill',
+    );
+  }
+});
+
 // The tokens, the package-only utility, the vendored faces, and the control
 // are all package-owned facts, so the package owns the assertion: every
 // expectation is derived from its own source at call time rather than restated
@@ -300,4 +427,14 @@ test('the built CSS carries the anil :focus-visible ring', () => {
     .map((entry) => join(entry.parentPath, entry.name));
   const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
   assert.match(css, /:focus-visible\s*\{[^}]*--ow-anil/);
+});
+
+test('site/app/icon.svg byte-equals the brand icon.svg export', () => {
+  const require = createRequire(import.meta.url);
+  const exported = readFileSync(require.resolve('@otto-nation/brand/icon.svg'));
+  const siteIcon = readFileSync(fileURLToPath(new URL('../app/icon.svg', import.meta.url)));
+  assert.ok(
+    exported.equals(siteIcon),
+    'site/app/icon.svg drifted from @otto-nation/brand/icon.svg',
+  );
 });
