@@ -3,6 +3,8 @@ import {
   AppCard,
   Button,
   Input,
+  Select,
+  Textarea,
   ListRow,
   SectionLabel,
   SegmentedControl,
@@ -174,6 +176,36 @@ export default function UiPage() {
           <Input dense={dense} disabled={disabled} defaultValue="branch" />
         </section>
       ))}
+      <section data-specimen="textarea-rest">
+        <Textarea defaultValue="notes" />
+      </section>
+      <section data-specimen="textarea-disabled">
+        <Textarea disabled defaultValue="notes" />
+      </section>
+      <section data-specimen="textarea-invalid">
+        <Textarea aria-invalid="true" defaultValue="notes" />
+      </section>
+      <section data-specimen="select-rest">
+        <Select defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
+      <section data-specimen="select-dense">
+        <Select dense defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
+      <section data-specimen="select-disabled">
+        <Select disabled defaultValue="open">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </Select>
+      </section>
       {STATE_MESSAGES.map(({ kind, children, action }) => (
         <section key={kind} data-specimen={`state-${kind}`}>
           <StateMessage

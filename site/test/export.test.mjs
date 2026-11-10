@@ -379,6 +379,96 @@ test('the /ui specimen renders AppCard and Input', () => {
   }
 });
 
+test('the /ui specimen renders Textarea and Select', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const state of ['rest', 'disabled', 'invalid']) {
+    const block = section(html, `textarea-${state}`);
+    const control = block.match(/<textarea\b[^>]*>/)?.[0];
+    assert.ok(control, `${state} is not a textarea`);
+    assert.match(control, /border-\[var\(--ow-outline\)\]/);
+    assert.ok(control.includes('--ow-font-body'), `${state} textarea body font missing`);
+    assert.ok(control.includes('--ow-space-1'), `${state} textarea space-1 missing`);
+    assert.doesNotMatch(
+      control,
+      /focus-visible/,
+      `${state} textarea has a focus class`,
+    );
+    assert.doesNotMatch(
+      control,
+      /hover:border/,
+      `${state} textarea changes the border on hover`,
+    );
+    if (state === 'disabled') {
+      assert.match(control, /\bdisabled\b/, 'disabled textarea is not disabled');
+      assert.ok(
+        control.includes('--ow-ink-muted'),
+        'disabled textarea ink-muted missing',
+      );
+    } else {
+      assert.doesNotMatch(
+        control,
+        /\bdisabled\b/,
+        `${state} textarea should not be disabled`,
+      );
+    }
+    if (state === 'invalid') {
+      assert.match(
+        control,
+        /aria-invalid="true"/,
+        'invalid textarea missing aria-invalid',
+      );
+      assert.ok(
+        control.includes('aria-[invalid=true]:border-[var(--ow-danger)]'),
+        'invalid textarea missing danger edge class',
+      );
+    }
+  }
+
+  for (const state of ['rest', 'dense', 'disabled']) {
+    const block = section(html, `select-${state}`);
+    assert.match(block, /<select\b/, `${state} is not a select`);
+    const control = block.match(/<select\b[^>]*>/)?.[0];
+    assert.ok(control, `${state} select tag missing`);
+    assert.ok(
+      control.includes('appearance-none'),
+      `${state} select missing appearance-none`,
+    );
+    assert.match(
+      block,
+      /<svg\b[^>]*aria-hidden="true"/,
+      `${state} select chevron missing aria-hidden`,
+    );
+    assert.ok(
+      block.includes('--ow-ink-muted'),
+      `${state} select chevron ink-muted missing`,
+    );
+    const options = [...block.matchAll(/<option\b/g)];
+    assert.equal(options.length, 3, `${state} select should have three options`);
+    if (state === 'disabled') {
+      assert.match(control, /\bdisabled\b/, 'disabled select is not disabled');
+    } else {
+      assert.doesNotMatch(
+        control,
+        /\bdisabled\b/,
+        `${state} select should not be disabled`,
+      );
+    }
+    if (state === 'dense') {
+      assert.ok(
+        control.includes('--ow-control-height-dense'),
+        'select dense height token missing',
+      );
+    } else {
+      assert.ok(
+        control.includes('--ow-control-height') &&
+          !control.includes('--ow-control-height-dense'),
+        `${state} select should use control-height`,
+      );
+    }
+  }
+});
+
 test('the /ui specimen renders StateMessage', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
 

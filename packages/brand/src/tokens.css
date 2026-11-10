@@ -61,6 +61,9 @@
  */
 
 :root {
+  /* Native controls (select popup, scrollbars, date inputs) follow the page
+   * theme instead of the OS light default. */
+  color-scheme: light;
   --ow-canvas: #f7f2e9;
   --ow-surface: #fbf6ea;
   --ow-ink: #1a1712;
@@ -162,6 +165,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --ow-canvas: #0f0e13;
   --ow-surface: #1f1c14;
   --ow-ink: #e8e3d8;
