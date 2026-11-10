@@ -325,6 +325,8 @@ Overlays stay flat. Depth is an edge, never a darker fill.
 | --- | --- |
 | Popover / menu | `{colors.surface}` fill, `{colors.outline}` edge, `{rounded.lg}`. Surface vs canvas is 1.03 light / 1.13 dark, so the edge does the separating. |
 | Window | Same as a popover. |
+| Dialog | Window treatment plus `var(--ow-scrim)`; modal only via `showModal()`. |
+| Toast | Same as a popover; no shadow. |
 | Scrim | Modal only: `var(--ow-scrim)`. |
 
 ## Shapes
@@ -346,7 +348,7 @@ and hit-area are prose — `borderColor` is not a component key. App entries use
 refs to the colour, type, and length tokens. React consumers: `Button` (`size="app"`
 for app controls; `sm`/`xs` for page CTAs; `variant="danger"` for destructive confirm), the deprecated `ActionButton` alias,
 `SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard` (including its popover variant), `Input`,
-`Textarea`, `Select`, `Field`, `StatusGlyph`, and `StateMessage` implement these entries.
+`Textarea`, `Select`, `Field`, `Checkbox`, `IconButton`, `Dialog`, `Toast`, `Table`, `StatusGlyph`, and `StateMessage` implement these entries.
 
 ```yaml
 components:
@@ -529,6 +531,16 @@ components:
     textColor: "{colors.canvas}"
     rounded: "{rounded.sm}"
     size: "{spacing.4}"
+  dialog:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
+  toast:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
   table:
     textColor: "{colors.ink}"
     typography: "{typography.body}"
@@ -569,6 +581,8 @@ components:
 - **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
 - **field** — label role above, meta-role hint or danger error below; `id` wires `htmlFor` and `aria-describedby`.
 - **checkbox** — outline edge, `{rounded.sm}`; checked is an anil fill with a canvas check.
+- **dialog** — window treatment plus scrim; `showModal()` for modal; actions in `form method="dialog"`. The `open` attribute alone is non-modal with no scrim.
+- **toast** — popover treatment, glyph plus text, no timer, consumer positions it. Keep it mounted and swap children; `status="fail"` is `role="alert"`.
 - **table** — body role, section-role header with a 1px ink rule, hover fill, `section` and `total` rows.
 
 | State | Treatment |
@@ -589,6 +603,7 @@ components:
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
 - Don't build a destructive button from rosa; use `button-danger`.
+- Don't add a shadow to a dialog or toast; the outline edge separates it.
 - Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
 - Don't use `{colors.hover}` as a border colour.
 - Don't change a border colour on hover; focus is the anil ring.
