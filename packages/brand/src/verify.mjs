@@ -27,7 +27,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { declaredTokens, fontStems, minifyLength, trackingValue } from './internal/derive.mjs';
+import { declaredTokens, fontStems, minifyLength, SOURCE_GLOB, trackingValue } from './internal/derive.mjs';
 
 const PACKAGE = '@otto-nation/brand';
 
@@ -231,7 +231,7 @@ function checkUtility(value, emittedCss, staticDir) {
       '  which is the only file in the tree that uses it, so its absence means Tailwind\'s\n' +
       '  @source glob never scanned the package. Every utility the package relies on is\n' +
       '  then missing from the stylesheet and the components render unstyled.\n' +
-      `  Add or fix: @source '../node_modules/${PACKAGE}/**/*.tsx';`,
+      `  Add or fix: @source '../${SOURCE_GLOB}';`,
   };
 }
 

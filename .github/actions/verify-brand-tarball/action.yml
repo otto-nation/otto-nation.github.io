@@ -84,3 +84,10 @@ runs:
       # site exercises only the workspace-symlink path, so without it a packaging
       # regression would surface in otto-workbench's CI after the release.
       run: ./node_modules/.bin/otto-brand-verify --out out --control py-7
+
+    - name: Tailwind scans only the brand's components
+      shell: bash
+      working-directory: fixtures/tarball-consumer
+      # The built CSS cannot show an over-broad @source glob: the production build
+      # drops the invalid rules package prose produces. The scanned-file list can.
+      run: node check-source-scope.mjs

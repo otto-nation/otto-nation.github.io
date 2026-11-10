@@ -22,6 +22,14 @@ import { basename } from 'node:path';
 export const OW_TOKEN = '--ow-[a-z0-9-]+';
 
 /**
+ * The `@source` glob consumers must point at this package. Tailwind v4 keeps
+ * automatic source detection on alongside `@source`, so a glob whose static
+ * head is the package root scans README.md and DESIGN.md as a directory and
+ * ignores `*.tsx`. Pinning `src/` keeps the scan on components.
+ */
+export const SOURCE_GLOB = 'node_modules/@otto-nation/brand/src/**/*.tsx';
+
+/**
  * The `--ow-*` custom property names a tokens.css declares.
  *
  * The leading `\s*` is what lets either indentation style parse; tokens.css is

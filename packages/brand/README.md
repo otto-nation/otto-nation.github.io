@@ -123,21 +123,22 @@ arrives later, in a build.
    @import 'tailwindcss';
    @import '@otto-nation/brand/tokens.css';
    @import '@otto-nation/brand/fonts.css';
-   @source '../node_modules/@otto-nation/brand/**/*.tsx';
+   @source '../node_modules/@otto-nation/brand/src/**/*.tsx';
    ```
 
    The `@source` line is not optional. Tailwind v4 excludes `node_modules` from
    auto-detection, so without it every utility the package uses is absent from
    your stylesheet and the page renders unstyled.
 
-   Write it as an explicit file glob, exactly as above — not as a bare directory
-   (`@source '../node_modules/@otto-nation/brand/src'`). The glob form is the one
-   verified to work against Next 16 + Turbopack + Tailwind v4.3.3; the directory
-   form is untested here and a directory argument is the shape Tailwind applies
-   its auto-detection heuristics to, which is what excludes `node_modules` in the
-   first place. Adjust the depth to your own layout: `../node_modules/...` from
-   `app/global.css` when the app has its own `node_modules`, `../../node_modules/...`
-   when it is a workspace package and npm has hoisted them to the repo root.
+   Pin the glob at `src/`, exactly as above — not at the package root
+   (`…/brand/**/*.tsx`). Tailwind v4 keeps automatic source detection on
+   alongside `@source`, so a glob whose static head is the package root scans
+   the whole package as a directory (README.md, DESIGN.md, …) and ignores
+   `*.tsx`. Class-shaped prose in those docs then becomes invalid CSS. The
+   `src/**/*.tsx` glob scans only the components. Adjust the depth to your own
+   layout: `../node_modules/...` from `app/global.css` when the app has its own
+   `node_modules`, `../../node_modules/...` when it is a workspace package and
+   npm has hoisted them to the repo root.
 
 3. In `next.config.mjs`:
 
@@ -222,20 +223,20 @@ utility prefix the matcher knows) and CSS named colours in declarations
 `inherit` are allowed.
 
 `pill-radius` flags `rounded-full` with any side prefix (`rounded-t-full`,
-`rounded-s-full`, …) and any variant prefix, `rounded-[9999px|50%|100%]`, and
-CSS `border-radius` (including longhands) set to those values.
-`rounded-[var(--ow-radius-*)]` is not flagged.
+`rounded-s-full`, …) and any variant prefix, plus the arbitrary rounded values
+9999px, 50%, and 100%, and CSS `border-radius` (including longhands) set to
+those values. A token-backed `rounded-[var(…)]` is not flagged.
 
 `hover-border` flags `hover:border` as a word (`group-hover:`, `peer-hover:`,
 `dark:hover:` included) and any CSS `border*` declaration inside a block whose
-selector contains `:hover`. `hover:bg-*` is not flagged.
+selector contains `:hover`. Hover background utilities are not flagged.
 
 `outline-removed` flags `outline-none`, `outline-hidden`, and `outline-0`, bare
-or with `focus:` / `focus-visible:`, when the same element has no
-`focus-visible:ring-*` (other than `ring-0`), `focus-visible:outline-*` (other
-than none/hidden/0), or `focus:ring-*`. In CSS, a `:focus` / `:focus-visible`
-block that sets `outline: none|0` or `outline-style: none` with no other
-non-none `outline*` or `box-shadow` in the same block.
+or with `focus:` / `focus-visible:`, when the same element has no matching
+focus-visible ring (other than `ring-0`), focus-visible outline (other than
+none/hidden/0), or focus ring. In CSS, a `:focus` / `:focus-visible`
+block that sets outline to none or 0, or `outline-style: none`, with no other
+non-none outline or `box-shadow` in the same block.
 
 The element for `outline-removed` is the enclosing `className=` / `class=`
 attribute value. A quoted value spans to its closing quote. A `{...}` value
@@ -546,11 +547,11 @@ emitted zero utilities from *any* source, package or not):
 | `"use client"` survives raw `.tsx` + `transpilePackages` | pass, both shapes |
 | `@source` reaches `.tsx` inside `node_modules`, including through an npm `file:` symlink | pass, with a control class from the consumer's own source emitted in the same build |
 
-Winning `@source` form: `@source '../node_modules/<pkg>/**/*.tsx';` — an explicit
-file glob. Adjust depth per consumer: `../` when the app owns its `node_modules`,
-`../../` when npm has hoisted them to a workspace root. The bare-directory form
-was never confirmed to work on a host where the scanner was genuinely running, so
-the glob is the form to use, not an assumption that either would do.
+Winning `@source` form: `@source '../node_modules/<pkg>/src/**/*.tsx';` — an
+explicit file glob whose static head is `src/`. A package-root glob
+(`…/<pkg>/**/*.tsx`) over-scans the docs because Tailwind still auto-detects
+alongside `@source`. Adjust depth per consumer: `../` when the app owns its
+`node_modules`, `../../` when npm has hoisted them to a workspace root.
 
 What the probe did **not** cover: fonts. Those three questions are the whole
 matrix — nothing in it touched `fonts.css`, the `url()` in either `@font-face`, or

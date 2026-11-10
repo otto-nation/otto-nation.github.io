@@ -24,7 +24,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 
-import { declaredTokens, OW_TOKEN } from '../src/internal/derive.mjs';
+import { declaredTokens, OW_TOKEN, SOURCE_GLOB } from '../src/internal/derive.mjs';
 import { SourceScanError, sourceFiles } from '../src/internal/source-files.mjs';
 import {
   CONSUMER_RULES,
@@ -318,9 +318,10 @@ if (checkSource && !sourceDirective) {
       detail:
         `  Tailwind v4 skips node_modules, so every utility the package uses would be\n` +
         `  missing from your stylesheet and the page would render unstyled.\n` +
-        `  Add: @source '../node_modules/${PACKAGE}/**/*.tsx';\n` +
-        `  Use an explicit file glob, not a bare directory, and use ../../node_modules\n` +
-        `  instead if npm hoisted them to a workspace root.`,
+        `  Add: @source '../${SOURCE_GLOB}';\n` +
+        `  Pin the glob at src/, not the package root: Tailwind still auto-detects\n` +
+        `  beside @source, and a package-root glob scans README.md and DESIGN.md.\n` +
+        `  Use ../../node_modules instead if npm hoisted them to a workspace root.`,
     },
   );
 } else if (checkSource) {
