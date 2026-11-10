@@ -122,6 +122,17 @@ export default function UiPage() {
       <section data-specimen="button-page-ondark">
         <Button onDark>Page onDark</Button>
       </section>
+      <section
+        data-specimen="segmented-ondark"
+        className="bg-[var(--ow-block)] p-[var(--ow-space-4)]"
+      >
+        <SegmentedControl
+          options={SEGMENTED_OPTIONS}
+          value="open"
+          label="Status"
+          onDark
+        />
+      </section>
       <section data-specimen="button-page-danger">
         <Button variant="danger">Delete</Button>
       </section>

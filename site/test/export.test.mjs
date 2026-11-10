@@ -297,6 +297,31 @@ test('the /ui specimen renders SegmentedControl and ListRow', () => {
     }
   }
 
+  const onDark = section(html, 'segmented-ondark');
+  assert.ok(onDark.includes('--ow-block'), 'onDark specimen is not on the block band');
+  assert.ok(onDark.includes('--ow-block-hairline'), 'onDark track hairline missing');
+  assert.ok(!onDark.includes('--ow-hairline'), 'onDark track used the canvas hairline');
+  assert.ok(!onDark.includes('--ow-canvas'), 'onDark track used canvas fill');
+  const onDarkButtons = [...onDark.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
+  assert.equal(onDarkButtons.length, 3, 'onDark should have three segments');
+  const onDarkPressed = onDarkButtons.filter((tag) => /aria-pressed="true"/.test(tag));
+  assert.equal(onDarkPressed.length, 1, 'onDark should have exactly one pressed segment');
+  assert.ok(
+    onDarkPressed[0].includes('bg-[var(--ow-block-ink)]') &&
+      onDarkPressed[0].includes('text-[var(--ow-block)]'),
+    'onDark pressed segment is not block-ink fill with block text',
+  );
+  const onDarkRest = onDarkButtons.filter((tag) => !/aria-pressed="true"/.test(tag));
+  for (const tag of onDarkRest) {
+    assert.match(tag, /aria-pressed="false"/, 'onDark rest segment missing aria-pressed=false');
+    assert.ok(tag.includes('--ow-block-ink-muted'), 'onDark rest segment muted ink missing');
+    assert.doesNotMatch(
+      tag,
+      /hover:bg-/,
+      'onDark rest segment should not hover-fill',
+    );
+  }
+
   const restRow = section(html, 'list-row-rest');
   assert.ok(restRow.includes('otto-nation/brand'), 'list-row text missing');
   assert.ok(restRow.includes('--ow-font-body'), 'list-row body font missing');
