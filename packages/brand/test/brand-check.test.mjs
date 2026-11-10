@@ -141,6 +141,28 @@ test('a bare-directory @source that does resolve is accepted', () => {
   assert.equal(code, 0);
 });
 
+test('a package-root @source glob warns and --strict fails', () => {
+  const dir = fixture({
+    css: GOOD_CSS.replace(
+      GOOD_SOURCE,
+      "'../node_modules/@otto-nation/brand/**/*.tsx'",
+    ),
+  });
+  const warned = run(dir);
+  assert.equal(warned.code, 0);
+  assert.match(warned.output, /warning source-too-broad:/);
+  assert.match(warned.output, /SOURCE_GLOB/);
+  const strict = run(dir, { extra: ['--strict'] });
+  assert.equal(strict.code, 1);
+  assert.match(strict.output, /error source-too-broad:/);
+});
+
+test('the src @source glob does not warn source-too-broad', () => {
+  const { code, output } = run(fixture());
+  assert.equal(code, 0);
+  assert.doesNotMatch(output, /source-too-broad/);
+});
+
 test('a missing tokens.css import fails', () => {
   const { code, output } = run(fixture({
     css: GOOD_CSS.replace("@import '@otto-nation/brand/tokens.css';\n", ''),

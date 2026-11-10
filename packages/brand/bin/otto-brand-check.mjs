@@ -13,8 +13,10 @@
 //     and a tokens.css this package can still parse those names out of at all
 //
 // It also warns on style drift in --src (literal colours, palette colours, pill
-// radii, hover borders, removed outlines, redefined tokens). Warnings print
-// and leave the exit code 0 unless --strict or --error <id> escalates them.
+// radii, hover borders, removed outlines, redefined tokens) and on an @source
+// glob whose literal head is the package root rather than src/ (source-too-broad).
+// Warnings print and leave the exit code 0 unless --strict or --error <id>
+// escalates them.
 //
 // Usage:
 //   otto-brand-check --css <entrypoint.css> \
@@ -22,7 +24,7 @@
 //                    --src <dir> [<dir>...] [--strict] [--error <id>]
 
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import { declaredTokens, OW_TOKEN, SOURCE_GLOB } from '../src/internal/derive.mjs';
 import { SourceScanError, sourceFiles } from '../src/internal/source-files.mjs';
@@ -58,6 +60,7 @@ const ERRORABLE = new Set([
   ...CONSUMER_RULES.map((rule) => rule.id),
   ...CONFIG_RULE_IDS,
   'src-empty',
+  'source-too-broad',
   IGNORE_REASON.id,
   IGNORE_UNKNOWN_RULE.id,
   IGNORE_UNUSED.id,
@@ -154,6 +157,10 @@ function usage(message) {
     'usage: otto-brand-check --css <file> (--next-config <file> | --vite-config <file>) --src <dir> [<dir>...] [--strict] [--error <id>]',
   );
   process.exit(2);
+}
+
+function isBrandPackageRoot(resolved) {
+  return basename(resolved) === 'brand' && basename(dirname(resolved)) === '@otto-nation';
 }
 
 function displayPath(path) {
@@ -345,6 +352,19 @@ if (checkSource && !sourceDirective) {
           `  directive were absent.\n` +
           `  Use ../node_modules/... when the app owns its node_modules and\n` +
           `  ../../node_modules/... when npm hoisted them to a workspace root.`,
+      },
+    );
+  } else if (isBrandPackageRoot(resolved)) {
+    report(
+      args.css,
+      'source-too-broad',
+      'the @source glob is rooted at the package, not src/.',
+      {
+        detail:
+          `  Tailwind still auto-detects beside @source, so a package-root glob scans\n` +
+          `  README.md and DESIGN.md. Class-shaped prose in those files compiles to\n` +
+          `  invalid CSS and next dev 500s.\n` +
+          `  Use SOURCE_GLOB: @source '../${SOURCE_GLOB}';`,
       },
     );
   }

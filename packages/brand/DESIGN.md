@@ -726,8 +726,10 @@ primitives ship with `@otto-nation/brand` from 1.3.0. `tokens.json` and the
 length tokens ship from 1.4.0. From 1.5.0, `otto-brand-check` flags
 `literal-color`, `palette-color`, `pill-radius`, `hover-border`,
 `outline-removed` and `token-redefined`, which map to the Don'ts above, as
-warnings unless the consumer runs `--strict`. Textarea, Select, Field, Checkbox,
-IconButton, Dialog, Toast, Table and Button's `danger` variant ship from 1.5.0.
+warnings unless the consumer runs `--strict`. A package-root `@source` glob is
+`source-too-broad` (warning; `--strict` is an error). Textarea, Select, Field,
+Checkbox, IconButton, Dialog, Toast, Table and Button's `danger` variant ship
+from 1.5.0.
 Locate this file with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.
