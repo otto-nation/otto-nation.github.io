@@ -16,16 +16,16 @@ export type CardItem = {
 
 // Gap is keyed to the column count rather than exposed as a prop because the
 // two shipped grids pair them: the 3-column grid links its cards and needs the
-// wider gap to absorb their -m-4 hit area, the 2-column grid does not.
+// wider gap to absorb their space-4 hit area, the 2-column grid does not.
 const COLUMNS = {
-  2: 'grid-cols-1 gap-4 sm:grid-cols-2',
-  3: 'grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3',
+  2: 'grid-cols-1 gap-[var(--ow-space-4)] sm:grid-cols-2',
+  3: 'grid-cols-1 gap-[var(--ow-space-6)] sm:grid-cols-2 lg:grid-cols-3',
 } as const;
 
 // The negative margin is the hit area: a linked card is clickable a little
 // beyond its text, which is why only the linking grid gets the wider gap above.
 const LINKED_CARD =
-  '-m-4 block rounded-lg p-4 transition-colors hover:bg-[var(--ow-hover)]';
+  '-m-[var(--ow-space-4)] block rounded-[var(--ow-radius-lg)] p-[var(--ow-space-4)] transition-colors hover:bg-[var(--ow-hover)]';
 
 // Subsumes Included and HowItWorks, which were the same component — a grid of
 // hairline-bordered cards — written twice, differing only in whether a card
@@ -49,9 +49,9 @@ export function CardGrid({
         const face = (
           <>
             <h2 className="text-sm font-bold tracking-tight">{item.title}</h2>
-            <p className="mt-1 text-xs leading-relaxed text-[var(--ow-ink-muted)]">{item.body}</p>
+            <p className="mt-[var(--ow-space-1)] text-xs leading-relaxed text-[var(--ow-ink-muted)]">{item.body}</p>
             {item.meta ? (
-              <p className="mt-3 font-mono text-xs text-[var(--ow-ink-muted)]">{item.meta}</p>
+              <p className="mt-[var(--ow-space-3)] font-mono text-xs text-[var(--ow-ink-muted)]">{item.meta}</p>
             ) : null}
           </>
         );
@@ -60,8 +60,8 @@ export function CardGrid({
           return (
             <div
               key={key}
-              className="rounded-lg border border-[var(--ow-hairline)] p-4"
-              style={item.accent ? { borderLeft: `3px solid ${item.accent}` } : undefined}
+              className="rounded-[var(--ow-radius-lg)] border border-[var(--ow-hairline)] p-[var(--ow-space-4)]"
+              style={item.accent ? { borderLeft: `var(--ow-rule-accent) solid ${item.accent}` } : undefined}
             >
               {face}
             </div>

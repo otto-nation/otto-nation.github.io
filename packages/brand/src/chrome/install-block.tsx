@@ -19,7 +19,7 @@ export function InstallBlock({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className={twMerge('overflow-hidden rounded-lg bg-[var(--ow-block)]', className)}>
+    <div className={twMerge('overflow-hidden rounded-[var(--ow-radius-lg)] bg-[var(--ow-block)]', className)}>
       <div className="flex items-center justify-between border-b border-[var(--ow-block-hairline)] px-3 py-2">
         <span className="font-mono text-[9px] text-[var(--ow-block-ink-muted)]">{shell}</span>
         <button

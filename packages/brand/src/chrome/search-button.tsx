@@ -23,10 +23,10 @@ export function SearchButton() {
       type="button"
       onClick={() => setOpenSearch(true)}
       aria-label="Search documentation"
-      className="flex items-center gap-2 rounded-md border border-[var(--ow-hairline)] px-2 py-1 transition-colors hover:bg-[var(--ow-hover)]"
+      className="flex items-center gap-2 rounded-[var(--ow-radius-md)] border border-[var(--ow-hairline)] px-2 py-1 transition-colors hover:bg-[var(--ow-hover)]"
     >
       search
-      <kbd className="rounded-sm border border-[var(--ow-hairline)] px-1 text-[10px] leading-4">
+      <kbd className="rounded-[var(--ow-radius-sm)] border border-[var(--ow-hairline)] px-1 text-[10px] leading-4">
         {hotKey.map((key) => (
           // The key code is the entry's own identifier — `display` is a
           // ReactNode, so it cannot be one — and it survives a sequence the

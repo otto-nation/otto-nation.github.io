@@ -2,7 +2,7 @@ import type { MouseEventHandler, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // DESIGN.md `list-row` / `list-row-hover` / `list-row-selected` — body role,
-// row heights; selected fill plus a 2px primary left rule (D6).
+// row heights; selected fill plus a --ow-rule-selected primary left rule (D6).
 export function ListRow({
   children,
   selected = false,
@@ -20,7 +20,7 @@ export function ListRow({
     'flex w-full items-center text-left [font:var(--ow-font-body)] text-[var(--ow-ink)]',
     dense ? 'h-[var(--ow-row-height-dense)]' : 'h-[var(--ow-row-height)]',
     selected
-      ? 'border-l-[2px] border-l-[var(--color-fd-primary)] bg-[var(--ow-selected)]'
+      ? 'border-l-[length:var(--ow-rule-selected)] border-l-[var(--color-fd-primary)] bg-[var(--ow-selected)]'
       : 'hover:bg-[var(--ow-hover)]',
     className,
   );

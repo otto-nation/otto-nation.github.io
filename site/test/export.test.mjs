@@ -268,7 +268,7 @@ test('the /ui specimen renders SegmentedControl and ListRow', () => {
   assert.match(selectedRow, /aria-current="true"/);
   assert.ok(selectedRow.includes('--ow-selected'), 'selected row fill missing');
   assert.ok(
-    selectedRow.includes('border-l-[2px]') &&
+    selectedRow.includes('border-l-[length:var(--ow-rule-selected)]') &&
       selectedRow.includes('border-l-[var(--color-fd-primary)]'),
     'selected row left rule missing',
   );
@@ -388,7 +388,11 @@ test('landing-page linked cards hover with a fill, never a border', () => {
   assert.doesNotMatch(INDEX_HTML, /hover:border/, 'index.html changes a border on hover');
   const cards = [...INDEX_HTML.matchAll(/<a\b[^>]*>/g)]
     .map((match) => match[0])
-    .filter((tag) => tag.includes('-m-4') && tag.includes('rounded-lg'));
+    .filter(
+      (tag) =>
+        tag.includes('-m-[var(--ow-space-4)]') &&
+        tag.includes('rounded-[var(--ow-radius-lg)]'),
+    );
   assert.ok(cards.length >= 3, `expected linked property cards, got ${cards.length}`);
   for (const tag of cards) {
     assert.ok(
