@@ -106,7 +106,7 @@
   --color-fd-card-foreground: var(--ow-ink);
   --color-fd-border: var(--ow-hairline);
   --color-fd-primary: var(--ow-rosa);
-  --color-fd-primary-foreground: var(--ow-canvas);
+  --color-fd-primary-foreground: var(--ow-on-rosa);
   --color-fd-secondary: var(--ow-surface);
   --color-fd-secondary-foreground: var(--ow-ink);
   --color-fd-accent: var(--ow-surface);
@@ -231,10 +231,12 @@
   /* Every other --color-fd-* role is derived: it references an --ow-* token
    * redefined above, and var() resolves against this element's own cascaded
    * value of that token, so the :root declaration already picks up the dark
-   * ramp once .dark is active. --color-fd-primary is the one exception — it
-   * swaps to a different token (amarillo instead of rosa) rather than
-   * following a redefined one, so it must be restated here. */
+   * ramp once .dark is active. --color-fd-primary and
+   * --color-fd-primary-foreground are the exceptions — they swap to different
+   * tokens (amarillo/on-amarillo instead of rosa/on-rosa) rather than
+   * following a redefined one, so they must be restated here. */
   --color-fd-primary: var(--ow-amarillo);
+  --color-fd-primary-foreground: var(--ow-on-amarillo);
 
   /* --ow-scrim swaps the mixed token (canvas instead of block) rather than
    * following a redefined one, so it must be restated here. A 50% block mix

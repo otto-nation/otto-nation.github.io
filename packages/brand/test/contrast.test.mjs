@@ -276,6 +276,24 @@ test('the dark scrim colour is not lighter than the dark canvas', () => {
   );
 });
 
+test('fumadocs primary foreground on primary clears AA in both themes', () => {
+  for (const [theme, tokens] of eachRamp()) {
+    const fgRole = fdRoleToken(TOKENS, '--color-fd-primary-foreground', theme);
+    const bgRole = fdRoleToken(TOKENS, '--color-fd-primary', theme);
+    assert.ok(fgRole, `${theme}: missing --color-fd-primary-foreground`);
+    assert.ok(bgRole, `${theme}: missing --color-fd-primary`);
+    const fg = tokens.get(fgRole);
+    const bg = tokens.get(bgRole);
+    assert.ok(fg, `${theme}: ${fgRole} is not declared`);
+    assert.ok(bg, `${theme}: ${bgRole} is not declared`);
+    const ratio = contrast(fg, bg);
+    assert.ok(
+      ratio >= 4.5,
+      `${theme}: ${fgRole} on ${bgRole} is ${ratio.toFixed(2)}:1, under AA`,
+    );
+  }
+});
+
 test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces', () => {
   const ringToken = focusRingToken(TOKENS);
   for (const [theme, tokens] of eachRamp()) {

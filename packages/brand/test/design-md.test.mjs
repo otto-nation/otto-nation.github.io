@@ -198,37 +198,42 @@ test('the lengths region lists every focus/rule/pane/scrim token with its value'
   }
 });
 
-function darkColor(ref, colors) {
+function resolveColor(ref, colors, theme) {
   const match = ref.match(/^\{colors\.([a-z0-9-]+)\}$/);
   if (!match) return null;
   const name = match[1];
-  const key = name.startsWith('dark-') ? name : `dark-${name}`;
-  return colors[key];
+  if (theme === 'dark') {
+    const key = name.startsWith('dark-') ? name : `dark-${name}`;
+    return colors[key];
+  }
+  return colors[name];
 }
 
-// The pinned linter checks light text/bg pairs. This walks the same YAML and
-// resolves each {colors.x} against the dark-* ramp so a dark-only miss fails.
-test('each component text/bg pair clears AA on the dark ramp', () => {
+// The pinned linter checks light pairs that already name both colours, and
+// skips every text-only entry. Measure those on {colors.canvas} in both ramps.
+test('each component text pair clears AA on both ramps, missing fill on canvas', () => {
   const designMd = read('DESIGN.md');
   const colors = yamlColors(designMd);
   const components = yamlComponents(designMd);
   let pairs = 0;
-  for (const [name, props] of Object.entries(components)) {
-    const fgRef = props.textColor;
-    const bgRef = props.backgroundColor;
-    if (!fgRef || !bgRef) continue;
-    const fg = darkColor(fgRef, colors);
-    const bg = darkColor(bgRef, colors);
-    assert.ok(fg, `${name}: ${fgRef} has no dark-* colour`);
-    assert.ok(bg, `${name}: ${bgRef} has no dark-* colour`);
-    const ratio = contrast(fg, bg);
-    assert.ok(
-      ratio >= 4.5,
-      `dark ${name}: ${fgRef} on ${bgRef} is ${ratio.toFixed(2)}:1, under AA`,
-    );
-    pairs += 1;
+  for (const theme of ['light', 'dark']) {
+    for (const [name, props] of Object.entries(components)) {
+      const fgRef = props.textColor;
+      if (!fgRef) continue;
+      const bgRef = props.backgroundColor ?? '{colors.canvas}';
+      const fg = resolveColor(fgRef, colors, theme);
+      const bg = resolveColor(bgRef, colors, theme);
+      assert.ok(fg, `${theme} ${name}: ${fgRef} has no colour`);
+      assert.ok(bg, `${theme} ${name}: ${bgRef} has no colour`);
+      const ratio = contrast(fg, bg);
+      assert.ok(
+        ratio >= 4.5,
+        `${theme} ${name}: ${fgRef} on ${bgRef} is ${ratio.toFixed(2)}:1, under AA`,
+      );
+      pairs += 1;
+    }
   }
-  assert.ok(pairs >= 12, `expected at least 12 text/bg pairs, got ${pairs}`);
+  assert.ok(pairs >= 50, `expected at least 50 text/bg pairs, got ${pairs}`);
 });
 
 // Text slots (foreground, 1–6, 8–14) must clear AA on that scheme's

@@ -392,11 +392,9 @@ components:
     textColor: "{colors.block}"
     rounded: "{rounded.md}"
   card:
-    backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
   card-accent:
-    backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
   card-linked:
