@@ -85,29 +85,9 @@ runs:
       # regression would surface in otto-workbench's CI after the release.
       run: ./node_modules/.bin/otto-brand-verify --out out --control py-7
 
-    - name: Built CSS has no package-doc placeholder rules
+    - name: Tailwind scans only the brand's components
       shell: bash
       working-directory: fixtures/tarball-consumer
-      # The recommended @source glob starts at src/, so README/DESIGN prose must
-      # not compile. --ow-radius-* and 9999px|50% are the two tokens the 1.5.0
-      # README produced as invalid CSS when the glob over-scanned the package.
-      run: |
-        node --input-type=module -e '
-          import { readdirSync, readFileSync } from "node:fs";
-          import { join } from "node:path";
-          const staticDir = join("out", "_next", "static");
-          const files = readdirSync(staticDir, { recursive: true, withFileTypes: true })
-            .filter((entry) => entry.isFile() && entry.name.endsWith(".css"))
-            .map((entry) => join(entry.parentPath, entry.name));
-          if (files.length === 0) {
-            console.error("no CSS under out/_next/static");
-            process.exit(1);
-          }
-          const css = files.map((file) => readFileSync(file, "utf8")).join("\n");
-          for (const needle of ["--ow-radius-*", "9999px|50%"]) {
-            if (css.includes(needle)) {
-              console.error(`built CSS contains ${needle}`);
-              process.exit(1);
-            }
-          }
-        '
+      # The built CSS cannot show an over-broad @source glob: the production build
+      # drops the invalid rules package prose produces. The scanned-file list can.
+      run: node check-source-scope.mjs
