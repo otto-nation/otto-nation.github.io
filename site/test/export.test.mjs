@@ -643,6 +643,33 @@ test('the /ui specimen renders StateMessage', () => {
   assert.match(error, /border-\[var\(--ow-hairline\)\]/);
 });
 
+test('the /ui specimen renders Dialog and Toast', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const dialogBlock = section(html, 'dialog-specimen');
+  const labelledby = dialogBlock.match(/aria-labelledby="([^"]+)"/)?.[1];
+  assert.ok(labelledby, 'dialog missing aria-labelledby');
+  assert.match(
+    dialogBlock,
+    new RegExp(`<h2\\b[^>]*id="${labelledby}"`),
+    'aria-labelledby does not match the h2 id',
+  );
+  assert.match(dialogBlock, /<form\b[^>]*method="dialog"/);
+  assert.match(dialogBlock, /\bopen\b/);
+  assert.ok(dialogBlock.includes('m-auto'), 'dialog missing m-auto');
+  assert.ok(
+    dialogBlock.includes('backdrop:bg-[var(--ow-scrim)]'),
+    'dialog missing backdrop scrim class',
+  );
+  assert.doesNotMatch(dialogBlock, /shadow/);
+
+  const info = section(html, 'toast-info');
+  assert.match(info, /role="status"/);
+  assert.doesNotMatch(info, /role="alert"/);
+
+  const fail = section(html, 'toast-fail');
+  assert.match(fail, /role="alert"/);
+});
+
 test('the /ui specimen renders StatusGlyph and Tag', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   for (const [status, { char, label, token }] of Object.entries(STATUS_SPECIMENS)) {
@@ -711,6 +738,15 @@ test('the built CSS carries the anil :focus-visible ring', () => {
     .map((entry) => join(entry.parentPath, entry.name));
   const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
   assert.match(css, /:focus-visible\s*\{[^}]*--ow-anil/);
+});
+
+test('the built CSS carries a dialog ::backdrop rule naming --ow-scrim', () => {
+  const staticDir = join(OUT_DIR, '_next', 'static');
+  const cssFiles = readdirSync(staticDir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+    .map((entry) => join(entry.parentPath, entry.name));
+  const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
+  assert.match(css, /::backdrop\s*\{[^}]*--ow-scrim/);
 });
 
 test('site/app/icon.svg byte-equals the brand icon.svg export', () => {

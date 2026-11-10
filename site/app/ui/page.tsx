@@ -3,6 +3,7 @@ import {
   AppCard,
   Button,
   Checkbox,
+  Dialog,
   Field,
   IconButton,
   Input,
@@ -14,6 +15,7 @@ import {
   StateMessage,
   StatusGlyph,
   Tag,
+  Toast,
   type ActionButtonVariant,
   type AppCardVariant,
   type SegmentedOption,
@@ -256,6 +258,27 @@ export default function UiPage() {
       </section>
       <section data-specimen="checkbox-bare">
         <Checkbox aria-label="Bench" />
+      </section>
+      <section data-specimen="dialog-specimen">
+        <Dialog
+          id="dialog-specimen"
+          open
+          title="Delete routine"
+          actions={
+            <>
+              <Button variant="outline">Cancel</Button>
+              <Button variant="danger">Delete</Button>
+            </>
+          }
+        >
+          This cannot be undone.
+        </Dialog>
+      </section>
+      <section data-specimen="toast-info">
+        <Toast>Saved</Toast>
+      </section>
+      <section data-specimen="toast-fail">
+        <Toast status="fail">Could not save</Toast>
       </section>
       {STATE_MESSAGES.map(({ kind, children, action }) => (
         <section key={kind} data-specimen={`state-${kind}`}>

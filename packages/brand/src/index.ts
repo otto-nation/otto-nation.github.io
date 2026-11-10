@@ -16,6 +16,8 @@ export { Textarea } from './primitives/textarea';
 export { Select } from './primitives/select';
 export { Checkbox } from './primitives/checkbox';
 export { IconButton, type IconButtonProps } from './primitives/icon-button';
+export { Dialog } from './primitives/dialog';
+export { Toast } from './primitives/toast';
 export { StateMessage, type StateMessageKind } from './primitives/state-message';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';
