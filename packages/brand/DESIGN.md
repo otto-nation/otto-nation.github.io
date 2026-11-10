@@ -227,6 +227,7 @@ Documented contrast claims from `tokens.css`:
 | danger | 8.22:1 | canvas | dark |
 | danger | 7.27:1 | surface | dark |
 | canvas | 8.22:1 | danger | dark |
+| canvas | 7.25:1 | anil | dark |
 | info | 9.19:1 | canvas | dark |
 | info | 8.13:1 | surface | dark |
 | magenta | 6.86:1 | canvas | dark |
@@ -330,7 +331,8 @@ Overlays stay flat. Depth is an edge, never a darker fill.
 
 Controls (buttons, segmented, inputs): `rounded-md` → `{rounded.md}` (6px).
 Cards, popovers, and windows: `rounded-lg` → `{rounded.lg}` (8px). Tags:
-`rounded-sm` → `{rounded.sm}` (4px). No `full`.
+`rounded-sm` → `{rounded.sm}` (4px). No `full`. Checkbox box: `{rounded.sm}`.
+At 16px, `{rounded.md}` reads as a circle.
 
 Do not use pills. Default status is coloured text plus a glyph. A label
 that needs a container is a `tag`: hairline border, `{rounded.sm}`,
@@ -395,6 +397,26 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
+  icon-button:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-selected:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
+  icon-button-danger:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.danger}"
+    rounded: "{rounded.md}"
+    size: "{spacing.control-height}"
   button-on-dark:
     backgroundColor: "{colors.block-ink}"
     textColor: "{colors.block}"
@@ -496,6 +518,17 @@ components:
   field-error:
     textColor: "{colors.danger}"
     typography: "{typography.meta}"
+  checkbox:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sm}"
+    size: "{spacing.4}"
+    typography: "{typography.label}"
+  checkbox-checked:
+    backgroundColor: "{colors.anil}"
+    textColor: "{colors.canvas}"
+    rounded: "{rounded.sm}"
+    size: "{spacing.4}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
@@ -503,6 +536,7 @@ components:
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
+- **icon-button** — square at control height; outline edge; required `label`; hover, pressed and toggle-selected as above. The dark edge-on-hover reading is 2.77:1 against the hover fill; the edge still reads 3.44:1 against the canvas outside it, which locates the control.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
@@ -521,6 +555,7 @@ components:
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
 - **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
 - **field** — label role above, meta-role hint or danger error below; `id` wires `htmlFor` and `aria-describedby`.
+- **checkbox** — outline edge, `{rounded.sm}`; checked is an anil fill with a canvas check.
 
 | State | Treatment |
 | --- | --- |
