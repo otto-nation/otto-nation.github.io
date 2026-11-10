@@ -2,7 +2,9 @@ import {
   ActionButton,
   AppCard,
   Button,
+  Checkbox,
   Field,
+  IconButton,
   Input,
   Select,
   Textarea,
@@ -219,6 +221,41 @@ export default function UiPage() {
           <option value="closed">Closed</option>
           <option value="all">All</option>
         </Select>
+      </section>
+      <section data-specimen="icon-button-rest">
+        <IconButton label="Close">×</IconButton>
+      </section>
+      <section data-specimen="icon-button-dense">
+        <IconButton label="Close" dense>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-pressed">
+        <IconButton label="Close" pressed>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-danger">
+        <IconButton label="Close" tone="danger">
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="icon-button-disabled">
+        <IconButton label="Close" disabled>
+          ×
+        </IconButton>
+      </section>
+      <section data-specimen="checkbox-rest">
+        <Checkbox label="Bench" />
+      </section>
+      <section data-specimen="checkbox-checked">
+        <Checkbox label="Bench" defaultChecked />
+      </section>
+      <section data-specimen="checkbox-disabled">
+        <Checkbox label="Bench" disabled />
+      </section>
+      <section data-specimen="checkbox-bare">
+        <Checkbox aria-label="Bench" />
       </section>
       {STATE_MESSAGES.map(({ kind, children, action }) => (
         <section key={kind} data-specimen={`state-${kind}`}>

@@ -14,6 +14,8 @@ export { Input } from './primitives/input';
 export { Field, type FieldControlProps } from './primitives/field';
 export { Textarea } from './primitives/textarea';
 export { Select } from './primitives/select';
+export { Checkbox } from './primitives/checkbox';
+export { IconButton, type IconButtonProps } from './primitives/icon-button';
 export { StateMessage, type StateMessageKind } from './primitives/state-message';
 export { Nav, ORG_HOME } from './chrome/nav';
 export { Footer, PROPERTIES } from './chrome/footer';

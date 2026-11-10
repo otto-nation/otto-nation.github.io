@@ -505,6 +505,99 @@ test('the /ui specimen renders Field and Input invalid', () => {
   );
 });
 
+test('the /ui specimen renders IconButton and Checkbox', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  for (const state of ['rest', 'dense', 'pressed', 'danger', 'disabled']) {
+    const block = section(html, `icon-button-${state}`);
+    const button = block.match(/<button\b[^>]*>/)?.[0];
+    assert.ok(button, `icon-button ${state} is not a button`);
+    assert.match(button, /aria-label="Close"/);
+    assert.match(block, /<span\b[^>]*aria-hidden="true"/);
+    assert.match(button, /border-\[var\(--ow-outline\)\]/);
+    if (state === 'dense') {
+      assert.ok(
+        button.includes('size-[var(--ow-control-height-dense)]'),
+        'icon-button dense missing size-[control-height-dense]',
+      );
+    } else {
+      assert.ok(
+        button.includes('size-[var(--ow-control-height)]') &&
+          !button.includes('--ow-control-height-dense'),
+        `icon-button ${state} should use size-[control-height]`,
+      );
+    }
+    if (state === 'rest') {
+      assert.ok(
+        button.includes('hover:bg-[var(--ow-hover)]'),
+        'icon-button rest missing hover fill',
+      );
+      assert.ok(
+        button.includes('active:bg-[var(--ow-selected)]'),
+        'icon-button rest missing pressed fill',
+      );
+    }
+    if (state === 'pressed') {
+      assert.match(button, /aria-pressed="true"/);
+      assert.ok(
+        button.includes('bg-[var(--ow-ink)]') &&
+          button.includes('text-[var(--ow-canvas)]'),
+        'icon-button pressed fill missing',
+      );
+      assert.doesNotMatch(
+        button,
+        /hover:bg-/,
+        'icon-button pressed should not hover-fill',
+      );
+    }
+    if (state === 'danger') {
+      assert.ok(button.includes('--ow-danger'), 'icon-button danger token missing');
+    }
+    if (state === 'disabled') {
+      assert.match(button, /\bdisabled\b/, 'icon-button disabled is not disabled');
+    }
+  }
+
+  for (const state of ['rest', 'checked', 'disabled', 'bare']) {
+    const block = section(html, `checkbox-${state}`);
+    const input = block.match(/<input\b[^>]*>/)?.[0];
+    assert.ok(input, `checkbox ${state} is not an input`);
+    assert.match(input, /type="checkbox"/);
+    assert.ok(input.includes('appearance-none'), `${state} missing appearance-none`);
+    assert.ok(input.includes('--ow-radius-sm'), `${state} missing radius-sm`);
+    assert.match(input, /border-\[var\(--ow-outline\)\]/);
+    assert.ok(
+      input.includes('checked:bg-[var(--ow-anil)]'),
+      `${state} missing checked anil fill`,
+    );
+    assert.match(
+      input,
+      /(?:^|[\s"'`])peer(?:[\s"'`]|$)/,
+      `${state} input missing peer`,
+    );
+    assert.match(
+      block,
+      /<svg\b[^>]*aria-hidden="true"/,
+      `${state} check svg missing aria-hidden`,
+    );
+    assert.ok(
+      block.includes('peer-checked:visible'),
+      `${state} check svg missing peer-checked:visible`,
+    );
+    if (state === 'bare') {
+      assert.doesNotMatch(block, /<label\b/, 'bare checkbox wrapped in a label');
+    } else {
+      assert.match(block, /<label\b/, `${state} checkbox is not wrapped in a label`);
+    }
+    if (state === 'checked') {
+      assert.match(input, /\bchecked\b/, 'checked checkbox did not render checked');
+    }
+    if (state === 'disabled') {
+      assert.match(input, /\bdisabled\b/, 'disabled checkbox is not disabled');
+    }
+  }
+});
+
 test('the /ui page has unique ids', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
