@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,34 +49,30 @@ function fixture(overrides = {}) {
   return dir;
 }
 
-function run(dir, { src = join(dir, 'app'), check = CHECK } = {}) {
-  try {
-    const stdout = execFileSync(
-      process.execPath,
-      [check, '--css', join(dir, 'app', 'global.css'), '--next-config',
-        join(dir, 'next.config.mjs'), '--src', src],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-    return { code: 0, output: stdout };
-  } catch (error) {
-    return { code: error.status, output: `${error.stdout}${error.stderr}` };
-  }
+function run(dir, { src = join(dir, 'app'), check = CHECK, extra = [] } = {}) {
+  const result = spawnSync(
+    process.execPath,
+    [check, '--css', join(dir, 'app', 'global.css'), '--next-config',
+      join(dir, 'next.config.mjs'), '--src', src, ...extra],
+    { encoding: 'utf8' },
+  );
+  return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
 
 // Copies the check script into its own temp bin/ with the given tokens.css
 // alongside it in src/, since the script always resolves tokens.css relative to
-// its own file location rather than a --src argument. src/internal/derive.mjs
-// comes along because the script imports the token parse from there; without it
-// the copy fails to resolve its own import.
+// its own file location rather than a --src argument. The whole of src/internal/
+// comes along because the script imports derive, style-rules, and source-files;
+// copying only derive.mjs fails with ERR_MODULE_NOT_FOUND.
 function checkWithTokens(tokensCss) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-check-pkg-'));
   tempDirs.push(dir);
   mkdirSync(join(dir, 'bin'), { recursive: true });
-  mkdirSync(join(dir, 'src', 'internal'), { recursive: true });
-  copyFileSync(CHECK, join(dir, 'bin', 'otto-brand-check.mjs'));
-  copyFileSync(
-    fileURLToPath(new URL('../src/internal/derive.mjs', import.meta.url)),
-    join(dir, 'src', 'internal', 'derive.mjs'),
+  cpSync(CHECK, join(dir, 'bin', 'otto-brand-check.mjs'));
+  cpSync(
+    fileURLToPath(new URL('../src/internal', import.meta.url)),
+    join(dir, 'src', 'internal'),
+    { recursive: true },
   );
   writeFileSync(join(dir, 'src', 'tokens.css'), tokensCss);
   return join(dir, 'bin', 'otto-brand-check.mjs');
@@ -290,4 +286,77 @@ test('a --ow-* reference inside an MDX HTML comment does not fail the build', ()
   );
   const { code } = run(dir);
   assert.equal(code, 0);
+});
+
+const STYLE_SNIPPETS = [
+  ['literal-color', 'export default () => <p className="bg-[#18160f]" />;'],
+  ['palette-color', 'export default () => <p className="bg-red-500" />;'],
+  ['pill-radius', 'export default () => <p className="rounded-full" />;'],
+  ['hover-border', 'export default () => <p className="hover:border-ink" />;'],
+  ['outline-removed', 'export default () => <p className="outline-none" />;'],
+  ['token-redefined', 'el.setProperty("--ow-ink", "red");'],
+];
+
+for (const [id, page] of STYLE_SNIPPETS) {
+  test(`style rule ${id} warns and exits 0 by default`, () => {
+    const { code, output } = run(fixture({ page: `${page}\n` }));
+    assert.equal(code, 0);
+    assert.match(output, new RegExp(`page\\.tsx:1:\\d+: warning ${id}:`));
+  });
+}
+
+test('--strict turns a style warning into an error', () => {
+  const { code, output } = run(
+    fixture({ page: 'export default () => <p className="rounded-full" />;\n' }),
+    { extra: ['--strict'] },
+  );
+  assert.equal(code, 1);
+  assert.match(output, /page\.tsx:1:\d+: error pill-radius:/);
+});
+
+test('--error escalates one rule and leaves another as a warning', () => {
+  const { code, output } = run(
+    fixture({
+      page: 'export default () => <p className="rounded-full hover:border-ink" />;\n',
+    }),
+    { extra: ['--error', 'pill-radius'] },
+  );
+  assert.equal(code, 1);
+  assert.match(output, /page\.tsx:1:\d+: error pill-radius:/);
+  assert.match(output, /page\.tsx:1:\d+: warning hover-border:/);
+});
+
+test('--error with an unknown id exits 2', () => {
+  const { code, output } = run(fixture(), { extra: ['--error', 'nonesuch'] });
+  assert.equal(code, 2);
+  assert.match(output, /unknown --error id: nonesuch/);
+});
+
+test('otto-brand-ignore with a reason suppresses the finding', () => {
+  const { code, output } = run(fixture({
+    page:
+      'export default () => <p className="rounded-full" />; // otto-brand-ignore: pill-radius — avatar is a circle\n',
+  }));
+  assert.equal(code, 0);
+  assert.doesNotMatch(output, /pill-radius/);
+});
+
+test('otto-brand-ignore without a reason is an error and suppresses nothing', () => {
+  const { code, output } = run(fixture({
+    page:
+      '// otto-brand-ignore: pill-radius\nexport default () => <p className="rounded-full" />;\n',
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /error ignore-reason:/);
+  assert.match(output, /warning pill-radius:/);
+});
+
+test('a violating tree invoked without new flags still exits 0', () => {
+  const { code, output } = run(fixture({
+    page:
+      'export default () => <p className="rounded-full hover:border-ink outline-none bg-[#18160f]" />;\n',
+  }));
+  assert.equal(code, 0);
+  assert.match(output, /warning pill-radius:/);
+  assert.match(output, /warning hover-border:/);
 });

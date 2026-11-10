@@ -512,6 +512,279 @@ export const RULES = Object.freeze([
 export const CONSUMER_RULES = Object.freeze(RULES.filter((rule) => rule.scope === 'consumer'));
 export const BRAND_RULES = Object.freeze(RULES.filter((rule) => rule.scope === 'brand'));
 
+const SUPPRESSIBLE = new Set(CONSUMER_RULES.map((rule) => rule.id));
+
+export const IGNORE_REASON = Object.freeze({
+  id: 'ignore-reason',
+  summary: 'ignore directive needs a reason after an em dash, en dash, or " - "',
+});
+export const IGNORE_UNKNOWN_RULE = Object.freeze({
+  id: 'ignore-unknown-rule',
+  summary: 'ignore directive names a rule that cannot be suppressed',
+});
+export const IGNORE_UNUSED = Object.freeze({
+  id: 'ignore-unused',
+  summary: 'ignore directive suppressed nothing',
+});
+
+const REASON_SEP = /(?:\s+—\s+|\s+–\s+|\s+-\s+)/;
+
+function skipTemplate(source, start) {
+  let i = start + 1;
+  while (i < source.length && source[i] !== '`') {
+    if (source[i] === '\\') {
+      i += 2;
+      continue;
+    }
+    if (source[i] === '$' && source[i + 1] === '{') {
+      i = skipBalanced(source, i + 1, '{', '}');
+      continue;
+    }
+    i++;
+  }
+  return i < source.length ? i + 1 : i;
+}
+
+function expandJsxComment(source, start, end) {
+  let from = start;
+  let i = start - 1;
+  while (i >= 0 && /[ \t]/.test(source[i])) i--;
+  if (source[i] !== '{') return { start, end };
+  from = i;
+  let j = end;
+  while (j < source.length && /[ \t]/.test(source[j])) j++;
+  if (source[j] === '}') return { start: from, end: j + 1 };
+  return { start, end };
+}
+
+function collectComments(source) {
+  const comments = [];
+  let i = 0;
+  while (i < source.length) {
+    const char = source[i];
+    if (char === "'" || char === '"') {
+      i = skipQuoted(source, i);
+      continue;
+    }
+    if (char === '`') {
+      i = skipTemplate(source, i);
+      continue;
+    }
+    if (char === '/' && source[i + 1] === '*') {
+      const innerStart = i;
+      i += 2;
+      while (i + 1 < source.length && !(source[i] === '*' && source[i + 1] === '/')) i++;
+      if (i + 1 < source.length && source[i] === '*' && source[i + 1] === '/') {
+        i += 2;
+        const expanded = expandJsxComment(source, innerStart, i);
+        comments.push({
+          start: expanded.start,
+          end: expanded.end,
+          innerStart,
+          inner: source.slice(innerStart + 2, i - 2),
+        });
+        continue;
+      }
+      i = innerStart + 1;
+      continue;
+    }
+    if (source.startsWith('<!--', i)) {
+      const close = source.indexOf('-->', i + 4);
+      if (close === -1) {
+        i += 1;
+        continue;
+      }
+      const end = close + 3;
+      comments.push({
+        start: i,
+        end,
+        innerStart: i,
+        inner: source.slice(i + 4, close),
+      });
+      i = end;
+      continue;
+    }
+    if (char === '/' && source[i + 1] === '/') {
+      const end = source.indexOf('\n', i);
+      const stop = end === -1 ? source.length : end;
+      comments.push({
+        start: i,
+        end: stop,
+        innerStart: i,
+        inner: source.slice(i + 2, stop),
+      });
+      i = stop;
+      continue;
+    }
+    i++;
+  }
+  return comments;
+}
+
+function firstCodeIndex(source, comments) {
+  let i = 0;
+  let c = 0;
+  while (i < source.length) {
+    if (/\s/.test(source[i])) {
+      i++;
+      continue;
+    }
+    while (c < comments.length && comments[c].end <= i) c++;
+    if (c < comments.length && i >= comments[c].start && i < comments[c].end) {
+      i = comments[c].end;
+      continue;
+    }
+    return i;
+  }
+  return source.length;
+}
+
+function hasCodeBeforeOnLine(source, index) {
+  const bol = source.lastIndexOf('\n', index - 1) + 1;
+  return /\S/.test(source.slice(bol, index));
+}
+
+function nextNonBlankLine(source, line) {
+  let seen = 1;
+  let i = 0;
+  while (seen <= line && i < source.length) {
+    const n = source.indexOf('\n', i);
+    if (n === -1) return line + 1;
+    i = n + 1;
+    seen++;
+  }
+  while (i < source.length) {
+    const n = source.indexOf('\n', i);
+    const end = n === -1 ? source.length : n;
+    if (/\S/.test(source.slice(i, end))) {
+      const { line: found } = indexToLineColumn(source, i);
+      return found;
+    }
+    if (n === -1) break;
+    i = n + 1;
+  }
+  return line + 1;
+}
+
+function parseIdList(body) {
+  const sep = body.match(REASON_SEP);
+  if (!sep) return { ids: [], reason: null };
+  const ids = body
+    .slice(0, sep.index)
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const reason = body.slice(sep.index + sep[0].length).trim();
+  if (ids.length === 0 || reason.length === 0) return { ids, reason: null };
+  return { ids, reason };
+}
+
+function parseDirectives(source) {
+  const comments = collectComments(source);
+  const codeAt = firstCodeIndex(source, comments);
+  const directives = [];
+  for (const comment of comments) {
+    const inner = comment.inner;
+    const patterns = [
+      { file: true, re: /otto-brand-ignore-file:/g },
+      { file: false, re: /otto-brand-ignore:/g },
+    ];
+    for (const { file, re } of patterns) {
+      re.lastIndex = 0;
+      let match;
+      while ((match = re.exec(inner))) {
+        const tokenAt = comment.innerStart + innerStartOffset(source, comment) + match.index;
+        const after = inner.slice(match.index + match[0].length);
+        const lineEnd = after.search(/\n/);
+        const body = (lineEnd === -1 ? after : after.slice(0, lineEnd)).trim();
+        const { ids, reason } = parseIdList(body);
+        const { line, column } = indexToLineColumn(source, tokenAt);
+        const targetLine = file
+          ? null
+          : hasCodeBeforeOnLine(source, comment.start)
+            ? line
+            : nextNonBlankLine(source, line);
+        directives.push({
+          file,
+          applies: !file || comment.start < codeAt,
+          ids,
+          reason,
+          line,
+          column,
+          targetLine,
+        });
+      }
+    }
+  }
+  return directives;
+}
+
+function innerStartOffset(source, comment) {
+  if (source.startsWith('<!--', comment.innerStart)) return 4;
+  return 2;
+}
+
+function applySuppressions(source, findings) {
+  const directives = parseDirectives(source);
+  const kept = [];
+  const used = new Set();
+  const fileIds = new Map();
+  const lineIds = new Map();
+
+  for (const [index, directive] of directives.entries()) {
+    if (directive.reason === null) {
+      kept.push({ rule: IGNORE_REASON, line: directive.line, column: directive.column });
+      used.add(index);
+      continue;
+    }
+    const knownIds = [];
+    for (const id of directive.ids) {
+      if (!SUPPRESSIBLE.has(id)) {
+        kept.push({ rule: IGNORE_UNKNOWN_RULE, line: directive.line, column: directive.column });
+        used.add(index);
+        continue;
+      }
+      knownIds.push(id);
+    }
+    if (!directive.applies) continue;
+    if (directive.file) {
+      for (const id of knownIds) {
+        if (!fileIds.has(id)) fileIds.set(id, []);
+        fileIds.get(id).push(index);
+      }
+    } else {
+      for (const id of knownIds) {
+        const list = lineIds.get(directive.targetLine) ?? [];
+        list.push({ id, index });
+        lineIds.set(directive.targetLine, list);
+      }
+    }
+  }
+
+  for (const finding of findings) {
+    const fileHits = fileIds.get(finding.rule.id);
+    if (fileHits) {
+      for (const index of fileHits) used.add(index);
+      continue;
+    }
+    const lineHits = lineIds.get(finding.line);
+    const match = lineHits?.find((hit) => hit.id === finding.rule.id);
+    if (match) {
+      used.add(match.index);
+      continue;
+    }
+    kept.push(finding);
+  }
+
+  for (const [index, directive] of directives.entries()) {
+    if (used.has(index) || directive.reason === null) continue;
+    if (directive.ids.some((id) => SUPPRESSIBLE.has(id))) {
+      kept.push({ rule: IGNORE_UNUSED, line: directive.line, column: directive.column });
+    }
+  }
+  return kept;
+}
+
 export function findViolations(source, { kind, rules = CONSUMER_RULES, known: _known } = {}) {
   const masked = maskComments(source);
   const findings = [];
@@ -521,6 +794,7 @@ export function findViolations(source, { kind, rules = CONSUMER_RULES, known: _k
       findings.push({ rule, line, column });
     }
   }
-  findings.sort((a, b) => a.line - b.line || a.column - b.column || a.rule.id.localeCompare(b.rule.id));
-  return findings;
+  const applied = applySuppressions(source, findings);
+  applied.sort((a, b) => a.line - b.line || a.column - b.column || a.rule.id.localeCompare(b.rule.id));
+  return applied;
 }

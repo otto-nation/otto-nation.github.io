@@ -129,3 +129,44 @@ test('a violation after a 3-line block comment reports line 5', () => {
   assert.equal(found.length, 1);
   assert.equal(found[0].line, 5);
 });
+
+test('same-line ignore suppresses pill-radius', () => {
+  const source = 'const x = "rounded-full"; // otto-brand-ignore: pill-radius — avatar\n';
+  assert.equal(idsOf(source, 'script').includes('pill-radius'), false);
+});
+
+test('next-line ignore suppresses pill-radius', () => {
+  const source = '// otto-brand-ignore: pill-radius — avatar\nconst x = "rounded-full";\n';
+  assert.equal(idsOf(source, 'script').includes('pill-radius'), false);
+});
+
+test('file-level ignore suppresses pill-radius', () => {
+  const source = '/* otto-brand-ignore-file: pill-radius — avatars */\nconst x = "rounded-full";\n';
+  assert.equal(idsOf(source, 'script').includes('pill-radius'), false);
+});
+
+test('one ignore can name several ids', () => {
+  const source =
+    '// otto-brand-ignore: pill-radius, hover-border — third-party\n' +
+    'const x = "rounded-full hover:border-ink";\n';
+  const found = idsOf(source, 'script');
+  assert.equal(found.includes('pill-radius'), false);
+  assert.equal(found.includes('hover-border'), false);
+});
+
+test('an ignore with no reason reports ignore-reason and suppresses nothing', () => {
+  const source = '// otto-brand-ignore: pill-radius\nconst x = "rounded-full";\n';
+  const found = idsOf(source, 'script');
+  assert.ok(found.includes('ignore-reason'));
+  assert.ok(found.includes('pill-radius'));
+});
+
+test('an unknown ignore id reports ignore-unknown-rule', () => {
+  const source = '// otto-brand-ignore: nonesuch — nope\nconst x = 1;\n';
+  assert.ok(idsOf(source, 'script').includes('ignore-unknown-rule'));
+});
+
+test('an unused ignore reports ignore-unused', () => {
+  const source = '// otto-brand-ignore: pill-radius — leftover\nconst x = "text-sm";\n';
+  assert.ok(idsOf(source, 'script').includes('ignore-unused'));
+});
