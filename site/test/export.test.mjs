@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -426,4 +427,14 @@ test('the built CSS carries the anil :focus-visible ring', () => {
     .map((entry) => join(entry.parentPath, entry.name));
   const css = cssFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
   assert.match(css, /:focus-visible\s*\{[^}]*--ow-anil/);
+});
+
+test('site/app/icon.svg byte-equals the brand icon.svg export', () => {
+  const require = createRequire(import.meta.url);
+  const exported = readFileSync(require.resolve('@otto-nation/brand/icon.svg'));
+  const siteIcon = readFileSync(fileURLToPath(new URL('../app/icon.svg', import.meta.url)));
+  assert.ok(
+    exported.equals(siteIcon),
+    'site/app/icon.svg drifted from @otto-nation/brand/icon.svg',
+  );
 });

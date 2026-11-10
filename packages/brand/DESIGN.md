@@ -610,6 +610,7 @@ terminal:
 
 This file, the terminal theme files (`terminal/otto-light.json`,
 `terminal/otto-dark.json`; generated; do not edit), and the app-UI React
-primitives ship with `@otto-nation/brand` from 1.3.0. Locate this file with
+primitives ship with `@otto-nation/brand` from 1.3.0. `tokens.json` and the
+length tokens ship from 1.4.0. Locate this file with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.

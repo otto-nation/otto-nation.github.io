@@ -21,6 +21,7 @@
     "./fonts.css": "./src/fonts.css",
     "./DESIGN.md": "./DESIGN.md",
     "./tokens.json": "./tokens.json",
+    "./icon.svg": "./src/marks/icon.svg",
     "./terminal/otto-light.json": "./terminal/otto-light.json",
     "./terminal/otto-dark.json": "./terminal/otto-dark.json",
     "./search-button": "./src/chrome/search-button.tsx",
