@@ -225,7 +225,8 @@ utility prefix the matcher knows) and CSS named colours in declarations
 `pill-radius` flags `rounded-full` with any side prefix (`rounded-t-full`,
 `rounded-s-full`, …) and any variant prefix, plus the arbitrary rounded values
 9999px, 50%, and 100%, and CSS `border-radius` (including longhands) set to
-those values. A token-backed rounded arbitrary whose value is a radius token is not flagged.
+those values. A token-backed rounded arbitrary whose value is a radius token
+is not flagged.
 
 `hover-border` flags `hover:border` as a word (`group-hover:`, `peer-hover:`,
 `dark:hover:` included) and any CSS `border*` declaration inside a block whose
