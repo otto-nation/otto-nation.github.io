@@ -112,7 +112,7 @@ arrives later, in a build.
 
    <!-- x-release-please-start-version -->
    ```bash
-   VERSION=1.5.0
+   VERSION=1.6.0
    npm install "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-$VERSION.tgz"
    ```
    <!-- x-release-please-end -->
@@ -355,7 +355,7 @@ and vendor it into the consumer's own repo:
 
 <!-- x-release-please-start-version -->
 ```bash
-VERSION=1.5.0
+VERSION=1.6.0
 curl -LO https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-assets-$VERSION.zip
 unzip otto-nation-brand-assets-$VERSION.zip -d path/to/vendored/theme
 ```
@@ -447,7 +447,7 @@ breaking release.
 | `Tag` | `{ children, className? }` |
 | `SectionLabel` | `{ children, count?: number, className? }` |
 | `ActionButton` | Deprecated alias for `<Button size="app">`. Kept until the next major |
-| `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, onDark?, className? }` |
+| `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
 | `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
 | `Input` | `{ dense?: boolean, className?, ...native input attributes }` |

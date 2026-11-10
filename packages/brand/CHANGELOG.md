@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.5.0...brand-v1.6.0) (2026-11-10)
+
+
+### Features
+
+* **brand:** SegmentedControl takes onDark for the block band ([#42](https://github.com/otto-nation/otto-nation.github.io/issues/42)) ([d7d110b](https://github.com/otto-nation/otto-nation.github.io/commit/d7d110b3ba9b6f46a5ec01e775e87ac1cd730e34))
+
+
+### Bug Fixes
+
+* **brand:** recommend the src glob so Tailwind skips the package docs ([#41](https://github.com/otto-nation/otto-nation.github.io/issues/41)) ([cf95c4f](https://github.com/otto-nation/otto-nation.github.io/commit/cf95c4f6e4a5af4ad0eeeb42bc5eda85e67b910f))
+
 ## [1.5.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.4.0...brand-v1.5.0) (2026-11-10)
 
 
