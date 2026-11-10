@@ -309,3 +309,18 @@ test('fumadocs ring matches the base focus rule and clears 3:1 on app surfaces',
     }
   }
 });
+
+// A layered ring loses to any utility that removes the outline. The restore rule has to sit
+// outside every @layer, skip controls that draw their own ring, and use the same focus tokens.
+test('an unlayered rule restores the ring where outline-none leaves none', () => {
+  const css = TOKENS.replace(/\/\*[\s\S]*?\*\//g, '');
+  const selector = '.focus-visible\\:outline-none:focus-visible:not([class*="focus-visible:ring"])';
+  const at = css.indexOf(selector);
+  assert.ok(at >= 0, 'tokens.css has no outline-none restore rule');
+  const before = css.slice(0, at);
+  const depth = [...before].reduce((d, c) => d + (c === '{') - (c === '}'), 0);
+  assert.equal(depth, 0, 'the restore rule is nested inside a block (an @layer wins against it)');
+  const body = css.slice(at).match(/\{([^}]*)\}/)[1];
+  assert.match(body, /outline:\s*var\(--ow-focus-width\)\s+solid\s+var\(--ow-anil\)/);
+  assert.match(body, /outline-offset:\s*var\(--ow-focus-offset\)/);
+});

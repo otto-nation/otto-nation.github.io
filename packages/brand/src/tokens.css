@@ -270,3 +270,12 @@ h4 {
     outline-offset: var(--ow-focus-offset);
   }
 }
+
+/* Unlayered on purpose: a docs framework's `focus-visible:outline-none` utility beats the
+ * @layer base ring above, and where it adds no `focus-visible:ring-*` of its own (search input,
+ * accordion and table-of-contents triggers) keyboard focus would show nothing. This restores the
+ * brand ring there only, so a control that draws its own ring is never doubled. */
+.focus-visible\:outline-none:focus-visible:not([class*="focus-visible:ring"]) {
+  outline: var(--ow-focus-width) solid var(--ow-anil);
+  outline-offset: var(--ow-focus-offset);
+}
