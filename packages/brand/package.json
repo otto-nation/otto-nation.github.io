@@ -52,9 +52,12 @@
   },
   "devDependencies": {
     "@google/design.md": "0.4.0",
+    "@tailwindcss/node": "4.3.3",
+    "@tailwindcss/oxide": "4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "fumadocs-ui": "^16.14.5",
+    "lightningcss": "1.32.0",
     "typescript": "^7.0.2",
     "yaml": "2.9.0"
   }

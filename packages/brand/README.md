@@ -225,7 +225,7 @@ utility prefix the matcher knows) and CSS named colours in declarations
 `pill-radius` flags `rounded-full` with any side prefix (`rounded-t-full`,
 `rounded-s-full`, …) and any variant prefix, plus the arbitrary rounded values
 9999px, 50%, and 100%, and CSS `border-radius` (including longhands) set to
-those values. A token-backed `rounded-[var(…)]` is not flagged.
+those values. A token-backed rounded arbitrary whose value is a radius token is not flagged.
 
 `hover-border` flags `hover:border` as a word (`group-hover:`, `peer-hover:`,
 `dark:hover:` included) and any CSS `border*` declaration inside a block whose
@@ -396,7 +396,7 @@ Four assertions, each pinned to a distinct failure:
 | Check | Derived from | What its absence means |
 |---|---|---|
 | Every `--ow-*` name is in the emitted CSS | `src/tokens.css` | The `@import` never resolved; every component renders with inherited or transparent colour |
-| The package-only utility was compiled | the `tracking-[…]` class in `src/primitives/eyebrow.tsx` | `@source` never scanned the package's `.tsx`, so every utility it relies on is missing |
+| The package-only utility was compiled | the tracking arbitrary in `src/primitives/eyebrow.tsx` | `@source` never scanned the package's `.tsx`, so every utility it relies on is missing |
 | Each vendored face was emitted as an asset | the `url()`s in `src/fonts.css` | The font `url()` did not resolve; the page renders in the fallback stack |
 | `--control` was compiled | you | The CSS scan produced nothing at all, which makes the three rows above vacuous |
 
