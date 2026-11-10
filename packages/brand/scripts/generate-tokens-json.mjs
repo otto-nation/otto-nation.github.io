@@ -43,12 +43,12 @@ const TOP_LEVEL = [
  */
 export function generate(tokensCss, fontsCss, eyebrowSource) {
   const groups = lengthGroups(tokensCss);
-  requireGroup(groups.radii, 'radius');
-  requireGroup(groups.spacing, 'space');
-  requireGroup(groups.lengths, '');
-  requireGroup(groups.focus, 'focus');
-  requireGroup(groups.rules, 'rule');
-  requireGroup(groups.panes, 'pane');
+  requireGroup(groups.radii, '--ow-radius-*');
+  requireGroup(groups.spacing, '--ow-space-*');
+  requireGroup(groups.lengths, '--ow-* px');
+  requireGroup(groups.focus, '--ow-focus-*');
+  requireGroup(groups.rules, '--ow-rule-*');
+  requireGroup(groups.panes, '--ow-pane-*');
 
   const doc = {
     schemaVersion: 1,
@@ -73,9 +73,8 @@ export function generate(tokensCss, fontsCss, eyebrowSource) {
 
 export const TOP_LEVEL_KEYS = TOP_LEVEL;
 
-function requireGroup(map, prefix) {
+function requireGroup(map, token) {
   if (map.size > 0) return;
-  const token = prefix ? `--ow-${prefix}-*` : '--ow-* px';
   throw new Error(`tokens.css :root declared no ${token} lengths`);
 }
 

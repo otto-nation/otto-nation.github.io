@@ -19,7 +19,7 @@ const VARIANT = {
   },
   ghost: {
     rest: 'text-[var(--ow-ink)]',
-    onDark: 'text-[var(--ow-ink)]',
+    onDark: 'text-[var(--ow-block-ink)]',
   },
 } as const;
 
