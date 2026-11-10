@@ -451,7 +451,7 @@ breaking release.
 | `GrecaDivider` | `{ className? }` |
 | `Rings` | `{ className? }` |
 | `Eyebrow` | `{ children, className? }` |
-| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost' \| 'danger', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className? }` |
+| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost' \| 'danger', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className?, ref? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
 | `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
 | `Tag` | `{ children, className? }` |
@@ -460,15 +460,15 @@ breaking release.
 | `SegmentedControl` | `{ options: { value, label }[], value, onChange?, label: string, dense?, className? }` |
 | `ListRow` | `{ children, selected?, dense?, onClick?, className?, ...native button attributes }` |
 | `AppCard` | `{ children, variant?: 'card' \| 'popover', title?, className? }` |
-| `Input` | `{ dense?: boolean, className?, ...native input attributes }` |
+| `Input` | `{ dense?: boolean, className?, ref?, ...native input attributes }` |
 | `Field` | `{ id, label, hint?, error?, children: (control: FieldControlProps) => ReactNode, className? }` |
-| `Textarea` | `{ className?, ...native textarea attributes }` |
-| `Select` | `{ dense?, className?, ...native select attributes }` |
-| `Checkbox` | `{ label?, className?, ...native input attributes minus type }` |
-| `IconButton` | `{ label, children, dense?, tone?: 'default' \| 'danger', pressed?, className?, ...native button attributes }` (`IconButtonProps`) |
-| `Dialog` | `{ id, title, children?, actions?, className?, ...native dialog attributes }` |
+| `Textarea` | `{ className?, ref?, ...native textarea attributes }` |
+| `Select` | `{ dense?, className?, ref?, ...native select attributes }` |
+| `Checkbox` | `{ label?, className?, ref?, ...native input attributes minus type }` |
+| `IconButton` | `{ label, children, dense?, tone?: 'default' \| 'danger', pressed?, className?, ref?, ...native button attributes }` (`IconButtonProps`) |
+| `Dialog` | `{ id, title, children?, actions?, className?, ref?, ...native dialog attributes }` — open with `ref.current.showModal()` |
 | `Toast` | `{ children, status?: StatusGlyphStatus, className? }` |
-| `Table` | `{ caption?, className?, ...native table attributes }` with `Table.Head` / `.Body` / `.Row` / `.Cell` / `.HeaderCell`; `TableAlign` is `'start' \| 'center' \| 'end'` |
+| `Table` | `{ caption?, className?, ref?, ...native table attributes }` with `Table.Head` / `.Body` / `.Row` / `.Cell` / `.HeaderCell`; `TableAlign` is `'start' \| 'center' \| 'end'` |
 | `StateMessage` | `{ kind: 'empty' \| 'loading' \| 'stale' \| 'error', children?, action?, className? }` |
 | `Nav` | `{ product, links, slot?, className? }` |
 | `Footer` | `{ cta?, className? }` |
@@ -483,6 +483,11 @@ The org site's `/ui/` page is the render coverage for the app primitives.
 Every component takes `className?` and merges it with `tailwind-merge` onto its
 outermost element, so your class beats the package default by prop rather than
 by stylesheet source order.
+
+Native-element wrappers (`Button`, `ActionButton`, `IconButton`, `Input`,
+`Select`, `Textarea`, `Checkbox`, `Dialog`, `Table` and its subcomponents) take
+React 19's `ref` prop and forward it to that node — `Select` and `Checkbox` to
+the control, not the wrapper. Open `Dialog` with `ref.current.showModal()`.
 
 `SearchButton` is the single exception. It is a verbatim copy of a
 fumadocs-coupled dialog trigger with no styling surface of its own, so there is

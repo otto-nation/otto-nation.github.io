@@ -1,4 +1,4 @@
-import { Children, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { Children, type ComponentPropsWithRef, type CSSProperties, type ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // No horizontal-scroll wrapper: a wrapper sized for one page's layout clips
@@ -82,8 +82,9 @@ export function Table({
   caption,
   children,
   className,
+  ref,
   ...rest
-}: { caption?: ReactNode } & ComponentPropsWithoutRef<'table'>) {
+}: { caption?: ReactNode } & ComponentPropsWithRef<'table'>) {
   return (
     <table
       className={twMerge(
@@ -91,6 +92,7 @@ export function Table({
         className,
       )}
       {...rest}
+      ref={ref}
     >
       {caption ? (
         <caption className="pb-[var(--ow-space-2)] text-left [font:var(--ow-font-section)] text-[var(--ow-ink-muted)]">
@@ -119,7 +121,7 @@ function withoutWhitespace(children: ReactNode) {
   );
 }
 
-function Head({ children, className, ...rest }: ComponentPropsWithoutRef<'thead'>) {
+function Head({ children, className, ...rest }: ComponentPropsWithRef<'thead'>) {
   return (
     <thead className={className} {...rest}>
       {children}
@@ -127,7 +129,7 @@ function Head({ children, className, ...rest }: ComponentPropsWithoutRef<'thead'
   );
 }
 
-function Body({ children, className, ...rest }: ComponentPropsWithoutRef<'tbody'>) {
+function Body({ children, className, ...rest }: ComponentPropsWithRef<'tbody'>) {
   return (
     <tbody className={className} {...rest}>
       {children}
@@ -140,7 +142,7 @@ function Row({
   children,
   className,
   ...rest
-}: { variant?: keyof typeof ROW_VARIANT } & ComponentPropsWithoutRef<'tr'>) {
+}: { variant?: keyof typeof ROW_VARIANT } & ComponentPropsWithRef<'tr'>) {
   return (
     <tr
       className={twMerge(
@@ -159,7 +161,7 @@ function Cell({
   children,
   className,
   ...rest
-}: CellStyleProps & Omit<ComponentPropsWithoutRef<'td'>, 'align'>) {
+}: CellStyleProps & Omit<ComponentPropsWithRef<'td'>, 'align'>) {
   const { cellProps, passedStyle, attrs } = splitCellProps(rest);
   return (
     <td
@@ -176,7 +178,7 @@ function HeaderCell({
   children,
   className,
   ...rest
-}: CellStyleProps & Omit<ComponentPropsWithoutRef<'th'>, 'align'>) {
+}: CellStyleProps & Omit<ComponentPropsWithRef<'th'>, 'align'>) {
   const { cellProps, passedStyle, attrs } = splitCellProps(rest);
   return (
     <th

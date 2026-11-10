@@ -1,14 +1,16 @@
-import type { DialogHTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-// Consumers open it with ref.current.showModal(). Older browsers may not
-// pass custom properties to ::backdrop (scrim then transparent; still modal).
+// Consumers open it with ref.current.showModal(). `ref` is a React 19 prop
+// forwarded to <dialog>. Older browsers may not pass custom properties to
+// ::backdrop (scrim then transparent; still modal).
 export function Dialog({
   id,
   title,
   children,
   actions,
   className,
+  ref,
   ...rest
 }: {
   id: string;
@@ -16,10 +18,11 @@ export function Dialog({
   children?: ReactNode;
   actions?: ReactNode;
   className?: string;
-} & Omit<DialogHTMLAttributes<HTMLDialogElement>, 'id'>) {
+} & Omit<ComponentPropsWithRef<'dialog'>, 'id'>) {
   return (
     <dialog
       {...rest}
+      ref={ref}
       id={id}
       aria-labelledby={`${id}-title`}
       className={twMerge(

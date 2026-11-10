@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import { Button, type ButtonVariant } from './button';
 
 export type ActionButtonVariant = ButtonVariant;
@@ -11,7 +11,7 @@ export function ActionButton(
   props: {
     variant?: ActionButtonVariant;
     dense?: boolean;
-  } & ButtonHTMLAttributes<HTMLButtonElement>,
+  } & ComponentPropsWithRef<'button'>,
 ) {
   return <Button size="app" {...props} />;
 }
