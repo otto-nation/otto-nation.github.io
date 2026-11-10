@@ -483,17 +483,17 @@ test('the /ui specimen renders Field and Input invalid', () => {
   assert.match(hint, /\bid="spec-title-hint"/);
 
   const error = section(html, 'field-error');
-  assert.match(error, /<label\b[^>]*\bfor="spec-title"/);
+  assert.match(error, /<label\b[^>]*\bfor="spec-notes"/);
   assert.ok(error.includes('--ow-font-label'), 'field-error label font missing');
   assert.ok(error.includes('--ow-font-meta'), 'field-error meta font missing');
   assert.ok(error.includes('--ow-danger'), 'field-error danger token missing');
-  assert.ok(!error.includes('spec-title-hint'), 'field-error still rendered a hint');
+  assert.ok(!error.includes('spec-notes-hint'), 'field-error still rendered a hint');
   const errorControl = error.match(/<textarea\b[^>]*>/)?.[0];
   assert.ok(errorControl, 'field-error control is not a textarea');
-  assert.match(errorControl, /\bid="spec-title"/);
-  assert.match(errorControl, /aria-describedby="spec-title-error"/);
+  assert.match(errorControl, /\bid="spec-notes"/);
+  assert.match(errorControl, /aria-describedby="spec-notes-error"/);
   assert.match(errorControl, /aria-invalid="true"/);
-  assert.match(error, /\bid="spec-title-error"/);
+  assert.match(error, /\bid="spec-notes-error"/);
 
   const invalid = section(html, 'input-invalid');
   const invalidControl = invalid.match(/<input\b[^>]*>/)?.[0];
@@ -502,6 +502,21 @@ test('the /ui specimen renders Field and Input invalid', () => {
   assert.ok(
     invalidControl.includes('aria-[invalid=true]:border-[var(--ow-danger)]'),
     'input-invalid missing danger edge class',
+  );
+});
+
+test('the /ui page has unique ids', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  const counts = new Map();
+  for (const id of ids) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  const dupes = [...counts.entries()].filter(([, n]) => n > 1);
+  assert.equal(
+    dupes.length,
+    0,
+    `duplicate ids: ${dupes.map(([id, n]) => `${id}×${n}`).join(', ')}`,
   );
 });
 

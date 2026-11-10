@@ -342,9 +342,9 @@ nothing.
 Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
 and hit-area are prose — `borderColor` is not a component key. App entries use
 refs to the colour, type, and length tokens. React consumers: `Button` (`size="app"`
-for app controls; `sm`/`xs` for page CTAs), the deprecated `ActionButton` alias,
+for app controls; `sm`/`xs` for page CTAs; `variant="danger"` for destructive confirm), the deprecated `ActionButton` alias,
 `SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard` (including its popover variant), `Input`,
-`StatusGlyph`, and `StateMessage` implement these entries.
+`Textarea`, `Select`, `Field`, `StatusGlyph`, and `StateMessage` implement these entries.
 
 ```yaml
 components:
@@ -475,6 +475,27 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.body}"
+  textarea:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.control-padding}"
+    typography: "{typography.body}"
+  select:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.body}"
+  field-label:
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+  field-hint:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.meta}"
+  field-error:
+    textColor: "{colors.danger}"
+    typography: "{typography.meta}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
@@ -498,6 +519,8 @@ components:
 - **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
 - **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
+- **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
+- **field** — label role above, meta-role hint or danger error below; `id` wires `htmlFor` and `aria-describedby`.
 
 | State | Treatment |
 | --- | --- |
@@ -506,6 +529,7 @@ components:
 | selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
+| invalid | `{colors.danger}` edge via `aria-invalid` on Input/Textarea/Select/Checkbox; message in field-error. Not a hover change. |
 
 ## Do's and Don'ts
 

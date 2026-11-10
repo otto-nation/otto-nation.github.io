@@ -186,7 +186,7 @@ export default function UiPage() {
         </Field>
       </section>
       <section data-specimen="field-error">
-        <Field id="spec-title" label="Title" hint="A short name" error="Required">
+        <Field id="spec-notes" label="Title" hint="A short name" error="Required">
           {(p) => <Textarea {...p} />}
         </Field>
       </section>
