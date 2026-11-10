@@ -529,6 +529,19 @@ components:
     textColor: "{colors.canvas}"
     rounded: "{rounded.sm}"
     size: "{spacing.4}"
+  table:
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+  table-header:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  table-section:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
+  table-row-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
@@ -556,6 +569,7 @@ components:
 - **textarea**, **select** — Input chrome; select's chevron is ink-muted and `aria-hidden`.
 - **field** — label role above, meta-role hint or danger error below; `id` wires `htmlFor` and `aria-describedby`.
 - **checkbox** — outline edge, `{rounded.sm}`; checked is an anil fill with a canvas check.
+- **table** — body role, section-role header with a 1px ink rule, hover fill, `section` and `total` rows.
 
 | State | Treatment |
 | --- | --- |

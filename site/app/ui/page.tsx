@@ -14,6 +14,7 @@ import {
   SegmentedControl,
   StateMessage,
   StatusGlyph,
+  Table,
   Tag,
   Toast,
   type ActionButtonVariant,
@@ -279,6 +280,38 @@ export default function UiPage() {
       </section>
       <section data-specimen="toast-fail">
         <Toast status="fail">Could not save</Toast>
+      </section>
+      <section data-specimen="table">
+        <Table caption="Buy list">
+          <Table.Head>
+            <Table.Row>
+              <Table.HeaderCell>Item</Table.HeaderCell>
+              <Table.HeaderCell align="end" numeric>
+                Amount
+              </Table.HeaderCell>
+            </Table.Row>
+          </Table.Head>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell align="center">
+                <Checkbox label="Flour" />
+              </Table.Cell>
+              <Table.Cell numeric>2</Table.Cell>
+            </Table.Row>
+            <Table.Row variant="section">
+              <Table.Cell>Produce</Table.Cell>
+              <Table.Cell />
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell muted>Note: organic</Table.Cell>
+              <Table.Cell numeric>0</Table.Cell>
+            </Table.Row>
+            <Table.Row variant="total">
+              <Table.Cell>Total</Table.Cell>
+              <Table.Cell numeric>2</Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
       </section>
       {STATE_MESSAGES.map(({ kind, children, action }) => (
         <section key={kind} data-specimen={`state-${kind}`}>

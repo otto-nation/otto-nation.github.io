@@ -643,6 +643,43 @@ test('the /ui specimen renders StateMessage', () => {
   assert.match(error, /border-\[var\(--ow-hairline\)\]/);
 });
 
+test('the /ui specimen renders Table', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+  const block = section(html, 'table');
+  assert.match(block, /<table\b/);
+  assert.match(block, /<caption\b/);
+  assert.match(block, /<th\b/);
+  assert.ok(block.includes('Buy list'), 'caption copy missing');
+  const header = block.match(/<th\b[^>]*>/)?.[0];
+  assert.ok(header, 'table missing a header cell');
+  assert.ok(header.includes('--ow-font-section'), 'header missing section role');
+  assert.ok(
+    header.includes('border-b-[var(--ow-ink)]'),
+    'header missing 1px ink rule',
+  );
+  const row = block.match(/<tr\b[^>]*>/)?.[0];
+  assert.ok(row, 'table missing a row');
+  assert.ok(
+    row.includes('hover:' + 'bg-[var(--ow-hover)]'),
+    'row missing hover fill',
+  );
+  assert.ok(block.includes('--ow-surface'), 'section row missing surface fill');
+  assert.ok(block.includes('--ow-font-code'), 'numeric cell missing code role');
+  assert.ok(block.includes('text-right'), 'numeric header missing end align');
+  const tableTag = block.match(/<table\b[^>]*>/)?.[0];
+  assert.ok(tableTag, 'table opening tag missing');
+  assert.doesNotMatch(
+    tableTag,
+    /input\[type=checkbox\]/,
+    'table still styles descendant checkboxes',
+  );
+  assert.match(block, /<input\b[^>]*type="checkbox"/);
+  assert.ok(
+    block.includes('text-center'),
+    'checkbox cell missing align=center',
+  );
+});
+
 test('the /ui specimen renders Dialog and Toast', () => {
   const html = readFileSync(UI_HTML_PATH, 'utf8');
   const dialogBlock = section(html, 'dialog-specimen');
