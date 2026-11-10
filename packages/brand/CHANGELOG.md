@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.2](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.1...brand-v1.6.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* **brand:** form controls and Dialog accept a ref ([#46](https://github.com/otto-nation/otto-nation.github.io/issues/46)) ([a8ccef2](https://github.com/otto-nation/otto-nation.github.io/commit/a8ccef256c7111c40997caa8981e44d1e84c21cb))
+* **brand:** mark the package side-effect-free so bundlers drop unused components ([#47](https://github.com/otto-nation/otto-nation.github.io/issues/47)) ([cf0ee57](https://github.com/otto-nation/otto-nation.github.io/commit/cf0ee5702e3419be77c0af52fb117c37e827b787))
+
 ## [1.6.1](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.0...brand-v1.6.1) (2026-11-10)
 
 
