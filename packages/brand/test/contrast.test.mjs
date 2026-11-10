@@ -11,6 +11,7 @@ import {
   fdRoleToken,
   focusRingToken,
   lightTokenHexes,
+  OW_TOKEN,
 } from '../src/internal/derive.mjs';
 
 const TOKENS = readFileSync(
@@ -141,7 +142,7 @@ test('icon.svg paints the tokens it says it mirrors', () => {
   const [comment] = ICON.match(/<!--[\s\S]*?-->/) ?? [];
   assert.ok(comment, 'icon.svg lost the comment mapping its hexes to tokens');
 
-  const documented = [...comment.matchAll(/(#[0-9a-f]{6})\s+(--ow-[a-z-]+)/gi)]
+  const documented = [...comment.matchAll(new RegExp(`(#[0-9a-f]{6})\\s+(${OW_TOKEN})`, 'gi'))]
     .map(([, hex, token]) => ({ hex: hex.toLowerCase(), token }));
   assert.equal(documented.length, 3, 'icon.svg should document exactly three hex/token pairs');
 

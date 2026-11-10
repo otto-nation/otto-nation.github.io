@@ -17,7 +17,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 
-import { declaredTokens } from '../src/internal/derive.mjs';
+import { declaredTokens, OW_TOKEN } from '../src/internal/derive.mjs';
 
 const PACKAGE = '@otto-nation/brand';
 // .svg is deliberately absent. An SVG served as a favicon or an <img> src is
@@ -123,7 +123,7 @@ function scanUndeclared(dirs, declared) {
   for (const dir of dirs) {
     for (const file of walk(dir)) {
       const source = stripComments(readFileSync(file, 'utf8'));
-      for (const [, token] of source.matchAll(/(--ow-[a-z-]+)/g)) {
+      for (const [, token] of source.matchAll(new RegExp(`(${OW_TOKEN})`, 'g'))) {
         if (declared.has(token)) continue;
         if (!undeclared.has(token)) undeclared.set(token, new Set());
         undeclared.get(token).add(file);

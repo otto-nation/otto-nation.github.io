@@ -15,6 +15,13 @@
 import { basename } from 'node:path';
 
 /**
+ * Pattern source for an `--ow-*` token name. Digits are included so
+ * `--ow-space-1` is one name, not `--ow-space-`. Every regex in this file
+ * and otto-brand-check interpolates this rather than writing its own class.
+ */
+export const OW_TOKEN = '--ow-[a-z0-9-]+';
+
+/**
  * The `--ow-*` custom property names a tokens.css declares.
  *
  * The leading `\s*` is what lets either indentation style parse; tokens.css is
@@ -23,7 +30,9 @@ import { basename } from 'node:path';
  * that passes on every input forever.
  */
 export function declaredTokens(tokensCss) {
-  return new Set([...tokensCss.matchAll(/^\s*(--ow-[a-z-]+):/gm)].map(([, name]) => name));
+  return new Set(
+    [...tokensCss.matchAll(new RegExp(`^\\s*(${OW_TOKEN}):`, 'gm'))].map(([, name]) => name),
+  );
 }
 
 /**
@@ -108,8 +117,17 @@ function darkBlock(tokensCss) {
 
 function hexMap(block) {
   const map = new Map();
-  for (const [, name, hex] of block.matchAll(/(--ow-[a-z-]+):\s*(#[0-9a-f]{6})/gi)) {
-    map.set(name, hex);
+  for (const [, name, value] of block.matchAll(
+    new RegExp(`^\\s*(${OW_TOKEN}):\\s*([^;]+);`, 'gm'),
+  )) {
+    const trimmed = value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(trimmed)) {
+      map.set(name, trimmed);
+      continue;
+    }
+    if (trimmed.includes('#')) {
+      throw new Error(`${name}: unmodelled hex value ${trimmed}`);
+    }
   }
   return map;
 }
@@ -154,7 +172,7 @@ export function documentedClaims(tokensCss) {
   const surfaces = new Set(claimSurfaceNames(tokensCss));
   if (surfaces.size === 0) return [];
   const claims = [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 on (?:the )?([a-z-]+)\b/g),
+    ...tokensCss.matchAll(new RegExp(`(${OW_TOKEN})\\s+([\\d.]+):1 on (?:the )?([a-z-]+)\\b`, 'g')),
   ]
     .filter((match) => surfaces.has(match[3]))
     .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
@@ -173,7 +191,7 @@ export function documentedDarkClaims(tokensCss) {
   const surfaces = new Set(claimSurfaceNames(tokensCss));
   if (surfaces.size === 0) return [];
   return [
-    ...tokensCss.matchAll(/(--ow-[a-z-]+)\s+([\d.]+):1 (?:on|against) the dark ([a-z-]+)\b/g),
+    ...tokensCss.matchAll(new RegExp(`(${OW_TOKEN})\\s+([\\d.]+):1 (?:on|against) the dark ([a-z-]+)\\b`, 'g')),
   ]
     .filter((match) => surfaces.has(match[3]))
     .map(([, token, ratio, surface]) => ({ token, ratio, background: `--ow-${surface}` }));
@@ -212,7 +230,7 @@ export function fontRoles(tokensCss) {
 export function lengthTokens(tokensCss) {
   const lengths = new Map();
   for (const [, name, value] of lightBlock(tokensCss).matchAll(
-    /^\s*(--ow-[a-z-]+):\s*(\d+px)\s*;/gm,
+    new RegExp(`^\\s*(${OW_TOKEN}):\\s*(\\d+px)\\s*;`, 'gm'),
   )) {
     lengths.set(name.replace(/^--ow-/, ''), value);
   }
@@ -235,7 +253,7 @@ export function headingLetterSpacing(tokensCss) {
 
 function fdRoleIn(block, role) {
   const escaped = role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return block.match(new RegExp(`${escaped}:\\s*var\\((--ow-[a-z-]+)\\)`))?.[1] ?? null;
+  return block.match(new RegExp(`${escaped}:\\s*var\\((${OW_TOKEN})\\)`))?.[1] ?? null;
 }
 
 /**
@@ -263,7 +281,7 @@ export function focusRingToken(tokensCss) {
   if (body == null) {
     throw new Error('tokens.css is missing a :focus-visible rule');
   }
-  const token = body.match(/outline:\s*[^;]*var\((--ow-[a-z-]+)\)/)?.[1];
+  const token = body.match(new RegExp(`outline:\\s*[^;]*var\\((${OW_TOKEN})\\)`))?.[1];
   if (!token) {
     throw new Error('tokens.css :focus-visible rule has no outline var(--ow-*)');
   }
