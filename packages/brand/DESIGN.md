@@ -402,6 +402,10 @@ components:
   card-linked:
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
+  card-linked-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
   eyebrow:
     textColor: "{colors.ink-muted}"
     typography: "{typography.eyebrow}"
@@ -474,7 +478,7 @@ components:
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
 - **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
-- **card-linked** — no border until hover paints hairline; focus shows the focus ring only; `-m-4` hit area.
+- **card-linked** — no border; hover `{colors.hover}` fill; focus ring only; `-m-4` hit area.
 - **eyebrow** — page only: mono, 10px, ink-muted.
 - **section-label** — app section: `{typography.section}`, sentence case, ink-muted.
 - **hero** — Rings mark, then eyebrow, headline, lede, actions.

@@ -25,7 +25,7 @@ const COLUMNS = {
 // The negative margin is the hit area: a linked card is clickable a little
 // beyond its text, which is why only the linking grid gets the wider gap above.
 const LINKED_CARD =
-  '-m-4 block rounded-lg border border-transparent p-4 transition-colors hover:border-[var(--ow-hairline)]';
+  '-m-4 block rounded-lg p-4 transition-colors hover:bg-[var(--ow-hover)]';
 
 // Subsumes Included and HowItWorks, which were the same component — a grid of
 // hairline-bordered cards — written twice, differing only in whether a card

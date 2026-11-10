@@ -384,6 +384,20 @@ test('index.html renders output from every component on the page', () => {
   assert.ok(INDEX_HTML.includes('MIT · otto-nation'), 'footer copy missing — Footer did not render');
 });
 
+test('landing-page linked cards hover with a fill, never a border', () => {
+  assert.doesNotMatch(INDEX_HTML, /hover:border/, 'index.html changes a border on hover');
+  const cards = [...INDEX_HTML.matchAll(/<a\b[^>]*>/g)]
+    .map((match) => match[0])
+    .filter((tag) => tag.includes('-m-4') && tag.includes('rounded-lg'));
+  assert.ok(cards.length >= 3, `expected linked property cards, got ${cards.length}`);
+  for (const tag of cards) {
+    assert.ok(
+      tag.includes('hover:bg-[var(--ow-hover)]'),
+      'linked card missing hover fill',
+    );
+  }
+});
+
 // The tokens, the package-only utility, the vendored faces, and the control
 // are all package-owned facts, so the package owns the assertion: every
 // expectation is derived from its own source at call time rather than restated

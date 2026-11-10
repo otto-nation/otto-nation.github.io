@@ -23,7 +23,7 @@ export function SearchButton() {
       type="button"
       onClick={() => setOpenSearch(true)}
       aria-label="Search documentation"
-      className="flex items-center gap-2 rounded-md border border-[var(--ow-hairline)] px-2 py-1 transition-colors hover:border-[var(--ow-amarillo)]"
+      className="flex items-center gap-2 rounded-md border border-[var(--ow-hairline)] px-2 py-1 transition-colors hover:bg-[var(--ow-hover)]"
     >
       search
       <kbd className="rounded-sm border border-[var(--ow-hairline)] px-1 text-[10px] leading-4">
