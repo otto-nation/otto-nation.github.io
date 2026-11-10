@@ -112,7 +112,7 @@ arrives later, in a build.
 
    <!-- x-release-please-start-version -->
    ```bash
-   VERSION=1.4.0
+   VERSION=1.5.0
    npm install "https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-$VERSION.tgz"
    ```
    <!-- x-release-please-end -->
@@ -354,7 +354,7 @@ and vendor it into the consumer's own repo:
 
 <!-- x-release-please-start-version -->
 ```bash
-VERSION=1.4.0
+VERSION=1.5.0
 curl -LO https://github.com/otto-nation/otto-nation.github.io/releases/download/brand-v$VERSION/otto-nation-brand-assets-$VERSION.zip
 unzip otto-nation-brand-assets-$VERSION.zip -d path/to/vendored/theme
 ```

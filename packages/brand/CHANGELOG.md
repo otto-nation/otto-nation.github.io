@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.4.0...brand-v1.5.0) (2026-11-10)
+
+
+### Features
+
+* **brand:** add the primitives consumers rebuild locally ([#39](https://github.com/otto-nation/otto-nation.github.io/issues/39)) ([64906f6](https://github.com/otto-nation/otto-nation.github.io/commit/64906f6616f2bee58dbd7e9b55544f90dde215e0))
+* **brand:** otto-brand-check flags style drift in consumers ([#37](https://github.com/otto-nation/otto-nation.github.io/issues/37)) ([fd6f23d](https://github.com/otto-nation/otto-nation.github.io/commit/fd6f23d6ff676274457ec2df5e917e2ec143319d))
+
 ## [1.4.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.3.0...brand-v1.4.0) (2026-11-10)
 
 
