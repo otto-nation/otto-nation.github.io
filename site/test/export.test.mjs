@@ -657,7 +657,9 @@ test('the /ui specimen renders Dialog and Toast', () => {
   assert.match(dialogBlock, /\bopen\b/);
   assert.ok(dialogBlock.includes('m-auto'), 'dialog missing m-auto');
   assert.ok(
-    dialogBlock.includes('backdrop:bg-[var(--ow-scrim)]'),
+    // Split so Tailwind's source scan of this file does not generate the class itself, which
+    // would let the built-CSS ::backdrop test below pass with the class gone from dialog.tsx.
+    dialogBlock.includes('backdrop:' + 'bg-[var(--ow-scrim)]'),
     'dialog missing backdrop scrim class',
   );
   assert.doesNotMatch(dialogBlock, /shadow/);
