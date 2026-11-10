@@ -95,6 +95,114 @@ test('the /ui specimen renders SectionLabel and ActionButton', () => {
           `${variant} ${state} should use control-height`,
         );
       }
+      const pressed =
+        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      if (pressed) {
+        assert.ok(
+          button.includes('hover:bg-[var(--ow-hover)]'),
+          `${variant} ${state} missing hover fill`,
+        );
+        assert.ok(
+          button.includes('active:bg-[var(--ow-selected)]'),
+          `${variant} ${state} missing pressed fill`,
+        );
+      } else {
+        assert.doesNotMatch(
+          button,
+          /active:bg-\[var\(--ow-selected\)\]/,
+          `${variant} ${state} should not paint pressed fill`,
+        );
+      }
+    }
+  }
+});
+
+test('the /ui specimen renders page-size Button and Button size=app', () => {
+  const html = readFileSync(UI_HTML_PATH, 'utf8');
+
+  const pageSolid = section(html, 'button-page-solid');
+  const pageSolidControl = pageSolid.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageSolidControl, 'page solid control missing');
+  assert.ok(pageSolid.includes('Page solid'), 'page solid label missing');
+  assert.ok(pageSolid.includes('--ow-space-4'), 'page solid space-4 missing');
+  assert.ok(pageSolid.includes('--ow-space-2'), 'page solid space-2 missing');
+  assert.ok(pageSolid.includes('--ow-radius-md'), 'page solid radius-md missing');
+  assert.ok(
+    pageSolid.includes('--ow-ink') && pageSolid.includes('--ow-canvas'),
+    'page solid fill missing',
+  );
+  assert.ok(!pageSolid.includes('--ow-control-height'), 'page solid used app height');
+  assert.doesNotMatch(
+    pageSolidControl,
+    /hover:bg-\[var\(--ow-hover\)\]/,
+    'page solid should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageSolidControl,
+    /active:bg-\[var\(--ow-selected\)\]/,
+    'page solid should not paint pressed fill',
+  );
+
+  const pageOutline = section(html, 'button-page-outline');
+  const pageOutlineControl = pageOutline.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageOutlineControl, 'page outline control missing');
+  assert.ok(pageOutline.includes('Page outline'), 'page outline label missing');
+  assert.ok(
+    pageOutlineControl.includes('hover:bg-[var(--ow-hover)]'),
+    'page outline missing hover fill',
+  );
+  assert.ok(
+    pageOutlineControl.includes('active:bg-[var(--ow-selected)]'),
+    'page outline missing pressed fill',
+  );
+  assert.ok(!pageOutline.includes('--ow-control-height'), 'page outline used app height');
+
+  const pageLink = section(html, 'button-page-link');
+  assert.match(pageLink, /<a\b/, 'page link is not an anchor');
+  assert.doesNotMatch(pageLink, /<button\b/, 'page link rendered a button');
+  assert.ok(pageLink.includes('Page link'), 'page link label missing');
+  assert.match(pageLink, /href="\/ui\/?"/, 'page link href missing');
+
+  const pageOnDark = section(html, 'button-page-ondark');
+  const pageOnDarkControl = pageOnDark.match(/<(?:a|button)\b[^>]*>/)?.[0];
+  assert.ok(pageOnDarkControl, 'page onDark control missing');
+  assert.ok(pageOnDark.includes('Page onDark'), 'page onDark label missing');
+  assert.ok(pageOnDark.includes('--ow-block-ink'), 'page onDark fill missing');
+  assert.doesNotMatch(
+    pageOnDarkControl,
+    /hover:bg-\[var\(--ow-hover\)\]/,
+    'page onDark should not hover-fill',
+  );
+  assert.doesNotMatch(
+    pageOnDarkControl,
+    /active:bg-\[var\(--ow-selected\)\]/,
+    'page onDark should not paint pressed fill',
+  );
+
+  for (const variant of ['solid', 'outline', 'ghost']) {
+    for (const state of ['rest', 'dense', 'disabled']) {
+      const block = section(html, `button-app-${variant}-${state}`);
+      const button = block.match(/<button\b[^>]*>/)?.[0];
+      assert.ok(button, `app ${variant} ${state} is not a button`);
+      assert.ok(block.includes('App'), `app ${variant} ${state} label missing`);
+      assert.ok(
+        block.includes('--ow-font-label'),
+        `app ${variant} ${state} label font missing`,
+      );
+      const pressed =
+        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      if (pressed) {
+        assert.ok(
+          button.includes('active:bg-[var(--ow-selected)]'),
+          `app ${variant} ${state} missing pressed fill`,
+        );
+      } else {
+        assert.doesNotMatch(
+          button,
+          /active:bg-\[var\(--ow-selected\)\]/,
+          `app ${variant} ${state} should not paint pressed fill`,
+        );
+      }
     }
   }
 });

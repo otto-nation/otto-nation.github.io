@@ -1,55 +1,17 @@
 import type { ButtonHTMLAttributes } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { Button, type ButtonVariant } from './button';
 
-export type ActionButtonVariant = 'solid' | 'outline' | 'ghost';
+export type ActionButtonVariant = ButtonVariant;
 
-const VARIANT = {
-  solid: 'bg-[var(--ow-ink)] text-[var(--ow-canvas)]',
-  outline:
-    'border border-[var(--ow-hairline)] bg-[var(--ow-canvas)] text-[var(--ow-ink)]',
-  ghost: 'text-[var(--ow-ink)]',
-} as const;
-
-const VARIANT_HOVER = {
-  solid: undefined,
-  outline: 'hover:bg-[var(--ow-hover)]',
-  ghost: 'hover:bg-[var(--ow-hover)]',
-} as const;
-
-// DESIGN.md `button-solid` / `button-outline` / `button-ghost` — label role,
-// control heights; hover fill never changes the border.
-export function ActionButton({
-  children,
-  variant = 'solid',
-  dense = false,
-  className,
-  type = 'button',
-  disabled,
-  ...rest
-}: {
-  variant?: ActionButtonVariant;
-  dense?: boolean;
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type={type}
-      disabled={disabled}
-      className={twMerge(
-        'inline-flex items-center justify-center rounded-md px-[var(--ow-control-padding)] [font:var(--ow-font-label)]',
-        dense
-          ? 'h-[var(--ow-control-height-dense)]'
-          : 'h-[var(--ow-control-height)]',
-        VARIANT[variant],
-        disabled
-          ? variant === 'solid'
-            ? 'opacity-50'
-            : 'text-[var(--ow-ink-muted)]'
-          : VARIANT_HOVER[variant],
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
-  );
+/**
+ * @deprecated Use `<Button size="app">`. Kept as an alias until the next major;
+ * removal is tracked in https://github.com/otto-nation/otto-nation.github.io/issues/34.
+ */
+export function ActionButton(
+  props: {
+    variant?: ActionButtonVariant;
+    dense?: boolean;
+  } & ButtonHTMLAttributes<HTMLButtonElement>,
+) {
+  return <Button size="app" {...props} />;
 }

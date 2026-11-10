@@ -339,7 +339,8 @@ nothing.
 
 Pairs below match the `.tsx` exports. Borders, hover fills, selected indicators,
 and hit-area are prose — `borderColor` is not a component key. App entries use
-refs to the colour, type, and length tokens. React consumers: `ActionButton`,
+refs to the colour, type, and length tokens. React consumers: `Button` (`size="app"`
+for app controls; `sm`/`xs` for page CTAs), the deprecated `ActionButton` alias,
 `SegmentedControl`, `Tag`, `SectionLabel`, `ListRow`, `AppCard` (including its popover variant), `Input`,
 `StatusGlyph`, and `StateMessage` implement these entries.
 
@@ -363,6 +364,12 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
+  button-outline-pressed:
+    backgroundColor: "{colors.selected}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
   button-ghost:
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
@@ -370,6 +377,12 @@ components:
     typography: "{typography.label}"
   button-ghost-hover:
     backgroundColor: "{colors.hover}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "{spacing.control-height}"
+    typography: "{typography.label}"
+  button-ghost-pressed:
+    backgroundColor: "{colors.selected}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
@@ -455,6 +468,7 @@ components:
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
+  Page size (`sm`/`xs`): `font-semibold`, `text-sm`/`text-xs`, `--ow-space-4` / `--ow-space-2` padding; same variants.
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-on-dark** — solid on the block band (`onDark`).
@@ -477,7 +491,7 @@ components:
 | State | Treatment |
 | --- | --- |
 | hover | `{colors.hover}` fill. Rest border stays. Hover fill is never a border colour. |
-| pressed | `{colors.selected}` fill. |
+| pressed | outline/ghost: `{colors.selected}` fill; solid and on-dark keep their fill. |
 | selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |

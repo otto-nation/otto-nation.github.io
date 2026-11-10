@@ -1,7 +1,7 @@
 export { Greca, GrecaDivider } from './marks/greca';
 export { Rings } from './marks/rings';
 export { Eyebrow } from './primitives/eyebrow';
-export { Button } from './primitives/button';
+export { Button, type ButtonVariant } from './primitives/button';
 export { CardGrid, type CardItem } from './primitives/card-grid';
 export { StatusGlyph, type StatusGlyphStatus } from './primitives/status-glyph';
 export { Tag } from './primitives/tag';
