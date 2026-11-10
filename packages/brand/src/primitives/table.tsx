@@ -14,9 +14,10 @@ const ALIGN: Record<TableAlign, string> = {
 };
 
 const ROW_VARIANT = {
-  // A section heading inside the body, spanning the full width.
+  // A section heading inside the body, spanning the full width. Not interactive, so no hover.
+  // Header rows opt out of the row hover with className="hover:bg-transparent".
   section:
-    'bg-[var(--ow-surface)] [&>td]:[font:var(--ow-font-section)] [&>td]:text-[var(--ow-ink-muted)]',
+    'bg-[var(--ow-surface)] hover:bg-[var(--ow-surface)] [&>td]:[font:var(--ow-font-section)] [&>td]:text-[var(--ow-ink-muted)]',
   // A summary row closing the table off.
   total: '[&>td]:border-b-0 [&>td]:border-t [&>td]:border-t-[var(--ow-ink)] [&>td]:font-semibold',
 } as const;
@@ -110,11 +111,8 @@ export function Table({
 // several rows in these plans carry a paragraph per cell, and a row that has
 // to stay on one line is a row nobody can read in the source.
 //
-// Head and Body filter too, though they are belt-and-braces rather than a
-// fix: React already discards the whitespace between sibling <tr> elements,
-// and removing their filter does not reproduce the warning. Kept because the
-// shape is identical one level up — rows written one per line, as every buy
-// list here is — and the cost is one array pass over a handful of children.
+// Only Row needs this: React already discards the whitespace between sibling
+// <tr> elements, so Head and Body do not filter.
 function withoutWhitespace(children: ReactNode) {
   return Children.toArray(children).filter(
     (child) => typeof child !== 'string' || child.trim() !== '',
@@ -124,7 +122,7 @@ function withoutWhitespace(children: ReactNode) {
 function Head({ children, className, ...rest }: ComponentPropsWithoutRef<'thead'>) {
   return (
     <thead className={className} {...rest}>
-      {withoutWhitespace(children)}
+      {children}
     </thead>
   );
 }
@@ -132,7 +130,7 @@ function Head({ children, className, ...rest }: ComponentPropsWithoutRef<'thead'
 function Body({ children, className, ...rest }: ComponentPropsWithoutRef<'tbody'>) {
   return (
     <tbody className={className} {...rest}>
-      {withoutWhitespace(children)}
+      {children}
     </tbody>
   );
 }
