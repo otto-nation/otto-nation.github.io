@@ -87,12 +87,15 @@ reaches Google Fonts, move it to `next/font/google`"): neither face uses that lo
 
 ## Consumer setup
 
-Four lines of configuration, and `otto-brand-check` enforces every one of them:
-it fails your build if either `@import` is absent, if the `@source` is absent
-*or* points at a path that does not exist on disk, or if `transpilePackages`
-omits the package. The compiler settings in step 6 are the one requirement it
-cannot see — those surface as errors in your own build. The AGENTS.md line in
-step 5 is for agents, not the build.
+Four lines of configuration, and `otto-brand-check` enforces them: it fails
+your build if either `@import` is absent; in Next mode, if the `@source` is
+absent *or* points at a path that does not exist on disk, or if
+`transpilePackages` omits the package; in Vite mode, those `@source` checks
+plus `vite-tailwind-plugin` only when source imports a brand component. It
+also warns on style drift in `--src` — see
+[Checking consumer source](#checking-consumer-source). The compiler settings
+in step 6 are the one requirement it cannot see — those surface as errors in
+your own build. The AGENTS.md line in step 5 is for agents, not the build.
 
 The package declares an `engines` floor for Node in its `package.json`; that
 field is the authority, not this sentence. It is set by `fs.Dirent.parentPath`,
@@ -142,15 +145,20 @@ arrives later, in a build.
    transpilePackages: ['@otto-nation/brand'],
    ```
 
-4. In CI, and ideally in a pre-push hook:
+4. In CI, and ideally in a pre-push hook. Exactly one of `--next-config` or
+   `--vite-config` is required:
 
    ```bash
    npx otto-brand-check --css site/app/global.css --next-config site/next.config.mjs --src site/app site/components
+   npx otto-brand-check --css src/styles/index.css --vite-config vite.config.ts --src src
    ```
 
-   After the build, run `otto-brand-verify` on the export as well — see
+   Style findings are warnings (exit 0). Pass `--strict` once the tree is
+   clean, or `--error <id>[,<id>]` to fail on named rules — see
+   [Checking consumer source](#checking-consumer-source). After the build, run
+   `otto-brand-verify` on the export as well — see
    [Verifying a build](#verifying-a-build). The two are not interchangeable:
-   this one reads configuration, that one reads output.
+   this one reads configuration and source, that one reads output.
 
 5. In your repo's `AGENTS.md` or `CLAUDE.md`, so agents working on UI find the
    design system the same way every time:
@@ -180,6 +188,155 @@ arrives later, in a build.
    `moduleResolution: "bundler"` (`packages/brand/tsconfig.json`, run by
    `npm test`), so that combination is the supported one.
 
+## Checking consumer source
+
+`otto-brand-check` walks every `--src` tree and warns on style drift. Warnings
+print and leave the exit code 0. `--strict` makes every style rule an error.
+`--error <id>[,<id>]` (repeatable) escalates named rules so a consumer can lock
+in each one as it gets clean. An unknown id passed to `--error` exits 2.
+
+### Style rules
+
+Each id maps to a Don't in `DESIGN.md`. All six are suppressible.
+
+| ID | DESIGN.md Don't |
+|---|---|
+| `literal-color` | Don't copy hexes from this file into CSS. `tokens.css` owns every value. |
+| `palette-color` | Don't copy hexes from this file into CSS. `tokens.css` owns every value. |
+| `pill-radius` | Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`. |
+| `hover-border` | Don't change a border colour on hover; focus is the anil ring. |
+| `outline-removed` | Don't change a border colour on hover; focus is the anil ring. |
+| `token-redefined` | Don't copy hexes from this file into CSS. `tokens.css` owns every value. |
+
+`literal-color` flags `#` plus 3/4/6/8 hex digits in script string and template
+literals, and the same in CSS declaration values only (so `#id` selectors are
+skipped), plus `rgb()` / `rgba()` / `hsl()` / `hsla()` / `hwb()` / `lab()` /
+`lch()` / `oklab()` / `oklch()` whose arguments do not start with `from var(`
+or `var(`. It does not flag HTML entities (`&#10003;`), `href="#…"`,
+`to="#…"`, `id="#…"`, or `.svg` files (never scanned).
+
+`palette-color` flags Tailwind palette utilities (`bg-black`, `text-white`,
+`bg-red-500`, any `-{color}-{shade}` and `/opacity` form, for every colour
+utility prefix the matcher knows) and CSS named colours in declarations
+(`color: white`, `background: black`). `transparent`, `currentColor`, and
+`inherit` are allowed.
+
+`pill-radius` flags `rounded-full` with any side prefix (`rounded-t-full`,
+`rounded-s-full`, …) and any variant prefix, `rounded-[9999px|50%|100%]`, and
+CSS `border-radius` (including longhands) set to those values.
+`rounded-[var(--ow-radius-*)]` is not flagged.
+
+`hover-border` flags `hover:border` as a word (`group-hover:`, `peer-hover:`,
+`dark:hover:` included) and any CSS `border*` declaration inside a block whose
+selector contains `:hover`. `hover:bg-*` is not flagged.
+
+`outline-removed` flags `outline-none`, `outline-hidden`, and `outline-0`, bare
+or with `focus:` / `focus-visible:`, when the same element has no
+`focus-visible:ring-*` (other than `ring-0`), `focus-visible:outline-*` (other
+than none/hidden/0), or `focus:ring-*`. In CSS, a `:focus` / `:focus-visible`
+block that sets `outline: none|0` or `outline-style: none` with no other
+non-none `outline*` or `box-shadow` in the same block.
+
+The element for `outline-removed` is the enclosing `className=` / `class=`
+attribute value. A quoted value spans to its closing quote. A `{...}` value
+spans its balanced braces, which covers `cn(...)`, `clsx(...)` and template
+literals. A match outside any attribute (for example
+`const BASE = "… outline-none"`) is scoped to its own string literal. Known
+gap: a ring split between a constant and the attribute
+(`className={cn(BASE, 'focus-visible:ring-2')}` where `BASE` holds
+`outline-none`) is a false positive. Move the ring next to the removal, or
+suppress it.
+
+`focus-visible:outline-none` is flagged even though `tokens.css` restores the
+anil ring at runtime. That restore is a safety net for third-party markup
+(fumadocs) consumers cannot edit. Consumer-authored code should state its ring.
+
+`token-redefined` flags a CSS `--ow-*:` declaration (not a `var()` reference),
+script `'--ow-x':` / `"--ow-x":` object keys, `['--ow-x']`,
+`setProperty('--ow-x'`, and Tailwind `[--ow-x:…]`. Mapping a token into
+`@theme` (`--color-canvas: var(--ow-canvas)`) is not a redefinition.
+
+### Configuration and meta rules
+
+Configuration findings are always errors and cannot be suppressed:
+`css-import`, `source-missing`, `source-path`, `transpile-packages`,
+`undeclared-token`, `tokens-unparsed`, `vite-tailwind-plugin`.
+
+Meta findings cannot be suppressed. `ignore-reason` (a directive with no
+reason) and `ignore-unknown-rule` are always errors. `ignore-unused` (a
+directive that suppressed nothing) and `src-empty` (a `--src` root yielded no
+files) are warnings; `--strict` makes them errors. `src-empty` stays a warning
+by default so a previously passing invocation still exits 0.
+
+### Vite mode
+
+`--vite-config <file>` is the alternative to `--next-config <file>`; exactly
+one of the two is required. Passing both, or neither, exits 2.
+
+Both modes check the `tokens.css` and `fonts.css` `@import`s, undeclared
+`--ow-*` references, and the style rules.
+
+Next mode always requires `@source` (and that its glob head exists) and
+`transpilePackages` listing the package.
+
+Vite mode skips `transpilePackages`. The `@source` checks and
+`vite-tailwind-plugin` apply only when consumer source imports a component
+entry: `@otto-nation/brand` or a `@otto-nation/brand/<subpath>` that is not a
+`.css`, `.json`, `.svg` or `.md` file, `verify`, or `package.json`. A CSS-only
+Vite consumer needs neither and passes. `vite-tailwind-plugin` requires the
+masked config to import `@tailwindcss/vite` under some binding and call that
+binding. Without the plugin no utility class compiles, so brand components
+would render unstyled on a build that otherwise passes.
+
+### Suppression
+
+A reason is mandatory. An em dash, an en dash, or ` - ` (spaces around a hyphen)
+separates the id list from it.
+
+```
+// otto-brand-ignore: pill-radius — avatar is a circle by definition
+{/* otto-brand-ignore: literal-color, hover-border — third-party embed colours */}
+/* otto-brand-ignore-file: literal-color — SVG data-viz palette, not UI chrome */
+```
+
+`otto-brand-ignore:` applies to its own line when code precedes it on that
+line, otherwise to the next non-blank line. `otto-brand-ignore-file:` applies
+to the whole file and must sit in a comment before the first non-comment code.
+Suppressions are parsed from the raw source (they live in comments). A
+directive with no reason does not suppress anything and raises `ignore-reason`.
+An unknown id raises `ignore-unknown-rule`. A directive that matched nothing
+raises `ignore-unused`.
+
+### Discovery
+
+Inside a git work tree the check lists files with `git ls-files` (`--cached
+--others --exclude-standard`), so `.gitignore` is honoured and build output
+such as `dist/` and `.next/` is not scanned. Outside git, or if git is missing,
+it walks recursively and skips any path segment that is `node_modules` or
+starts with `.`. Extensions: `.tsx`, `.ts`, `.css`, `.mjs`, `.js`, `.jsx`,
+`.mdx`. `.svg` is never scanned.
+
+### Output and exit codes
+
+Each finding is one headline on stderr, in the unix style editors and CI
+annotators parse: `path:line:col: <error|warning> <rule-id>: <message>`.
+Configuration findings have no line number: `path: error <rule-id>: <message>`,
+followed by indented detail. Paths are relative to cwd. The last stderr line is
+`otto-brand-check: N error(s), M warning(s)`.
+
+On success, stdout prints one OK line, with a warning count when there are
+warnings.
+
+| Exit | Meaning |
+|---|---|
+| 0 | no errors (warnings allowed) |
+| 1 | at least one error, or an unreadable input |
+| 2 | usage error: missing flags, both `--next-config` and `--vite-config`, neither of them, or an unknown `--error` id |
+
+This repo's `site/` and the packed tarball fixture run `--strict`. Other
+consumers add `--strict` when their tree is clean. The default stays warn until
+a later major.
+
 ## No-build installation
 
 Steps 1–5 above are all for a Next.js + Tailwind consumer. A consumer with no
@@ -206,8 +363,8 @@ unzip otto-nation-brand-assets-$VERSION.zip -d path/to/vendored/theme
 Then reference the two stylesheets however the consumer loads CSS — a plain
 `<link>` for a static page, an `@import` for anything with its own build.
 Nothing here is enforced by `otto-brand-check`: that script assumes a
-Tailwind entrypoint and a Next config, neither of which exists in a no-build
-consumer, so getting the reference paths right is on the consumer. Pin the
+Tailwind entrypoint and a Next or Vite config, neither of which exists in a
+no-build consumer, so getting the reference paths right is on the consumer. Pin the
 version in whatever the consumer's own vendoring note is (a README next to
 the vendored files works) and re-run the two commands above to upgrade —
 there is no automatic sync, the same as the npm path has none.

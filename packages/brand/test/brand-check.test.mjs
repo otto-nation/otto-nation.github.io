@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,34 +49,31 @@ function fixture(overrides = {}) {
   return dir;
 }
 
-function run(dir, { src = join(dir, 'app'), check = CHECK } = {}) {
-  try {
-    const stdout = execFileSync(
-      process.execPath,
-      [check, '--css', join(dir, 'app', 'global.css'), '--next-config',
-        join(dir, 'next.config.mjs'), '--src', src],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-    return { code: 0, output: stdout };
-  } catch (error) {
-    return { code: error.status, output: `${error.stdout}${error.stderr}` };
-  }
+function run(dir, { src = join(dir, 'app'), check = CHECK, extra = [] } = {}) {
+  const result = spawnSync(
+    process.execPath,
+    [check, '--css', join(dir, 'app', 'global.css'), '--next-config',
+      join(dir, 'next.config.mjs'), '--src', src, ...extra],
+    { encoding: 'utf8' },
+  );
+  assert.ifError(result.error);
+  return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
 
 // Copies the check script into its own temp bin/ with the given tokens.css
 // alongside it in src/, since the script always resolves tokens.css relative to
-// its own file location rather than a --src argument. src/internal/derive.mjs
-// comes along because the script imports the token parse from there; without it
-// the copy fails to resolve its own import.
+// its own file location rather than a --src argument. The whole of src/internal/
+// comes along because the script imports derive, style-rules, and source-files;
+// copying only derive.mjs fails with ERR_MODULE_NOT_FOUND.
 function checkWithTokens(tokensCss) {
   const dir = mkdtempSync(join(tmpdir(), 'brand-check-pkg-'));
   tempDirs.push(dir);
   mkdirSync(join(dir, 'bin'), { recursive: true });
-  mkdirSync(join(dir, 'src', 'internal'), { recursive: true });
-  copyFileSync(CHECK, join(dir, 'bin', 'otto-brand-check.mjs'));
-  copyFileSync(
-    fileURLToPath(new URL('../src/internal/derive.mjs', import.meta.url)),
-    join(dir, 'src', 'internal', 'derive.mjs'),
+  cpSync(CHECK, join(dir, 'bin', 'otto-brand-check.mjs'));
+  cpSync(
+    fileURLToPath(new URL('../src/internal', import.meta.url)),
+    join(dir, 'src', 'internal'),
+    { recursive: true },
   );
   writeFileSync(join(dir, 'src', 'tokens.css'), tokensCss);
   return join(dir, 'bin', 'otto-brand-check.mjs');
@@ -290,4 +287,218 @@ test('a --ow-* reference inside an MDX HTML comment does not fail the build', ()
   );
   const { code } = run(dir);
   assert.equal(code, 0);
+});
+
+const STYLE_SNIPPETS = [
+  ['literal-color', 'export default () => <p className="bg-[#18160f]" />;'],
+  ['palette-color', 'export default () => <p className="bg-red-500" />;'],
+  ['pill-radius', 'export default () => <p className="rounded-full" />;'],
+  ['hover-border', 'export default () => <p className="hover:border-ink" />;'],
+  ['outline-removed', 'export default () => <p className="outline-none" />;'],
+  ['token-redefined', 'el.setProperty("--ow-ink", "red");'],
+];
+
+for (const [id, page] of STYLE_SNIPPETS) {
+  test(`style rule ${id} warns and exits 0 by default`, () => {
+    const { code, output } = run(fixture({ page: `${page}\n` }));
+    assert.equal(code, 0);
+    assert.match(output, new RegExp(`page\\.tsx:1:\\d+: warning ${id}:`));
+  });
+}
+
+test('--strict turns a style warning into an error', () => {
+  const { code, output } = run(
+    fixture({ page: 'export default () => <p className="rounded-full" />;\n' }),
+    { extra: ['--strict'] },
+  );
+  assert.equal(code, 1);
+  assert.match(output, /page\.tsx:1:\d+: error pill-radius:/);
+});
+
+test('--error escalates one rule and leaves another as a warning', () => {
+  const { code, output } = run(
+    fixture({
+      page: 'export default () => <p className="rounded-full hover:border-ink" />;\n',
+    }),
+    { extra: ['--error', 'pill-radius'] },
+  );
+  assert.equal(code, 1);
+  assert.match(output, /page\.tsx:1:\d+: error pill-radius:/);
+  assert.match(output, /page\.tsx:1:\d+: warning hover-border:/);
+});
+
+test('--error with an unknown id exits 2', () => {
+  const { code, output } = run(fixture(), { extra: ['--error', 'nonesuch'] });
+  assert.equal(code, 2);
+  assert.match(output, /unknown --error id: nonesuch/);
+});
+
+test('otto-brand-ignore with a reason suppresses the finding', () => {
+  const { code, output } = run(fixture({
+    page:
+      'export default () => <p className="rounded-full" />; // otto-brand-ignore: pill-radius — avatar is a circle\n',
+  }));
+  assert.equal(code, 0);
+  assert.doesNotMatch(output, /pill-radius/);
+});
+
+test('otto-brand-ignore without a reason is an error and suppresses nothing', () => {
+  const { code, output } = run(fixture({
+    page:
+      '// otto-brand-ignore: pill-radius\nexport default () => <p className="rounded-full" />;\n',
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /error ignore-reason:/);
+  assert.match(output, /warning pill-radius:/);
+});
+
+test('a violating tree invoked without new flags still exits 0', () => {
+  const { code, output } = run(fixture({
+    page:
+      'export default () => <p className="rounded-full hover:border-ink outline-none bg-[#18160f]" />;\n',
+  }));
+  assert.equal(code, 0);
+  assert.match(output, /warning pill-radius:/);
+  assert.match(output, /warning hover-border:/);
+});
+
+test('a violation three directories deep is reported', () => {
+  const dir = fixture();
+  const deep = join(dir, 'app', 'a', 'b', 'c');
+  mkdirSync(deep, { recursive: true });
+  writeFileSync(
+    join(deep, 'deep.tsx'),
+    'export default () => <p className="rounded-full" />;\n',
+  );
+  const { code, output } = run(dir);
+  assert.equal(code, 0);
+  assert.match(output, /deep\.tsx:\d+:\d+: warning pill-radius:/);
+});
+
+test('a gitignored file is not reported', () => {
+  const dir = fixture();
+  execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+  writeFileSync(join(dir, '.gitignore'), 'dist/\n');
+  mkdirSync(join(dir, 'app', 'dist'));
+  writeFileSync(
+    join(dir, 'app', 'dist', 'x.js'),
+    'export const x = "rounded-full";\n',
+  );
+  const { code, output } = run(dir);
+  assert.equal(code, 0);
+  assert.doesNotMatch(output, /pill-radius/);
+  assert.doesNotMatch(output, /dist\/x\.js/);
+});
+
+test('a violation after a block comment reports the original line', () => {
+  const { code, output } = run(fixture({
+    page: '/*\n \n */\n\nexport default () => <p className="rounded-full" />;\n',
+  }));
+  assert.equal(code, 0);
+  assert.match(output, /page\.tsx:5:\d+: warning pill-radius:/);
+});
+
+test('src-empty warns by default and errors under --strict', () => {
+  const dir = fixture();
+  const empty = join(dir, 'empty');
+  mkdirSync(empty);
+  const warned = run(dir, { src: empty });
+  assert.equal(warned.code, 0);
+  assert.match(warned.output, /warning src-empty:/);
+  const strict = run(dir, { src: empty, extra: ['--strict'] });
+  assert.equal(strict.code, 1);
+  assert.match(strict.output, /error src-empty:/);
+});
+
+const VITE_CSS = `@import 'tailwindcss';
+@import '@otto-nation/brand/tokens.css';
+@import '@otto-nation/brand/fonts.css';
+`;
+const VITE_CSS_WITH_SOURCE = `${VITE_CSS}@source '../../node_modules/@otto-nation/brand/**/*.tsx';
+`;
+const VITE_CONFIG = `import tailwindcss from '@tailwindcss/vite';
+export default { plugins: [tailwindcss()] };
+`;
+const VITE_PAGE = `export default () => <p className="text-[var(--ow-ink)]" />;
+`;
+const VITE_PAGE_COMPONENT =
+  "import { Button } from '@otto-nation/brand';\nexport default () => <Button />;\n";
+
+function viteFixture(overrides = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'brand-check-vite-'));
+  tempDirs.push(dir);
+  mkdirSync(join(dir, 'src', 'styles'), { recursive: true });
+  mkdirSync(join(dir, 'node_modules', '@otto-nation', 'brand', 'src'), { recursive: true });
+  writeFileSync(join(dir, 'src', 'styles', 'index.css'), overrides.css ?? VITE_CSS);
+  writeFileSync(join(dir, 'vite.config.ts'), overrides.config ?? VITE_CONFIG);
+  writeFileSync(join(dir, 'src', 'main.tsx'), overrides.page ?? VITE_PAGE);
+  return dir;
+}
+
+function runVite(dir, { src = join(dir, 'src'), extra = [], check = CHECK } = {}) {
+  const result = spawnSync(
+    process.execPath,
+    [
+      check,
+      '--css', join(dir, 'src', 'styles', 'index.css'),
+      '--vite-config', join(dir, 'vite.config.ts'),
+      '--src', src,
+      ...extra,
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.ifError(result.error);
+  return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+}
+
+test('a CSS-only Vite consumer with no @source passes', () => {
+  assert.equal(runVite(viteFixture()).code, 0);
+});
+
+test('a Vite consumer that imports a brand component without @source fails', () => {
+  const { code, output } = runVite(viteFixture({ page: VITE_PAGE_COMPONENT }));
+  assert.equal(code, 1);
+  assert.match(output, /error source-missing:/);
+});
+
+test('a Vite consumer that imports a brand component without @tailwindcss/vite fails', () => {
+  const { code, output } = runVite(viteFixture({
+    css: VITE_CSS_WITH_SOURCE,
+    page: VITE_PAGE_COMPONENT,
+    config: 'export default { plugins: [] };\n',
+  }));
+  assert.equal(code, 1);
+  assert.match(output, /error vite-tailwind-plugin:/);
+  assert.doesNotMatch(output, /source-missing/);
+  assert.doesNotMatch(output, /transpilePackages/);
+});
+
+test('passing both --next-config and --vite-config exits 2', () => {
+  const dir = fixture();
+  const result = spawnSync(
+    process.execPath,
+    [
+      CHECK,
+      '--css', join(dir, 'app', 'global.css'),
+      '--next-config', join(dir, 'next.config.mjs'),
+      '--vite-config', join(dir, 'vite.config.ts'),
+      '--src', join(dir, 'app'),
+    ],
+    { encoding: 'utf8' },
+  );
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  assert.equal(result.status, 2);
+  assert.match(output, /exactly one of --next-config or --vite-config is required/);
+});
+
+test('passing neither --next-config nor --vite-config exits 2', () => {
+  const dir = fixture();
+  const result = spawnSync(
+    process.execPath,
+    [CHECK, '--css', join(dir, 'app', 'global.css'), '--src', join(dir, 'app')],
+    { encoding: 'utf8' },
+  );
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  assert.equal(result.status, 2);
+  assert.match(output, /exactly one of --next-config or --vite-config is required/);
 });

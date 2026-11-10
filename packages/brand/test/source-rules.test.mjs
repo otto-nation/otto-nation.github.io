@@ -1,24 +1,16 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { BRAND_RULES, CONSUMER_RULES, findViolations } from '../src/internal/style-rules.mjs';
+import { sourceFiles } from '../src/internal/source-files.mjs';
+
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 
-const NAMED_RADIUS =
-  /(?:^|[\s"'`])rounded(?:-(?:none|sm|md|lg|xl|2xl|3xl|full))?(?=[\s"'`]|$)/;
-const ARBITRARY_RADIUS = /rounded-\[(?!var\(--ow-radius-[a-z]+\))/;
-const LITERAL_BORDER_LEFT = /border-l-\[\d+px\]/;
-const LITERAL_SOLID = /\d+px\s+solid/;
-const NUMERIC_SPACING =
-  /(?:^|[\s"'`])-?(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y)-[1-6](?=[\s"'`]|$)/;
-
-function sourceFiles() {
-  return readdirSync(SRC, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.tsx'))
-    .map((entry) => relative(SRC, join(entry.parentPath, entry.name)).split(sep).join('/'))
-    .sort();
+function tsxFiles() {
+  return sourceFiles(SRC, ['.tsx']).map((abs) => relative(SRC, abs).split(sep).join('/'));
 }
 
 function walk(files, check) {
@@ -28,53 +20,43 @@ function walk(files, check) {
   }
 }
 
-test('src has no hover:border', () => {
-  walk(sourceFiles(), (file, source) => {
-    assert.doesNotMatch(
-      source,
-      /hover:border/,
-      `src/${file} changes a border on hover`,
-    );
-  });
-});
+function brandRule(id) {
+  const rule = BRAND_RULES.find((entry) => entry.id === id);
+  assert.ok(rule, `unknown brand rule: ${id}`);
+  return rule;
+}
+
+function assertClean(file, source, rules) {
+  const found = findViolations(source, { kind: 'script', rules });
+  assert.equal(
+    found.length,
+    0,
+    `src/${file} ${found.map((hit) => `${hit.rule.id}:${hit.line}`).join(', ')}`,
+  );
+}
 
 test('src rounded utilities are radius tokens', () => {
-  walk(sourceFiles(), (file, source) => {
-    assert.doesNotMatch(
-      source,
-      NAMED_RADIUS,
-      `src/${file} uses a named rounded utility`,
-    );
-    assert.doesNotMatch(
-      source,
-      ARBITRARY_RADIUS,
-      `src/${file} uses a rounded value that is not --ow-radius-*`,
-    );
+  const rules = [brandRule('named-radius'), brandRule('arbitrary-radius')];
+  walk(tsxFiles(), (file, source) => {
+    assertClean(file, source, rules);
   });
 });
 
 test('src has no literal rule widths', () => {
-  walk(sourceFiles(), (file, source) => {
-    assert.doesNotMatch(
-      source,
-      LITERAL_BORDER_LEFT,
-      `src/${file} hard-codes a border-l pixel width`,
-    );
-    assert.doesNotMatch(
-      source,
-      LITERAL_SOLID,
-      `src/${file} hard-codes an Npx solid rule`,
-    );
+  walk(tsxFiles(), (file, source) => {
+    assertClean(file, source, [brandRule('literal-rule-width')]);
   });
 });
 
 test('primitives have no numeric spacing utilities', () => {
-  const files = sourceFiles().filter((file) => file.startsWith('primitives/'));
+  const files = tsxFiles().filter((file) => file.startsWith('primitives/'));
   walk(files, (file, source) => {
-    assert.doesNotMatch(
-      source,
-      NUMERIC_SPACING,
-      `src/${file} uses a numeric spacing utility`,
-    );
+    assertClean(file, source, [brandRule('numeric-spacing')]);
+  });
+});
+
+test('brand src passes every consumer rule', () => {
+  walk(tsxFiles(), (file, source) => {
+    assertClean(file, source, CONSUMER_RULES);
   });
 });

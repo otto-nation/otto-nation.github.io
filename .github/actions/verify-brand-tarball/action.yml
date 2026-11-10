@@ -54,6 +54,14 @@ runs:
         npm install --no-save "$TARBALL"
         npm run build
 
+    - name: Check the tarball fixture with the packed bin
+      shell: bash
+      working-directory: fixtures/tarball-consumer
+      # The packed otto-brand-check, not the workspace symlink: the bin now
+      # imports src/internal/style-rules.mjs and source-files.mjs, and only
+      # installing the tarball proves those files ship and resolve.
+      run: ./node_modules/.bin/otto-brand-check --strict --css app/global.css --next-config next.config.mjs --src app
+
     - name: Resolve DESIGN.md from the installed fixture
       shell: bash
       working-directory: fixtures/tarball-consumer
