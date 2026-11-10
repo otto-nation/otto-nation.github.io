@@ -90,6 +90,11 @@ test('fumadocs-ui is an optional peer', () => {
   assert.equal(manifest.peerDependenciesMeta['fumadocs-ui'].optional, true);
 });
 
+// Bundlers keep unused barrel re-exports unless this is set; only CSS has effects.
+test('sideEffects is only CSS', () => {
+  assert.deepEqual(manifest.sideEffects, ['*.css']);
+});
+
 test('every component in src is reachable from the barrel or a subpath export', () => {
   const srcDir = fileURLToPath(new URL('src/', root));
   const barrel = read('src/index.ts');
