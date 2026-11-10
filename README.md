@@ -4,10 +4,10 @@ Home of `@otto-nation/brand`, the design package every otto-nation property
 consumes: tokens, fonts, marks, primitives, and page chrome.
 
 `packages/brand/` holds the package and the two bins a consumer runs in CI:
-`otto-brand-check` reads its configuration before a build, `otto-brand-verify`
-reads the built export after one. Neither substitutes for the other — a correct
-configuration can still produce a page that builds clean and renders wrong. See
-its README for consumer setup.
+`otto-brand-check` reads its configuration and source before a build,
+`otto-brand-verify` reads the built export after one. Neither substitutes for
+the other — a correct configuration can still produce a page that builds clean
+and renders wrong. See its README for consumer setup.
 
 `site/` is the org landing page at https://otto-nation.github.io/ and the
 package's first consumer. `.github/workflows/pages.yml` builds and deploys it on

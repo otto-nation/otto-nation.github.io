@@ -514,6 +514,7 @@ components:
 - Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
 - Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
+- Don't silence `otto-brand-check` without a reason: `otto-brand-ignore: <rule> — <reason>`.
 - Don't hand-copy a length; use the token.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
 
@@ -611,6 +612,9 @@ terminal:
 This file, the terminal theme files (`terminal/otto-light.json`,
 `terminal/otto-dark.json`; generated; do not edit), and the app-UI React
 primitives ship with `@otto-nation/brand` from 1.3.0. `tokens.json` and the
-length tokens ship from 1.4.0. Locate this file with
+length tokens ship from 1.4.0. From 1.4.0, `otto-brand-check` flags
+`literal-color`, `palette-color`, `pill-radius`, `hover-border`,
+`outline-removed` and `token-redefined`, which map to the Don'ts above, as
+warnings unless the consumer runs `--strict`. Locate this file with
 `node -p "require.resolve('@otto-nation/brand/DESIGN.md')"`. For setup, tokens,
 and the no-build zip, see the package README.

@@ -1,10 +1,10 @@
 # Repos that receive an automated version-bump pull request on each brand-v* tag.
 # Adding a consumer is one entry here; what else is needed in that repo depends on
-# how it consumes the package. A Next.js+Tailwind consumer also needs two config
-# lines (@source and transpilePackages) — otto-brand-check, which ships with the
-# package, fails their build if either is missing. A CSS-only consumer (tokens.css/
-# fonts.css via a plain npm dependency, no Next.js) needs neither, and
-# otto-brand-check does not apply to it.
+# how it consumes the package. Next and Vite consumers run otto-brand-check, which
+# ships with the package. Next needs @source and transpilePackages. Vite needs
+# @source and @tailwindcss/vite only when it imports brand components. Style drift
+# warns until the consumer opts into --strict. A no-build consumer (zip vendoring)
+# is still out of reach.
 #
 # `manifest` is the package.json holding the @otto-nation/brand dependency,
 # relative to that repo's root.
