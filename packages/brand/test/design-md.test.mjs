@@ -12,6 +12,7 @@ import {
   lengthGroups,
   lengthTokens,
   lightTokenHexes,
+  scrimSpec,
 } from '../src/internal/derive.mjs';
 import { GENERATED_HEADER, generate } from '../scripts/generate-design-md.mjs';
 import { resolveTerminal, terminalMap } from '../scripts/terminal.mjs';
@@ -170,6 +171,33 @@ test('grouped length tokens do not leak into YAML spacing keys', () => {
   }
 });
 
+test('the lengths region lists every focus/rule/pane/scrim token with its value', () => {
+  const tokensCss = read('src/tokens.css');
+  const generated = generate(read('DESIGN.md'), sources(tokensCss));
+  const region = generatedRegion(generated, 'lengths');
+  const groups = lengthGroups(tokensCss);
+  const prefixes = { focus: 'focus', rules: 'rule', panes: 'pane' };
+  for (const [group, prefix] of Object.entries(prefixes)) {
+    const map = groups[group];
+    assert.ok(map.size > 0, `tokens.css declared no --ow-${prefix}-*`);
+    for (const [name, value] of map) {
+      const token = `--ow-${prefix}-${name}`;
+      assert.ok(
+        region.includes(`| ${token} | ${value} |`),
+        `${token} ${value} missing from lengths region`,
+      );
+    }
+  }
+  for (const theme of ['light', 'dark']) {
+    const spec = scrimSpec(tokensCss, theme);
+    const mix = `color-mix(in srgb, var(${spec.token}) ${Math.round(spec.opacity * 100)}%, transparent)`;
+    assert.ok(
+      region.includes(`| --ow-scrim | ${mix} |`),
+      `--ow-scrim ${theme} missing from lengths region`,
+    );
+  }
+});
+
 function darkColor(ref, colors) {
   const match = ref.match(/^\{colors\.([a-z0-9-]+)\}$/);
   if (!match) return null;
@@ -251,6 +279,15 @@ test('the package exports DESIGN.md', () => {
     fileURLToPath(new URL('DESIGN.md', root)),
   );
 });
+
+function generatedRegion(designMd, name) {
+  const start = `<!-- generated:${name} -->`;
+  const end = `<!-- /generated:${name} -->`;
+  const startIdx = designMd.indexOf(start);
+  const endIdx = designMd.indexOf(end);
+  assert.ok(startIdx !== -1 && endIdx > startIdx, `missing ${start} … ${end}`);
+  return designMd.slice(startIdx + start.length, endIdx);
+}
 
 function frontMatterBody(designMd) {
   if (!designMd.startsWith('---\n')) {

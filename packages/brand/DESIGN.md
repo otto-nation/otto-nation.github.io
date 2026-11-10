@@ -258,7 +258,7 @@ roles inherit `{typography.display}` tracking and emit no `letterSpacing` key.
 
 ## Layout
 
-Spacing follows Tailwind's 4px base (`{spacing.1}` is one step). Chrome uses
+`{spacing.1}`–`{spacing.6}` are `--ow-space-1`…`--ow-space-6`. Chrome uses
 `px-6`. Cards `p-4`. Hero `pt-11 pb-9` with content `sm:max-w-[62%]`.
 
 App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
@@ -274,16 +274,30 @@ App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
 | card-padding | `{spacing.card-padding}` | App cards |
 | column-min | `{spacing.column-min}` | Board column min width |
 
-Pane widths are the pane's container width. A YAML `breakpoints` key warns,
-and `var()` is not allowed in `@container` conditions, so this table is
-prose only.
+Pane tokens are the minimum container width of the pane they name. A YAML
+`breakpoints` key warns, and `var()` is not allowed in `@container`
+conditions, so they are for non-web consumers and documentation.
 
 | Pane | Width | Treatment |
 | --- | --- | --- |
-| rail | <160px | Icons and glyphs only |
-| compact | 160–559px | Single column, dense heights |
-| board | ≥560px | Columns `minmax(var(--ow-column-min), 1fr)` |
-| wide | ≥1100px | Board plus a detail pane |
+| rail | below `--ow-pane-compact` | Icons and glyphs only |
+| compact | `--ow-pane-compact` up to `--ow-pane-board` | Single column, dense heights |
+| board | from `--ow-pane-board` | Columns `minmax(var(--ow-column-min), 1fr)` |
+| wide | from `--ow-pane-wide` | Board plus a detail pane |
+
+<!-- generated:lengths -->
+| Token | Value | Use |
+| --- | --- | --- |
+| --ow-focus-width | 2px | Focus outline width |
+| --ow-focus-offset | 2px | Focus outline offset |
+| --ow-rule-selected | 2px | Selected list-row left rule |
+| --ow-rule-accent | 3px | Card-accent left rule |
+| --ow-pane-compact | 160px | Minimum width of the compact pane |
+| --ow-pane-board | 560px | Minimum width of the board pane |
+| --ow-pane-wide | 1100px | Minimum width of the wide pane |
+| --ow-scrim | color-mix(in srgb, var(--ow-block) 50%, transparent) | Modal overlay (light) |
+| --ow-scrim | color-mix(in srgb, var(--ow-canvas) 70%, transparent) | Modal overlay (dark) |
+<!-- /generated:lengths -->
 
 CardGrid: 2 columns at `gap-4`; 3 columns at `gap-6` because linked cards add a
 `-m-4` hit area.
@@ -298,8 +312,9 @@ Flat. No shadows. Hierarchy is three edges:
 | Outline | `{colors.outline}` | Controls you find by their edge: inputs, checkboxes, icon-only buttons, and a window/popover that floats over canvas |
 | Block band | `{colors.block}` | Footer and install; stays dark in both themes |
 
-Borders do not change on hover. Focus adds a 2px `{colors.anil}` outline,
-offset 2px, in both themes; it does not swap the border.
+Borders do not change on hover. Focus uses `--ow-focus-width` `{colors.anil}`
+outline, offset `--ow-focus-offset`, in both themes; it does not swap the
+border.
 
 Overlays stay flat. Depth is an edge, never a darker fill.
 
@@ -307,7 +322,7 @@ Overlays stay flat. Depth is an edge, never a darker fill.
 | --- | --- |
 | Popover / menu | `{colors.surface}` fill, `{colors.outline}` edge, `{rounded.lg}`. Surface vs canvas is 1.03 light / 1.13 dark, so the edge does the separating. |
 | Window | Same as a popover. |
-| Scrim | Modal only: `color-mix(in srgb, var(--ow-block) 50%, transparent)`. No token — an alpha hex breaks the token parser. |
+| Scrim | Modal only: `var(--ow-scrim)`. |
 
 ## Shapes
 
@@ -444,7 +459,7 @@ components:
 - **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-on-dark** — solid on the block band (`onDark`).
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
-- **card-accent** — card plus a 3px left rule; colour is the caller's (`accent` prop).
+- **card-accent** — card plus a `--ow-rule-accent` left rule; colour is the caller's (`accent` prop).
 - **card-linked** — no border until hover paints hairline; focus shows the focus ring only; `-m-4` hit area.
 - **eyebrow** — page only: mono, 10px, ink-muted.
 - **section-label** — app section: `{typography.section}`, sentence case, ink-muted.
@@ -454,7 +469,7 @@ components:
 - **footer** — block fill; Greca onDark; property links.
 - **tag** — hairline, `{rounded.sm}`, `{typography.label}`, ink-muted, no fill, 4px (`px-1`) inline padding.
 - **app-card** — surface fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
-- **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a 2px left rule in `{colors.primary}` (dark: amarillo) and ink text.
+- **list-row** — `{typography.body}`, `{spacing.row-height}`. Hover `{colors.hover}`. Selected: `{colors.selected}` plus a `--ow-rule-selected` left rule in `{colors.primary}` (dark: amarillo) and ink text.
 - **segmented** — hairline track, `{rounded.md}`, `{typography.label}`. Unselected ink-muted; selected is ink fill with canvas text.
 - **popover** — surface fill, outline edge, `{rounded.lg}`, `{spacing.card-padding}`.
 - **input** — outline border, `{rounded.md}`, `{typography.body}`, `{spacing.control-height}`.
@@ -463,8 +478,8 @@ components:
 | --- | --- |
 | hover | `{colors.hover}` fill. Rest border stays. Hover fill is never a border colour. |
 | pressed | `{colors.selected}` fill. |
-| selected | Never fill alone. Rows: selected fill plus a 2px `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
-| focus | 2px `{colors.anil}` outline, offset 2px, both themes. Does not swap the border. |
+| selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
+| focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
 
 ## Do's and Don'ts
@@ -483,6 +498,7 @@ components:
 - Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
 - Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
 - Don't copy hexes from this file into CSS. `tokens.css` owns every value.
+- Don't hand-copy a length; use the token.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
 
 ## Marks

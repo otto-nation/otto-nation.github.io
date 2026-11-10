@@ -20,6 +20,7 @@ import {
   headingLetterSpacing,
   lengthGroups,
   lightTokenHexes,
+  scrimSpec,
   trackingValue,
 } from '../src/internal/derive.mjs';
 
@@ -29,6 +30,7 @@ export function generate(designMd, { tokensCss, fontsCss, eyebrowSource }) {
   const yaml = frontMatter({ tokensCss, fontsCss, eyebrowSource });
   let out = replaceFrontMatter(designMd, yaml);
   out = replaceMarkedRegion(out, 'contrast-rules', contrastTable(tokensCss));
+  out = replaceMarkedRegion(out, 'lengths', lengthsTable(tokensCss));
   return out;
 }
 
@@ -168,6 +170,57 @@ function contrastRow({ token, ratio, background }, theme) {
   const name = token.replace(/^--ow-/, '');
   const on = background.replace(/^--ow-/, '');
   return `| ${name} | ${ratio}:1 | ${on} | ${theme} |`;
+}
+
+const LENGTH_USES = {
+  'focus-width': 'Focus outline width',
+  'focus-offset': 'Focus outline offset',
+  'rule-selected': 'Selected list-row left rule',
+  'rule-accent': 'Card-accent left rule',
+  'pane-compact': 'Minimum width of the compact pane',
+  'pane-board': 'Minimum width of the board pane',
+  'pane-wide': 'Minimum width of the wide pane',
+};
+
+function lengthsTable(tokensCss) {
+  const groups = lengthGroups(tokensCss);
+  const rows = [
+    ...lengthGroupRows(groups, 'focus', 'focus'),
+    ...lengthGroupRows(groups, 'rules', 'rule'),
+    ...lengthGroupRows(groups, 'panes', 'pane'),
+    ...scrimRows(tokensCss),
+  ];
+  return ['| Token | Value | Use |', '| --- | --- | --- |', ...rows, ''].join('\n');
+}
+
+function lengthGroupRows(groups, group, prefix) {
+  const map = groups[group];
+  if (map.size === 0) {
+    throw new Error(`tokens.css :root declared no --ow-${prefix}-* lengths`);
+  }
+  return [...map].map(([name, value]) => {
+    const token = `--ow-${prefix}-${name}`;
+    const use = LENGTH_USES[`${prefix}-${name}`];
+    if (!use) {
+      throw new Error(`no Use copy for ${token}`);
+    }
+    return `| ${token} | ${value} | ${use} |`;
+  });
+}
+
+function scrimRows(tokensCss) {
+  return [
+    scrimRow(scrimSpec(tokensCss, 'light'), 'light'),
+    scrimRow(scrimSpec(tokensCss, 'dark'), 'dark'),
+  ];
+}
+
+function scrimRow(spec, theme) {
+  return `| --ow-scrim | ${scrimMix(spec)} | Modal overlay (${theme}) |`;
+}
+
+function scrimMix({ token, opacity }) {
+  return `color-mix(in srgb, var(${token}) ${Math.round(opacity * 100)}%, transparent)`;
 }
 
 function replaceFrontMatter(source, yamlBody) {
