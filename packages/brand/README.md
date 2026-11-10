@@ -265,9 +265,17 @@ Configuration findings are always errors and cannot be suppressed:
 
 Meta findings cannot be suppressed. `ignore-reason` (a directive with no
 reason) and `ignore-unknown-rule` are always errors. `ignore-unused` (a
-directive that suppressed nothing) and `src-empty` (a `--src` root yielded no
-files) are warnings; `--strict` makes them errors. `src-empty` stays a warning
-by default so a previously passing invocation still exits 0.
+directive that suppressed nothing), `src-empty` (a `--src` root yielded no
+files), and `source-too-broad` are warnings; `--strict` makes them errors.
+`src-empty` stays a warning by default so a previously passing invocation still
+exits 0.
+
+`source-too-broad` fires when the `@source` pointing at the package has a
+literal glob head (the part before the first `*`) that resolves to the package
+root rather than `src/`. A package-root glob scans README.md and DESIGN.md;
+class-shaped prose there compiles to invalid CSS. Use `SOURCE_GLOB` from
+`src/internal/derive.mjs`:
+`@source '../node_modules/@otto-nation/brand/src/**/*.tsx'`.
 
 ### Vite mode
 
@@ -278,7 +286,8 @@ Both modes check the `tokens.css` and `fonts.css` `@import`s, undeclared
 `--ow-*` references, and the style rules.
 
 Next mode always requires `@source` (and that its glob head exists) and
-`transpilePackages` listing the package.
+`transpilePackages` listing the package. A glob headed at the package root is
+`source-too-broad`.
 
 Vite mode skips `transpilePackages`. The `@source` checks and
 `vite-tailwind-plugin` apply only when consumer source imports a component
