@@ -1,3 +1,6 @@
+// ceiling: the barrel imports next/link here, in card-grid.tsx and in chrome/nav.tsx, so every
+// consumer takes Next as a peer. Upgrade when a non-Next consumer's bundle size or its need to run
+// without Next matters, or when the 2.0 major ships. Tracked in #49.
 import Link from 'next/link';
 import type { ComponentPropsWithRef, ReactNode, Ref } from 'react';
 import { twMerge } from 'tailwind-merge';
