@@ -566,6 +566,11 @@ components:
   table-row-hover:
     backgroundColor: "{colors.hover}"
     textColor: "{colors.ink}"
+  run-output:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.card-padding}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
@@ -596,6 +601,10 @@ components:
 - **dialog** — window treatment plus scrim; open with `ref.current.showModal()`; actions in `form method="dialog"`. The `open` attribute alone is non-modal with no scrim.
 - **toast** — popover treatment, glyph plus text, no timer, consumer positions it. Keep it mounted and swap children; `status="fail"` is `role="alert"`.
 - **table** — body role, section-role header with a 1px ink rule, hover fill, `section` and `total` rows.
+- **run-output** — surface card or inset: `{colors.surface}` fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
+  Header: Status table glyph and title, elapsed in `{colors.ink-muted}` `{typography.meta}`, exit code on fail, secondary actions as `button-ghost`.
+  One-line summary of the last meaningful output line. Raw tail collapsed behind a ghost "Show output" toggle, `{typography.code}`.
+  Static glyphs only; no spinner (see States: loading). Sentence case. When the run ends, the panel may swap to the resulting record.
 
 | State | Treatment |
 | --- | --- |
@@ -621,6 +630,7 @@ components:
 - Don't change a border colour on hover; focus is the anil ring.
 - Don't show selected by fill alone; rows take the primary left rule, segmented takes ink fill with canvas text.
 - Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`.
+- Don't put counts, totals or progress in a button or link label; the label is the action and nothing else. e.g. "Start", not "Start 2 runs"; "Batch", not "Batch · running 3 of 5". Put that state beside the control as text, and leave out a line that restates what the form already shows.
 - Don't use `{colors.magenta}` outside the terminal map; it is ANSI 5/13 only.
 - Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
 - Do use `{rounded.sm}` for tags, `{rounded.md}` for controls, `{rounded.lg}` for cards and popovers. No `full`.
