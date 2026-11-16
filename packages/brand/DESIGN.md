@@ -121,6 +121,9 @@ spacing:
   control-padding: 10px
   card-padding: 12px
   column-min: 260px
+  meter-width: 96px
+  meter-height: 6px
+  meter-gap: 2px
 ---
 
 # otto-nation
@@ -276,6 +279,9 @@ App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
 | control-padding | `{spacing.control-padding}` | Control inline padding |
 | card-padding | `{spacing.card-padding}` | App cards |
 | column-min | `{spacing.column-min}` | Board column min width |
+| meter-width | `{spacing.meter-width}` | Meter track width |
+| meter-height | `{spacing.meter-height}` | Meter track height |
+| meter-gap | `{spacing.meter-gap}` | Discrete meter segment gap |
 
 Every click target is at least `{spacing.control-height-dense}` in both dimensions; a glyph-only control is an `icon-button`, never a text button narrower than that. Related actions sit `{spacing.2}` apart; separate groups by `{spacing.4}` or a spacer.
 
@@ -562,6 +568,11 @@ components:
   key-value-key:
     textColor: "{colors.ink-muted}"
     typography: "{typography.section}"
+  meter:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sm}"
+    height: "{spacing.meter-height}"
+    typography: "{typography.code}"
   action-bar:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
@@ -606,6 +617,19 @@ components:
   Static glyphs only; no spinner (see States: loading). Sentence case. When the run ends, the panel may swap to the resulting record.
 - **key-value** — compact two-column facts about one thing (Directory, Kind, Process, Waited, Ran). A `table` is rows of many things. Read-only, not interactive. No borders or fills between rows; it sits inside a card or inset, and may sit inside `run-output` beneath the header.
   Keys: `{typography.section}` sentence case in `{colors.ink-muted}`. Values: `{typography.meta}` in `{colors.ink}`; paths and ids in `{typography.code}`, truncated. Row gap `{spacing.1}`. Omit a missing value; never "n/a". Durations are relative ("waited 3m", "ran 12s").
+- **meter** — a capacity reading (how much of a fixed limit is in use), not progress. Lay it out
+  as the label (`{typography.label}`, ink-muted), then the track, then the value as `n/limit`
+  (`{typography.code}`, ink), on one line; wrap the pair onto a second line rather than shrink
+  the track. The track is `--ow-meter-width` (96px) wide and `--ow-meter-height` (6px) tall,
+  `{rounded.sm}`. When the limit is 8 or less the track is discrete: one segment per unit, equal
+  widths, `--ow-meter-gap` (2px) apart, each segment filled completely or not at all; used
+  units are `{colors.info}`, unused units `{colors.hairline}`. Above 8 the track is continuous:
+  a `{colors.hairline}` track with an `{colors.info}` fill to `n/limit`, clamped at full.
+  Never draw a meter from block or shade glyphs (U+2580–U+259F); they render as texture, not
+  as a bar. Never put text inside the track. The value text is always shown, so the meter is
+  never read by colour alone. Expose `role="meter"` with `aria-valuenow`, `aria-valuemin`,
+  `aria-valuemax` and an `aria-label` naming the label ("heavy slots"). No animation; the fill
+  changes in place on refresh.
 
 | State | Treatment |
 | --- | --- |
@@ -615,6 +639,8 @@ components:
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. A disabled control always says why: the reason is its tooltip (`title`), and for a view's primary also the action-bar text slot. Never a line of its own above or below the control. A control with nothing to act on is disabled, not left live. |
 | invalid | `{colors.danger}` edge via `aria-invalid` on Input/Textarea/Select/Checkbox; message in field-error. Not a hover change. |
+
+meter — no hover, no focus, not a control.
 
 ## Do's and Don'ts
 
@@ -632,6 +658,7 @@ components:
 - Don't change a border colour on hover; focus is the anil ring.
 - Don't show selected by fill alone; rows take the primary left rule, segmented takes ink fill with canvas text.
 - Don't use pills or `rounded-full`. Status is coloured text plus a glyph; a contained label is a `tag`.
+- Don't draw a meter from block or shade glyphs (U+2580–U+259F); they render as texture, not as a bar.
 - Don't put counts, totals or progress in a button or link label; the label is the action and nothing else. e.g. "Start", not "Start 2 runs"; "Batch", not "Batch · running 3 of 5". Put that state beside the control as text, and leave out a line that restates what the form already shows.
 - Don't use `{colors.magenta}` outside the terminal map; it is ANSI 5/13 only.
 - Do use `{typography.section}` in sentence case and `{colors.ink-muted}` for app section labels; the page eyebrow stays for pages.
