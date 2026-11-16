@@ -135,6 +135,9 @@
   --ow-control-padding: 10px;
   --ow-card-padding: 12px;
   --ow-column-min: 260px;
+  --ow-meter-width: 96px;
+  --ow-meter-height: 6px;
+  --ow-meter-gap: 2px;
 
   --ow-radius-sm: 4px;
   --ow-radius-md: 6px;

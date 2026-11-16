@@ -98,6 +98,9 @@ const APP_LENGTHS = {
   'control-padding': '10px',
   'card-padding': '12px',
   'column-min': '260px',
+  'meter-width': '96px',
+  'meter-height': '6px',
+  'meter-gap': '2px',
 };
 
 test('YAML typography includes app font roles with size, weight, and lineHeight', () => {
