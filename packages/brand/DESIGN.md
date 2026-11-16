@@ -571,6 +571,12 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
     padding: "{spacing.card-padding}"
+  key-value:
+    textColor: "{colors.ink}"
+    typography: "{typography.meta}"
+  key-value-key:
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.section}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
@@ -605,6 +611,8 @@ components:
   Header: Status table glyph and title, elapsed in `{colors.ink-muted}` `{typography.meta}`, exit code on fail, secondary actions as `button-ghost`.
   One-line summary of the last meaningful output line. Raw tail collapsed behind a ghost "Show output" toggle, `{typography.code}`.
   Static glyphs only; no spinner (see States: loading). Sentence case. When the run ends, the panel may swap to the resulting record.
+- **key-value** — compact two-column facts about one thing (Directory, Kind, Process, Waited, Ran). A `table` is rows of many things. Read-only, not interactive. No borders or fills between rows; it sits inside a card or inset, and may sit inside `run-output` beneath the header.
+  Keys: `{typography.section}` sentence case in `{colors.ink-muted}`. Values: `{typography.meta}` in `{colors.ink}`; paths and ids in `{typography.code}`, truncated. Row gap `{spacing.1}`. Omit a missing value; never "n/a". Durations are relative ("waited 3m", "ran 12s").
 
 | State | Treatment |
 | --- | --- |
