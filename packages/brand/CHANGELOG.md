@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.2...brand-v2.0.0) (2026-11-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **brand:** Button variant="ghost" and the button-ghost design entries are removed; use variant="outline".
+
+### Features
+
+* **brand:** remove the ghost button; add the button hierarchy ([#53](https://github.com/otto-nation/otto-nation.github.io/issues/53)) ([356006c](https://github.com/otto-nation/otto-nation.github.io/commit/356006cd1214fc01b35997c810bf13c221c9db80))
+
 ## [1.6.2](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.1...brand-v1.6.2) (2026-11-10)
 
 
