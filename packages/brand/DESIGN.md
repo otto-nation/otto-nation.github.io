@@ -277,6 +277,8 @@ App UI uses these lengths, owned by `tokens.css` (`{spacing.control-height}` is
 | card-padding | `{spacing.card-padding}` | App cards |
 | column-min | `{spacing.column-min}` | Board column min width |
 
+Every click target is at least `{spacing.control-height-dense}` in both dimensions; a glyph-only control is an `icon-button`, never a text button narrower than that. Related actions sit `{spacing.2}` apart; separate groups by `{spacing.4}` or a spacer.
+
 Pane tokens are the minimum container width of the pane they name. A YAML
 `breakpoints` key warns, and `var()` is not allowed in `@container`
 conditions, so they are for non-web consumers and documentation.
@@ -311,7 +313,7 @@ Flat. No shadows. Hierarchy is three edges:
 
 | Treatment | Token | Use |
 | --- | --- | --- |
-| Hairline | `{colors.hairline}` | Containers that carry their own text label: cards, tags, the segmented track, text buttons, list dividers, popovers over content, nav |
+| Hairline | `{colors.hairline}` | Containers that carry their own text label: cards, tags, the segmented track, text buttons, list dividers, popovers over content, nav, the top edge of an action-bar |
 | Outline | `{colors.outline}` | Controls you find by their edge: inputs, checkboxes, icon-only buttons, and a window/popover that floats over canvas |
 | Block band | `{colors.block}` | Footer and install; stays dark in both themes |
 
@@ -560,12 +562,21 @@ components:
   key-value-key:
     textColor: "{colors.ink-muted}"
     typography: "{typography.section}"
+  action-bar:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    padding: "{spacing.3}"
 ```
 
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
   Page size (`sm`/`xs`): `font-semibold`, `text-sm`/`text-xs`, `--ow-space-4` / `--ow-space-2` padding; same variants.
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
 - **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
+- **button hierarchy** — one `button-solid` per view, for the action the view exists for; a view of peer actions has none. Secondary actions are `button-outline`. Siblings in one group share a variant unless one is the group's primary or confirm. Order: primary or confirm, then secondary, then the back-out.
+- **confirm** — a destructive action confirms inline, in place of its trigger: the consequence in `{typography.meta}` `{colors.ink-muted}`, then `button-danger` "Confirm <verb>", then `button-outline` "Keep". A confirm that publishes rather than destroys uses `button-solid` and a `button-outline` "Cancel". An action that ends running work always confirms.
+- **menu-button** — `button-outline` that opens a popover: label, `•` in `{colors.ink}` when its filter is active, then `▾` in `{colors.ink-muted}`, `aria-hidden`. The value it sets is shown beside it as text, never in the label.
+- **back** — navigation to the parent view: `button-outline` "← <parent>", first in the header, followed at `{spacing.1}` by the view title.
+- **action-bar** — pinned footer of an app pane whose primary would scroll away: `{colors.canvas}`, hairline top edge, `{spacing.4}` inline and `{spacing.3}` block padding. Primary first, then secondary, then one `{typography.meta}` text slot for the disabled reason, progress, or a selection count. An error from the last attempt sits above the row as field-error. Not the block band; that is the page footer.
 - **icon-button** — square at control height; outline edge; required `label`; hover, pressed and toggle-selected as above. The dark edge-on-hover reading is 2.77:1 against the hover fill; the edge still reads 3.44:1 against the canvas outside it, which locates the control.
 - **button-on-dark** — solid on the block band (`onDark`). SegmentedControl takes the same `onDark` there.
 - **card** — no fill (sits on canvas), hairline border, `p-4`. Title `text-sm font-bold tracking-tight`; body `text-xs` ink-muted.
@@ -602,7 +613,7 @@ components:
 | pressed | outline: `{colors.selected}` fill; solid and on-dark keep their fill. |
 | selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
-| disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
+| disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. A disabled control always says why: the reason is its tooltip (`title`), and for a view's primary also the action-bar text slot. Never a line of its own above or below the control. A control with nothing to act on is disabled, not left live. |
 | invalid | `{colors.danger}` edge via `aria-invalid` on Input/Textarea/Select/Checkbox; message in field-error. Not a hover change. |
 
 ## Do's and Don'ts
@@ -629,6 +640,11 @@ components:
 - Don't silence `otto-brand-check` without a reason: `otto-brand-ignore: <rule> — <reason>`.
 - Don't hand-copy a length; use the token.
 - Don't hand-edit the front matter or `<!-- generated:* -->` regions; run `npm run design:generate -w packages/brand`.
+- Don't put more than one `button-solid` in a view.
+- Don't build a destructive confirm from `button-outline` or `button-solid`; use `button-danger`, with a `button-outline` "Keep" beside it.
+- Don't give sibling actions in one group different variants unless one is the group's primary.
+- Don't put a disabled control's reason on its own line; it is the tooltip, and the action-bar text for a primary.
+- Don't flip a text button's label to show a toggle; use `icon-button` toggle-selected or `segmented`.
 
 ## Marks
 
