@@ -36,7 +36,7 @@ const STATUSES: { status: StatusGlyphStatus; label: string }[] = [
   { status: 'none', label: 'None' },
 ];
 
-const ACTION_VARIANTS: ActionButtonVariant[] = ['solid', 'outline', 'ghost'];
+const ACTION_VARIANTS: ActionButtonVariant[] = ['solid', 'outline'];
 const ACTION_STATES = [
   { state: 'rest', dense: false, disabled: false },
   { state: 'dense', dense: true, disabled: false },

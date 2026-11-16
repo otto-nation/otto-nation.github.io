@@ -6,7 +6,7 @@ import type { ComponentPropsWithRef, ReactNode, Ref } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { leavesThisDeployment } from '../internal/href';
 
-export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'solid' | 'outline' | 'danger';
 export type ButtonSize = 'sm' | 'xs' | 'app';
 
 const PAGE_TEXT = { sm: 'text-sm', xs: 'text-xs' } as const;
@@ -20,10 +20,6 @@ const VARIANT = {
     rest: 'border border-[var(--ow-hairline)] bg-[var(--ow-canvas)] text-[var(--ow-ink)]',
     onDark: 'border border-[var(--ow-block-hairline)]',
   },
-  ghost: {
-    rest: 'text-[var(--ow-ink)]',
-    onDark: 'text-[var(--ow-block-ink)]',
-  },
   danger: {
     rest: 'bg-[var(--ow-danger)] text-[var(--ow-canvas)]',
     onDark: 'bg-[var(--ow-danger)] text-[var(--ow-canvas)]',
@@ -33,14 +29,12 @@ const VARIANT = {
 const VARIANT_HOVER = {
   solid: undefined,
   outline: 'hover:bg-[var(--ow-hover)]',
-  ghost: 'hover:bg-[var(--ow-hover)]',
   danger: undefined,
 } as const;
 
 const VARIANT_PRESSED = {
   solid: undefined,
   outline: 'active:bg-[var(--ow-selected)]',
-  ghost: 'active:bg-[var(--ow-selected)]',
   danger: undefined,
 } as const;
 
@@ -114,10 +108,10 @@ function buttonClassName({
   );
 }
 
-// DESIGN.md `button-solid` / `button-outline` / `button-ghost` / `button-danger`
+// DESIGN.md `button-solid` / `button-outline` / `button-danger`
 // / `button-on-dark`. One component: with href it is a link (page CTAs);
 // without, a <button>. `size="app"` is the control-height label role. Hover
-// and pressed fills apply to outline and ghost only — canvas text on the
+// and pressed fills apply to outline only — canvas text on the
 // selected fill fails AA, and onDark hover is unreadable. Danger uses the
 // same rest fill for onDark: block-ink on danger fails in dark. Absorbs the
 // three link-shaped buttons that shipped separately in otto-workbench.
