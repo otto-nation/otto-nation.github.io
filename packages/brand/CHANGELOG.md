@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v2.0.0...brand-v2.1.0) (2026-11-16)
+
+
+### Features
+
+* **brand:** add the meter component ([#55](https://github.com/otto-nation/otto-nation.github.io/issues/55)) ([381637e](https://github.com/otto-nation/otto-nation.github.io/commit/381637ea83fa2b7145394a953d077e2c22d35ce4))
+
 ## [2.0.0](https://github.com/otto-nation/otto-nation.github.io/compare/brand-v1.6.2...brand-v2.0.0) (2026-11-16)
 
 
