@@ -454,7 +454,7 @@ breaking release.
 | `GrecaDivider` | `{ className? }` |
 | `Rings` | `{ className? }` |
 | `Eyebrow` | `{ children, className? }` |
-| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'ghost' \| 'danger', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className?, ref? }` |
+| `Button` | `{ href?, children, variant?: 'solid' \| 'outline' \| 'danger', size?: 'sm' \| 'xs' \| 'app', dense?, onDark?, className?, ref? }` |
 | `CardGrid` | `{ columns: 2 \| 3, items: CardItem[], className? }` |
 | `StatusGlyph` | `{ status: 'pass' \| 'fail' \| 'running' \| 'warn' \| 'none', label, showLabel?: boolean, className? }` |
 | `Tag` | `{ children, className? }` |

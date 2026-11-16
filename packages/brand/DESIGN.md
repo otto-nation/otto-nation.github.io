@@ -376,23 +376,6 @@ components:
     rounded: "{rounded.md}"
     height: "{spacing.control-height}"
     typography: "{typography.label}"
-  button-ghost:
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "{spacing.control-height}"
-    typography: "{typography.label}"
-  button-ghost-hover:
-    backgroundColor: "{colors.hover}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "{spacing.control-height}"
-    typography: "{typography.label}"
-  button-ghost-pressed:
-    backgroundColor: "{colors.selected}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "{spacing.control-height}"
-    typography: "{typography.label}"
   button-danger:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.canvas}"
@@ -582,7 +565,6 @@ components:
 - **button-solid** — default CTA. `{typography.label}`, `{spacing.control-height}`.
   Page size (`sm`/`xs`): `font-semibold`, `text-sm`/`text-xs`, `--ow-space-4` / `--ow-space-2` padding; same variants.
 - **button-outline** — hairline border; hover `{colors.hover}` fill; rest border stays.
-- **button-ghost** — no fill; hover `{colors.hover}` fill; rest border stays.
 - **button-danger** — destructive confirm only. Canvas text on the danger fill. No hover or pressed fill, like solid. `onDark` has no effect.
 - **icon-button** — square at control height; outline edge; required `label`; hover, pressed and toggle-selected as above. The dark edge-on-hover reading is 2.77:1 against the hover fill; the edge still reads 3.44:1 against the canvas outside it, which locates the control.
 - **button-on-dark** — solid on the block band (`onDark`). SegmentedControl takes the same `onDark` there.
@@ -608,8 +590,8 @@ components:
 - **toast** — popover treatment, glyph plus text, no timer, consumer positions it. Keep it mounted and swap children; `status="fail"` is `role="alert"`.
 - **table** — body role, section-role header with a 1px ink rule, hover fill, `section` and `total` rows.
 - **run-output** — surface card or inset: `{colors.surface}` fill, hairline, `{rounded.lg}`, `{spacing.card-padding}`.
-  Header: Status table glyph and title, elapsed in `{colors.ink-muted}` `{typography.meta}`, exit code on fail, secondary actions as `button-ghost`.
-  One-line summary of the last meaningful output line. Raw tail collapsed behind a ghost "Show output" toggle, `{typography.code}`.
+  Header: Status table glyph and title, elapsed in `{colors.ink-muted}` `{typography.meta}`, exit code on fail, secondary actions as `button-outline`.
+  One-line summary of the last meaningful output line. Raw tail collapsed behind a `button-outline` "Show output" toggle, `{typography.code}`.
   Static glyphs only; no spinner (see States: loading). Sentence case. When the run ends, the panel may swap to the resulting record.
 - **key-value** — compact two-column facts about one thing (Directory, Kind, Process, Waited, Ran). A `table` is rows of many things. Read-only, not interactive. No borders or fills between rows; it sits inside a card or inset, and may sit inside `run-output` beneath the header.
   Keys: `{typography.section}` sentence case in `{colors.ink-muted}`. Values: `{typography.meta}` in `{colors.ink}`; paths and ids in `{typography.code}`, truncated. Row gap `{spacing.1}`. Omit a missing value; never "n/a". Durations are relative ("waited 3m", "ran 12s").
@@ -617,7 +599,7 @@ components:
 | State | Treatment |
 | --- | --- |
 | hover | `{colors.hover}` fill. Rest border stays. Hover fill is never a border colour. |
-| pressed | outline/ghost: `{colors.selected}` fill; solid and on-dark keep their fill. |
+| pressed | outline: `{colors.selected}` fill; solid and on-dark keep their fill. |
 | selected | Never fill alone. Rows: selected fill plus a `--ow-rule-selected` `{colors.primary}` left rule (dark: amarillo) and ink text. Segmented: ink fill, canvas text. |
 | focus | `--ow-focus-width` `{colors.anil}` outline, offset `--ow-focus-offset`, both themes. Does not swap the border. |
 | disabled | `{colors.ink-muted}` text, no fill change, no hover. A solid button keeps its ink fill at 50% opacity instead, since ink-muted on ink does not read. |
@@ -632,6 +614,7 @@ components:
 - Don't use amarillo as text on the light canvas.
 - Don't use rosa for inline prose; UI and large text only.
 - Don't build a destructive button from rosa; use `button-danger`.
+- Don't use a borderless clickable for an action: use button-outline (or button-solid for the primary, icon-button for icon-only).
 - Don't add a shadow to a dialog or toast; the outline edge separates it.
 - Don't use `{colors.outline}` as text; dim and faint map to `{colors.ink-muted}`.
 - Don't use `{colors.hover}` as a border colour.

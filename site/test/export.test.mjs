@@ -64,7 +64,7 @@ test('the /ui specimen renders SectionLabel and ActionButton', () => {
   assert.ok(counted.includes('3'), 'section count missing');
   assert.ok(counted.includes('--ow-font-meta'), 'count meta font token missing');
 
-  for (const variant of ['solid', 'outline', 'ghost']) {
+  for (const variant of ['solid', 'outline']) {
     for (const state of ['rest', 'dense', 'disabled']) {
       const block = section(html, `action-${variant}-${state}`);
       const button = block.match(/<button\b[^>]*>/)?.[0];
@@ -96,8 +96,7 @@ test('the /ui specimen renders SectionLabel and ActionButton', () => {
           `${variant} ${state} should use control-height`,
         );
       }
-      const pressed =
-        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      const pressed = variant === 'outline' && state !== 'disabled';
       if (pressed) {
         assert.ok(
           button.includes('hover:bg-[var(--ow-hover)]'),
@@ -180,7 +179,7 @@ test('the /ui specimen renders page-size Button and Button size=app', () => {
     'page onDark should not paint pressed fill',
   );
 
-  for (const variant of ['solid', 'outline', 'ghost']) {
+  for (const variant of ['solid', 'outline']) {
     for (const state of ['rest', 'dense', 'disabled']) {
       const block = section(html, `button-app-${variant}-${state}`);
       const button = block.match(/<button\b[^>]*>/)?.[0];
@@ -190,8 +189,7 @@ test('the /ui specimen renders page-size Button and Button size=app', () => {
         block.includes('--ow-font-label'),
         `app ${variant} ${state} label font missing`,
       );
-      const pressed =
-        (variant === 'outline' || variant === 'ghost') && state !== 'disabled';
+      const pressed = variant === 'outline' && state !== 'disabled';
       if (pressed) {
         assert.ok(
           button.includes('active:bg-[var(--ow-selected)]'),
